@@ -1,35 +1,139 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useRef } from "react";
+import { Routes, Route, Outlet } from "react-router-dom";
+import { useAuth } from "./hooks/useAuth";
+
+// Page Imports
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
+import ProjectForm from "./pages/ProjectForm";
+import Blogs from "./pages/Blogs";
+import BlogDetail from "./pages/BlogDetail";
+import BlogForm from "./pages/BlogForm";
+import Chat from "./pages/Chat";
+import OurPurpose from "./pages/OurPurpose";
+import OurNetwork from "./pages/OurNetwork";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
+import RoleRequest from "./pages/RoleRequest";
+import AdminDashboard from "./pages/AdminDashboard";
+import UserManagement from "./pages/admin/UserManagement";
+import RoleRequests from "./pages/admin/RoleRequests";
+import NotFound from "./pages/NotFound";
+
+// Layout Imports
+import Navbar from "./components/layout/Navbar";
+import Footer from "./components/layout/Footer";
+import ProtectedRoute from "./components/layout/ProtectedRoute";
+import AdminRoute from "./components/layout/AdminRoute";
+import AdminLayout from "./components/layout/AdminLayout";
+
+/**
+ * Main application layout with Navbar and Footer.
+ */
+const MainLayout = () => (
+  <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950">
+    <Navbar />
+    <main className="flex-grow">
+      <Outlet />
+    </main>
+    <Footer />
+  </div>
+);
+
+/**
+ * Full-screen layout for the chat page.
+ */
+const ChatLayout = () => (
+  <div className="flex flex-col h-screen bg-white dark:bg-gray-950">
+    <Navbar />
+    <main className="flex-grow overflow-hidden">
+      <Outlet />
+    </main>
+  </div>
+);
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { isLoading } = useAuth();
+  const audioStarted = useRef(false);
+
+  useEffect(() => {
+    const startAudio = async () => {
+      if (window.Tone && !audioStarted.current) {
+        try {
+          await window.Tone.start();
+          console.log("Audio context started successfully.");
+          audioStarted.current = true;
+        } catch (e) {
+          console.error("Could not start audio context", e);
+        }
+      }
+    };
+    const handleFirstInteraction = () => {
+      startAudio();
+      window.removeEventListener("mousedown", handleFirstInteraction);
+      window.removeEventListener("keydown", handleFirstInteraction);
+      window.removeEventListener("touchstart", handleFirstInteraction);
+    };
+    window.addEventListener("mousedown", handleFirstInteraction);
+    window.addEventListener("keydown", handleFirstInteraction);
+    window.addEventListener("touchstart", handleFirstInteraction);
+    return () => {
+      window.removeEventListener("mousedown", handleFirstInteraction);
+      window.removeEventListener("keydown", handleFirstInteraction);
+      window.removeEventListener("touchstart", handleFirstInteraction);
+    };
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-900 text-white">
+        Loading...
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="text-gray-800 dark:text-gray-200">
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route element={<AdminRoute />}>
+          <Route path="/admin/*" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<UserManagement />} />
+            <Route path="requests" element={<RoleRequests />} />
+          </Route>
+        </Route>
+        <Route element={<ProtectedRoute />}>
+          <Route element={<ChatLayout />}>
+            <Route path="/chat" element={<Chat />} />
+          </Route>
+        </Route>
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<Home />} />
+          <Route path="projects" element={<Projects />} />
+          <Route path="projects/:id" element={<ProjectDetail />} />
+          <Route path="blogs" element={<Blogs />} />
+          <Route path="blogs/:id" element={<BlogDetail />} />
+          <Route path="purpose" element={<OurPurpose />} />
+          <Route path="network" element={<OurNetwork />} />
+          <Route path="profile/:username" element={<Profile />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="projects/new" element={<ProjectForm />} />
+            <Route path="projects/edit/:id" element={<ProjectForm />} />
+            <Route path="blogs/new" element={<BlogForm />} />
+            <Route path="blogs/edit/:id" element={<BlogForm />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="request-teacher-role" element={<RoleRequest />} />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
+    </div>
+  );
 }
 
-export default App
+export default App;

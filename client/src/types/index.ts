@@ -1,0 +1,94 @@
+// Defines the structure of the user object we get from the API
+export interface User {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  role: string[];
+  settings: {
+    theme: string;
+  };
+  profile: {
+    avatar?: string;
+    bio?: string;
+  };
+  premium: {
+    isPremium: boolean;
+  };
+  socials?: {
+    followersCount: number;
+    followingCount: number;
+    friendsCount: number;
+  };
+  isFollowing?: boolean; // Add the new property
+}
+
+// Defines the structure of the authentication context's state
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+}
+
+// Defines the functions available in the authentication context
+export interface AuthContextType extends AuthState {
+  login: (data: AuthState) => void;
+  logout: () => void;
+  isLoading: boolean;
+}
+
+// Defines the structure for a single project
+export interface Project {
+  _id: string;
+  title: string;
+  description: string;
+  coverImage: string;
+  screenshots?: string[];
+  projectLink?: string;
+  sourceCodeLink?: string;
+  extraLinks?: { title: string; url: string }[];
+  author: Pick<User, "_id" | "username" | "firstName" | "lastName" | "profile">;
+  tags: string[];
+  createdAt: string;
+}
+
+// Defines the structure for a single blog post
+export interface Blog {
+  _id: string;
+  title: string;
+  content: string;
+  coverImage: string;
+  author: Pick<User, "_id" | "username" | "firstName" | "lastName" | "profile">;
+  tags: string[];
+  createdAt: string;
+}
+
+// Defines the structure for a single message
+export interface Message {
+  _id: string;
+  sender: User;
+  content: string;
+  chat: Chat;
+  createdAt: string;
+}
+
+// Defines the structure for a chat conversation
+export interface Chat {
+  _id: string;
+  isGroupChat: boolean;
+  participants: User[];
+  groupInfo?: {
+    name: string;
+    admin: User;
+  };
+  lastMessage?: Message;
+}
+// Defines the structure for a single notification
+export interface Notification {
+  _id: string;
+  sender: Pick<User, "_id" | "username" | "profile">;
+  type: "follow" | "friend_request" | "message";
+  link: string;
+  isRead: boolean;
+  createdAt: string;
+}
