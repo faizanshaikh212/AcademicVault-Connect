@@ -13,7 +13,7 @@ const router = express.Router();
 
 router.route("/").get(getAllBlogs).post(protect, createBlog);
 
-// This is the crucial route
+// This is the crucial route that was missing.
 router.get("/user/:userId", getBlogsByUserId);
 
 router
