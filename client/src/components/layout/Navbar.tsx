@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 import {
@@ -9,7 +9,6 @@ import {
   Users,
   Rss,
   Layers,
-  MessageSquare,
   User,
   Settings,
   LogOut,
@@ -24,37 +23,26 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/DropdownMenu";
 import NotificationBell from "./NotificationBell";
+import { useScrollDirection } from "@/hooks/useScrollDirection";
 
 const navLinks = [
   { name: "Our Purpose", href: "/purpose", icon: Users },
   { name: "Our Network", href: "/network", icon: Code },
   { name: "Blogs", href: "/blogs", icon: Rss },
   { name: "Projects", href: "/projects", icon: Layers },
-  { name: "Social", href: "/chat", icon: MessageSquare },
 ];
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const location = useLocation();
-  const isHomePage = location.pathname === "/";
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const scrollDirection = useScrollDirection();
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full transition-all duration-300",
-        isScrolled || !isHomePage
-          ? "border-b border-gray-200/50 bg-white/80 backdrop-blur-lg dark:bg-gray-900/80 dark:border-gray-800/50"
-          : "border-transparent bg-transparent"
+        scrollDirection === "down" ? "-translate-y-full" : "translate-y-0",
+        "fixed top-0 left-0 z-50 w-full transition-all duration-300",
+        "border-b border-gray-200/50 bg-white/80 backdrop-blur-lg dark:bg-gray-900/70 dark:border-gray-800/50"
       )}
     >
       <div className="container mx-auto flex h-20 items-center justify-between px-4">
@@ -79,7 +67,7 @@ const Navbar: React.FC = () => {
               {link.name}
             </NavLink>
           ))}
-          {/* THE FIX: Conditionally render Admin Panel link */}
+          {/*Conditionally render Admin Panel link */}
           {user && user.role.includes("admin") && (
             <NavLink
               to="/admin"

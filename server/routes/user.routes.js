@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getUserProfile,
+  getUserById,
   updateUserProfile,
   updateUserSettings,
   followUser,
@@ -9,15 +10,18 @@ import {
   getAllPublicUsers,
   submitRoleRequest,
 } from "../controllers/user.controller.js";
-import { protect } from "../middleware/auth.middleware.js";
+import { protect, optionalAuth } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
 // Add the new public route to get all users
 router.get("/all", getAllPublicUsers);
 
-// Public route to get a single user's profile
-router.get("/:username", getUserProfile);
+// Public route to get a single user's profile, with optional auth for follow status
+router.get("/:username", optionalAuth, getUserProfile);
+
+// Public route to get user by ID (for profile lookup)
+router.get("/id/:id", getUserById);
 
 // Private routes for the logged-in user
 router.put("/profile", protect, updateUserProfile);

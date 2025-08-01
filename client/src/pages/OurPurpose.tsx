@@ -51,9 +51,9 @@ const OurPurpose: React.FC = () => {
             <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
               Our platform is more than just a workspace; it's a launchpad for
               innovation. By providing robust tools for project management,
-              real-time chat, and knowledge sharing, we empower users to turn
-              their ideas into reality. Showcase your work, get valuable
-              feedback, and build a portfolio that stands out.
+              real-time knowledge sharing, we empower users to turn their ideas
+              into reality. Showcase your work, get valuable feedback, and build
+              a portfolio that stands out.
             </p>
           </div>
         </div>

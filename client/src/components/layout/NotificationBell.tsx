@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "@/services/api";
 import { Notification as NotificationType } from "../../types";
-import { useSocket } from "@/context/SocketContext";
 import { Bell, UserPlus } from "lucide-react";
 import {
   DropdownMenu,
@@ -12,19 +11,9 @@ import {
 } from "../ui/DropdownMenu"; // Separator removed
 import { Button } from "../ui/Button";
 
-// A simple sound player using Tone.js
-const playNotificationSound = () => {
-  // The global.d.ts file will prevent TypeScript errors on window.Tone
-  if (window.Tone) {
-    const synth = new window.Tone.Synth().toDestination();
-    synth.triggerAttackRelease("C5", "8n");
-  }
-};
-
 const NotificationBell: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const { socket } = useSocket();
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -38,23 +27,6 @@ const NotificationBell: React.FC = () => {
     };
     fetchNotifications();
   }, []);
-
-  // Listen for real-time notifications
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleNewNotification = (newNotification: NotificationType) => {
-      playNotificationSound();
-      setNotifications((prev) => [newNotification, ...prev]);
-      setUnreadCount((prev) => prev + 1);
-    };
-
-    socket.on("new notification", handleNewNotification);
-
-    return () => {
-      socket.off("new notification", handleNewNotification);
-    };
-  }, [socket]);
 
   const handleMarkAsRead = async () => {
     if (unreadCount === 0) return;

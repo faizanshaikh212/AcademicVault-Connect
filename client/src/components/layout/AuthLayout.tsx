@@ -20,7 +20,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
 
       {/* Form Card */}
       <div className="relative z-10 w-full max-w-md rounded-xl border border-white/10 bg-gray-900/50 p-8 shadow-2xl backdrop-blur-lg">
-        <h1 className="mb-6 text-center text-3xl font-bold text-white">
+        <h1 className="relative mb-6 text-center text-3xl font-bold text-white">
           {title}
         </h1>
         {children}

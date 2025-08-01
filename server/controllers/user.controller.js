@@ -154,7 +154,11 @@ const followUser = async (req, res) => {
       targetUser.socials.followers.pull(currentUserId);
       await currentUser.save();
       await targetUser.save();
-      return res.json({ message: "Successfully unfollowed user." });
+      return res.json({
+        message: "Successfully unfollowed user.",
+        action: "unfollowed",
+        isFollowing: false,
+      });
     } else {
       currentUser.socials.following.push(targetUserId);
       targetUser.socials.followers.push(currentUserId);
@@ -175,7 +179,11 @@ const followUser = async (req, res) => {
           .emit("new notification", notification);
       }
 
-      return res.json({ message: "Successfully followed user." });
+      return res.json({
+        message: "Successfully followed user.",
+        action: "followed",
+        isFollowing: true,
+      });
     }
   } catch (error) {
     console.error("Follow Error:", error);
@@ -317,6 +325,7 @@ const blockUser = async (req, res) => {
     });
   }
 };
+
 /**
  * @desc    Get all public user profiles for the network page
  * @route   GET /api/users/all
@@ -376,6 +385,26 @@ const submitRoleRequest = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Server error submitting request.",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Get user by MongoDB ObjectId
+ * @route   GET /api/users/id/:id
+ * @access  Public
+ */
+export const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("username");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({ username: user.username });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error fetching user by ID.",
       error: error.message,
     });
   }

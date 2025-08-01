@@ -34,10 +34,21 @@ const Profile: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const userRes = await api.get<User>(`/users/${username}`);
+        // Get the auth token
+        const token = localStorage.getItem("token");
+
+        // Make the request with explicit headers
+        const userRes = await api.get<User>(`/users/${username}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         const fetchedUser = userRes.data;
         setProfileUser(fetchedUser);
-        setIsFollowing(fetchedUser.isFollowing ?? false);
+
+        // Explicitly check if isFollowing is true, default to false otherwise
+        setIsFollowing(fetchedUser.isFollowing === true);
 
         const [projectsRes, blogsRes] = await Promise.all([
           api.get<Project[]>(`/projects/user/${fetchedUser._id}`),
@@ -52,32 +63,23 @@ const Profile: React.FC = () => {
       }
     };
     fetchProfileData();
-  }, [username, currentUser]); // THE FIX: Re-run this effect when the logged-in user is identified.
+  }, [username, currentUser]); // Re-run when the logged-in user changes
 
   const handleFollow = async () => {
-    if (!profileUser || isOwnProfile) return;
+    if (!profileUser || isOwnProfile || !currentUser) return;
     try {
-      const originalFollowState = isFollowing;
-      setIsFollowing(!originalFollowState);
-      setProfileUser((prev) => {
-        if (!prev) return null;
-        const newFollowersCount = originalFollowState
-          ? prev.socials!.followersCount - 1
-          : prev.socials!.followersCount + 1;
-        return {
-          ...prev,
-          socials: { ...prev.socials!, followersCount: newFollowersCount },
-        };
-      });
+      // Make the API call to toggle follow status
+      const response = await api.post(`/users/${profileUser._id}/follow`);
+      const isNowFollowing = response.data.action === "followed";
 
-      await api.post(`/users/${profileUser._id}/follow`);
-    } catch (error) {
-      console.error("Follow action failed", error);
-      // Revert on failure
-      setIsFollowing((prev) => !prev);
+      // Update the local follow state
+      setIsFollowing(isNowFollowing);
+
+      // Then update the state with the server's response
+      setIsFollowing(isNowFollowing);
       setProfileUser((prev) => {
         if (!prev) return null;
-        const newFollowersCount = isFollowing
+        const newFollowersCount = isNowFollowing
           ? prev.socials!.followersCount + 1
           : prev.socials!.followersCount - 1;
         return {
@@ -85,6 +87,8 @@ const Profile: React.FC = () => {
           socials: { ...prev.socials!, followersCount: newFollowersCount },
         };
       });
+    } catch (error) {
+      console.error("Follow action failed", error);
     }
   };
 
@@ -95,7 +99,7 @@ const Profile: React.FC = () => {
   if (!profileUser) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-950">
+    <div className="bg-white dark:bg-gray-950 min-h-screen pt-20">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-1 flex justify-center items-start">

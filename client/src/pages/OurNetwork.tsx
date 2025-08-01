@@ -5,6 +5,15 @@ import UserCard from "@/components/shared/UserCard";
 import { Input } from "@/components/ui/Input";
 import { Search } from "lucide-react";
 
+const cardThemes = [
+  { borderColor: "#4F46E5", gradient: "linear-gradient(145deg,#4F46E5,#000)" },
+  { borderColor: "#10B981", gradient: "linear-gradient(210deg,#10B981,#000)" },
+  { borderColor: "#F59E0B", gradient: "linear-gradient(165deg,#F59E0B,#000)" },
+  { borderColor: "#EF4444", gradient: "linear-gradient(195deg,#EF4444,#000)" },
+  { borderColor: "#8B5CF6", gradient: "linear-gradient(225deg,#8B5CF6,#000)" },
+  { borderColor: "#06B6D4", gradient: "linear-gradient(135deg,#06B6D4,#000)" },
+];
+
 const OurNetwork: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -73,10 +82,18 @@ const OurNetwork: React.FC = () => {
           ) : error ? (
             <p className="text-center text-red-500">{error}</p>
           ) : filteredUsers.length > 0 ? (
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {filteredUsers.map((user) => (
-                <UserCard key={user._id} user={user} />
-              ))}
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredUsers.map((user, index) => {
+                const theme = cardThemes[index % cardThemes.length];
+                return (
+                  <UserCard
+                    key={user._id}
+                    user={user}
+                    borderColor={theme.borderColor}
+                    gradient={theme.gradient}
+                  />
+                );
+              })}
             </div>
           ) : (
             <p className="text-center text-gray-500">No users found.</p>

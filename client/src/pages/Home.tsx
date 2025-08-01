@@ -7,9 +7,10 @@ import BlogCard from "@/components/shared/BlogCard";
 import Particles from "@/components/background/Particles"; // Corrected import path
 import Aurora from "@/components/background/Aurora"; // Corrected import path
 import { ArrowRight, BookOpen, Users, Lightbulb } from "lucide-react";
-// The unused 'cn' import has been removed.
+import { useAuth } from "@/hooks/useAuth";
 
 const Home: React.FC = () => {
+  const { user } = useAuth();
   const [latestBlogs, setLatestBlogs] = useState<Blog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,11 +61,13 @@ const Home: React.FC = () => {
               knowledge, build projects, and grow together.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <Button asChild size="lg">
-                <Link to="/register">
-                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+              {!user && (
+                <Button asChild size="lg">
+                  <Link to="/register">
+                    Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              )}
               <Button
                 asChild
                 size="lg"
@@ -220,11 +223,13 @@ const Home: React.FC = () => {
               knowledge, build projects, and grow together.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <Button asChild size="lg">
-                <Link to="/register">
-                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+              {!user && (
+                <Button asChild size="lg">
+                  <Link to="/register">
+                    Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              )}
               <Button
                 asChild
                 size="lg"

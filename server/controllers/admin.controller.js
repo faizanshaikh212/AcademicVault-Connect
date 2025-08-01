@@ -70,12 +70,10 @@ const updateUserRole = async (req, res) => {
     await user.save();
     res.json({ message: `User roles updated.` });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error updating user role.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error updating user role.",
+      error: error.message,
+    });
   }
 };
 
@@ -123,32 +121,29 @@ const handleRoleRequest = async (req, res) => {
     }
 
     if (action === "approve") {
-      user.role = "teacher";
-      await user.save();
+      // Only add 'teacher' if not already present
+      if (!user.role.includes("teacher")) {
+        user.role.push("teacher");
+        await user.save();
+      }
       request.status = "approved";
       await request.save();
-
-      // Create a notification for the user
       await Notification.create({
         recipient: user._id,
-        sender: req.user._id, // The admin who approved
+        sender: req.user._id,
         type: "role_approved",
-        link: `/profile/${user.username}`, // Link to their profile
+        link: `/profile/${user.username}`,
       });
-
       res.json({ message: "Request approved. User role updated to teacher." });
     } else if (action === "reject") {
       request.status = "rejected";
       await request.save();
-
-      // Create a notification for the user
       await Notification.create({
         recipient: user._id,
-        sender: req.user._id, // The admin who rejected
+        sender: req.user._id,
         type: "role_rejected",
         link: `/profile/${user.username}`,
       });
-
       res.json({ message: "Request rejected." });
     } else {
       res.status(400).json({ message: "Invalid action." });

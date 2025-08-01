@@ -12,7 +12,6 @@ import ProjectForm from "./pages/ProjectForm";
 import Blogs from "./pages/Blogs";
 import BlogDetail from "./pages/BlogDetail";
 import BlogForm from "./pages/BlogForm";
-import Chat from "./pages/Chat";
 import OurPurpose from "./pages/OurPurpose";
 import OurNetwork from "./pages/OurNetwork";
 import Profile from "./pages/Profile";
@@ -21,7 +20,12 @@ import RoleRequest from "./pages/RoleRequest";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import RoleRequests from "./pages/admin/RoleRequests";
+import AdminContentManager from "./pages/admin/AdminContentManager";
+import CustomerCare from "./pages/admin/CustomerCare";
 import NotFound from "./pages/NotFound";
+import TermsAndConditions from "./pages/TermsAndConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import ContactUs from "./pages/ContactUs";
 
 // Layout Imports
 import Navbar from "./components/layout/Navbar";
@@ -40,18 +44,6 @@ const MainLayout = () => (
       <Outlet />
     </main>
     <Footer />
-  </div>
-);
-
-/**
- * Full-screen layout for the chat page.
- */
-const ChatLayout = () => (
-  <div className="flex flex-col h-screen bg-white dark:bg-gray-950">
-    <Navbar />
-    <main className="flex-grow overflow-hidden">
-      <Outlet />
-    </main>
   </div>
 );
 
@@ -105,13 +97,11 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="requests" element={<RoleRequests />} />
+            <Route path="customer-care" element={<CustomerCare />} />
+            <Route path="content" element={<AdminContentManager />} />
           </Route>
         </Route>
-        <Route element={<ProtectedRoute />}>
-          <Route element={<ChatLayout />}>
-            <Route path="/chat" element={<Chat />} />
-          </Route>
-        </Route>
+        <Route element={<ProtectedRoute />}></Route>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
           <Route path="projects" element={<Projects />} />
@@ -129,6 +119,9 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="request-teacher-role" element={<RoleRequest />} />
           </Route>
+          <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/contact" element={<ContactUs />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

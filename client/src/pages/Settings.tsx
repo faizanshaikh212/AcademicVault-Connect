@@ -79,10 +79,11 @@ const Settings: React.FC = () => {
       login({ user: updatedUser, token: localStorage.getItem("token") });
       setMessage({ type: "success", text: "Profile updated successfully!" });
     } catch (err: any) {
-      setMessage({
-        type: "error",
-        text: err.response?.data?.message || "Failed to save profile.",
-      });
+      let errorMsg = err.response?.data?.message || "Failed to save profile.";
+      if (err.response?.data?.message === "Username already taken.") {
+        errorMsg = "This username is already taken. Please choose another.";
+      }
+      setMessage({ type: "error", text: errorMsg });
     } finally {
       setIsSaving(false);
     }
@@ -199,7 +200,7 @@ const Settings: React.FC = () => {
         )}
 
         {/* Teacher Role Request Section */}
-        {user.role === "student" && (
+        {user.role?.includes("student") && (
           <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-2">Become a Teacher</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">

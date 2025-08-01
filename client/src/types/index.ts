@@ -63,31 +63,11 @@ export interface Blog {
   createdAt: string;
 }
 
-// Defines the structure for a single message
-export interface Message {
-  _id: string;
-  sender: User;
-  content: string;
-  chat: Chat;
-  createdAt: string;
-}
-
-// Defines the structure for a chat conversation
-export interface Chat {
-  _id: string;
-  isGroupChat: boolean;
-  participants: User[];
-  groupInfo?: {
-    name: string;
-    admin: User;
-  };
-  lastMessage?: Message;
-}
 // Defines the structure for a single notification
 export interface Notification {
   _id: string;
   sender: Pick<User, "_id" | "username" | "profile">;
-  type: "follow" | "friend_request" | "message";
+  type: "follow" | "friend_request";
   link: string;
   isRead: boolean;
   createdAt: string;

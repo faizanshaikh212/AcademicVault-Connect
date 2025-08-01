@@ -41,8 +41,9 @@ const Blogs: React.FC = () => {
   }, [searchTerm, blogs]);
 
   return (
-    <>
-      <div className="container mx-auto px-4 pt-20 pb-12 text-white">
+    <div className="relative w-full min-h-screen pt-20">
+      <div className="absolute inset-0 -z-10"></div>
+      <div className="container mx-auto px-4 pb-12 text-white">
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
             <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
@@ -89,7 +90,7 @@ const Blogs: React.FC = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

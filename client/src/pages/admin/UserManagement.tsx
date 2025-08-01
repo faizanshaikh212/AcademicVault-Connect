@@ -9,6 +9,16 @@ const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [newUser, setNewUser] = useState({
+    firstName: "",
+    lastName: "",
+    username: "",
+    email: "",
+    password: "",
+    role: ["student"],
+  });
+  const [creating, setCreating] = useState(false);
+  const [createMsg, setCreateMsg] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -56,12 +66,100 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  const handleNewUserChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewUser({ ...newUser, [e.target.name]: e.target.value });
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreating(true);
+    setCreateMsg(null);
+    try {
+      await api.post("/auth/register", newUser);
+      setCreateMsg("User created successfully!");
+      setNewUser({
+        firstName: "",
+        lastName: "",
+        username: "",
+        email: "",
+        password: "",
+        role: ["student"],
+      });
+    } catch (err: any) {
+      setCreateMsg(err.response?.data?.message || "Failed to create user.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   if (isLoading) return <p className="text-center">Loading users...</p>;
   if (error) return <p className="text-center text-red-500">{error}</p>;
 
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">User Management</h1>
+      <div className="mb-8 bg-white dark:bg-gray-900 p-6 rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-4">Create New User</h2>
+        <form onSubmit={handleCreateUser} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              name="firstName"
+              value={newUser.firstName}
+              onChange={handleNewUserChange}
+              placeholder="First Name"
+              className="border rounded px-3 py-2"
+              required
+            />
+            <input
+              name="lastName"
+              value={newUser.lastName}
+              onChange={handleNewUserChange}
+              placeholder="Last Name"
+              className="border rounded px-3 py-2"
+              required
+            />
+            <input
+              name="username"
+              value={newUser.username}
+              onChange={handleNewUserChange}
+              placeholder="Username"
+              className="border rounded px-3 py-2"
+              required
+            />
+            <input
+              name="email"
+              value={newUser.email}
+              onChange={handleNewUserChange}
+              placeholder="Email"
+              className="border rounded px-3 py-2"
+              required
+            />
+            <input
+              name="password"
+              type="password"
+              value={newUser.password}
+              onChange={handleNewUserChange}
+              placeholder="Password"
+              className="border rounded px-3 py-2"
+              required
+            />
+          </div>
+          <Button type="submit" disabled={creating} className="w-full">
+            {creating ? "Creating..." : "Create User"}
+          </Button>
+          {createMsg && (
+            <div
+              className={
+                createMsg.includes("success")
+                  ? "text-green-600 mt-2"
+                  : "text-red-600 mt-2"
+              }
+            >
+              {createMsg}
+            </div>
+          )}
+        </form>
+      </div>
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow overflow-x-auto">
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400">
