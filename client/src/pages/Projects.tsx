@@ -43,7 +43,7 @@ const Projects: React.FC = () => {
   }, [searchTerm, projects]);
 
   return (
-    <div className="relative w-full min-h-screen pt-20">
+    <div className="relative w-full min-h-screen pt-30">
       <div className="absolute inset-0 -z-10"></div>
       <div className="container mx-auto px-4 pb-8">
         {/* Page Header */}

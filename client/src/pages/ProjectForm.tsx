@@ -5,7 +5,6 @@ import { Project } from "../types";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
-// The unused 'Upload' icon import has been removed.
 
 const ProjectForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -111,7 +110,8 @@ const ProjectForm: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-8">
+    <div className="container mx-auto max-w-3xl px-4 py-8 pt-30">
+      {/* Page Header */}
       <h1 className="text-3xl font-bold mb-6">
         {isEditMode ? "Edit Project" : "Create a New Project"}
       </h1>
