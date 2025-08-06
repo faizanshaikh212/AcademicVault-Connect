@@ -70,15 +70,35 @@ const updateUserProfile = async (req, res) => {
           req.body.profile.connections ?? user.profile.connections;
 
         // Handle avatar updates with GIF check
-        if (req.body.profile.avatar) {
-          const isGif = req.body.profile.avatar.endsWith(".gif");
-          if (isGif && !user.premium.isPremium) {
-            return res
-              .status(403)
-              .json({ message: "Animated avatars are a premium feature." });
+        if (req.body.profile.avatar !== undefined) {
+          if (req.body.profile.avatar === null) {
+            // Remove avatar
+            user.profile.avatar = "";
+            user.profile.isAvatarGif = false;
+          } else if (req.body.profile.avatar) {
+            const isGif = req.body.profile.avatar.endsWith(".gif");
+            if (isGif && !user.premium.isPremium) {
+              return res
+                .status(403)
+                .json({ message: "Animated avatars are a premium feature." });
+            }
+
+            // Add current avatar to history if it exists and is not already in history
+            if (
+              user.profile.avatar &&
+              !user.profile.avatarHistory.includes(user.profile.avatar)
+            ) {
+              user.profile.avatarHistory.unshift(user.profile.avatar);
+              // Keep only last 3 avatars
+              user.profile.avatarHistory = user.profile.avatarHistory.slice(
+                0,
+                3
+              );
+            }
+
+            user.profile.avatar = req.body.profile.avatar;
+            user.profile.isAvatarGif = isGif;
           }
-          user.profile.avatar = req.body.profile.avatar;
-          user.profile.isAvatarGif = isGif;
         }
       }
 

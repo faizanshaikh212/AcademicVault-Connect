@@ -1,6 +1,7 @@
 // src/components/UserGrid.tsx
 
 import React from "react";
+import { getAvatarUrl } from "@/lib/avatar";
 import { User } from "../../types"; // Adjust this import path to your types file
 import ChromaGrid, { ChromaItem } from "@/components/layout/ChromaGrid"; // Import the generic grid and its item type
 
@@ -24,7 +25,7 @@ const UserGrid: React.FC<UserGridProps> = ({ users }) => {
     const theme = cardThemes[index % cardThemes.length]; // Cycle through themes
     return {
       id: user._id, // Use a unique ID from your user object
-      image: user.profile.avatar || `https://i.pravatar.cc/300?u=${user._id}`,
+      image: getAvatarUrl(user.profile?.avatar, user.updatedAt),
       title: `${user.firstName} ${user.lastName}`,
       subtitle: user.profile.bio || "No bio provided.",
       handle: `@${user.username}`,

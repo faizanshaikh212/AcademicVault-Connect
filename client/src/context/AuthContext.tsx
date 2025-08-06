@@ -57,12 +57,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem("token");
   };
 
+  // Function to update the user's profile
+  const updateProfile = (profile: Partial<User["profile"]>) => {
+    if (user) {
+      const updatedUser = {
+        ...user,
+        profile: { ...user.profile, ...profile },
+        updatedAt: new Date().toISOString(), // Update the timestamp
+      };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    }
+  };
+
   const value = {
     user,
     token,
     login,
     logout,
     isLoading,
+    updateProfile,
   };
 
   // Provide the context value to child components

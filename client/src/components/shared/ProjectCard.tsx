@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Project } from "../../types";
+import { getAvatarUrl } from "@/lib/avatar";
 import { ArrowRight } from "lucide-react";
 
 interface ProjectCardProps {
@@ -54,10 +55,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img
-              src={
-                project.author.profile?.avatar ||
-                `https://i.pravatar.cc/40?u=${project.author._id}`
-              }
+              src={getAvatarUrl(
+                project.author.profile?.avatar,
+                project.author.updatedAt
+              )}
               alt={project.author.username}
               className="h-8 w-8 rounded-full"
             />

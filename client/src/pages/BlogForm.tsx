@@ -69,7 +69,7 @@ const BlogForm: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-8">
+    <div className="container mx-auto max-w-3xl px-4 py-8 pt-30">
       <h1 className="text-3xl font-bold mb-6">
         {isEditMode ? "Edit Article" : "Write a New Article"}
       </h1>

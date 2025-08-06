@@ -13,8 +13,10 @@ import {
   Settings,
   LogOut,
   ShieldCheck,
+  RotateCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getAvatarUrl } from "@/lib/avatar";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -35,7 +37,16 @@ const navLinks = [
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const scrollDirection = useScrollDirection();
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    // Add a small delay to ensure the animation is visible
+    setTimeout(() => {
+      window.location.reload();
+    }, 300);
+  };
 
   return (
     <header
@@ -46,12 +57,26 @@ const Navbar: React.FC = () => {
       )}
     >
       <div className="container mx-auto flex h-20 items-center justify-between px-4">
-        <Link
-          to="/"
-          className="text-2xl font-bold text-gray-800 dark:text-white"
-        >
-          Academic<span className="text-blue-600">Vault</span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/"
+            className="text-2xl font-bold text-gray-800 dark:text-white"
+          >
+            Academic<span className="text-blue-600">Vault</span>
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            className={`transition-transform duration-300 ${
+              isRefreshing ? "animate-spin" : "hover:rotate-90"
+            }`}
+            title="Refresh page"
+            disabled={isRefreshing}
+          >
+            <RotateCw className="h-5 w-5" />
+          </Button>
+        </div>
         <nav className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
             <NavLink
@@ -91,10 +116,7 @@ const Navbar: React.FC = () => {
                 <DropdownMenuTrigger>
                   <img
                     className="h-10 w-10 rounded-full object-cover cursor-pointer ring-2 ring-offset-2 ring-transparent hover:ring-blue-500 transition-all"
-                    src={
-                      user.profile?.avatar ||
-                      `https://i.pravatar.cc/40?u=${user._id}`
-                    }
+                    src={getAvatarUrl(user.profile?.avatar, user.updatedAt)}
                     alt={user.username}
                   />
                 </DropdownMenuTrigger>

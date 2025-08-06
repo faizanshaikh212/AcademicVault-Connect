@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Routes, Route, Outlet } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 
@@ -48,8 +48,21 @@ const MainLayout = () => (
 );
 
 function App() {
-  const { isLoading } = useAuth();
+  const { isLoading: authLoading } = useAuth();
   const audioStarted = useRef(false);
+  const [pageLoading, setPageLoading] = useState(false);
+
+  // Add event listeners for page refresh/reload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      setPageLoading(true);
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   useEffect(() => {
     const startAudio = async () => {
@@ -79,10 +92,13 @@ function App() {
     };
   }, []);
 
-  if (isLoading) {
+  if (authLoading || pageLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-900 text-white">
-        Loading...
+      <div className="fixed inset-0 z-50 flex min-h-screen items-center justify-center bg-gray-900 text-white">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-white border-t-transparent" />
+          <p>Loading...</p>
+        </div>
       </div>
     );
   }

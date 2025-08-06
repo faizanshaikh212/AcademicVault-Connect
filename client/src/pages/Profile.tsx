@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getAvatarUrl } from "@/lib/avatar";
 import { useParams, Link } from "react-router-dom";
 import api from "@/services/api";
 import { User, Project, Blog } from "../types";
@@ -99,15 +100,15 @@ const Profile: React.FC = () => {
   if (!profileUser) return null;
 
   return (
-    <div className="bg-white dark:bg-gray-950 min-h-screen pt-20">
+    <div className="bg-white dark:bg-gray-950 min-h-screen pt-30">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-1 flex justify-center items-start">
             <img
-              src={
-                profileUser.profile.avatar ||
-                `https://i.pravatar.cc/150?u=${profileUser._id}`
-              }
+              src={getAvatarUrl(
+                profileUser.profile?.avatar,
+                profileUser.updatedAt
+              )}
               alt={profileUser.username}
               className="h-36 w-36 rounded-full object-cover"
             />

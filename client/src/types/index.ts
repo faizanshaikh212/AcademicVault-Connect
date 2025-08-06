@@ -12,6 +12,7 @@ export interface User {
   profile: {
     avatar?: string;
     bio?: string;
+    avatarHistory?: string[];
   };
   premium: {
     isPremium: boolean;
@@ -21,7 +22,8 @@ export interface User {
     followingCount: number;
     friendsCount: number;
   };
-  isFollowing?: boolean; // Add the new property
+  isFollowing?: boolean;
+  updatedAt?: string;
 }
 
 // Defines the structure of the authentication context's state
@@ -35,6 +37,7 @@ export interface AuthContextType extends AuthState {
   login: (data: AuthState) => void;
   logout: () => void;
   isLoading: boolean;
+  updateProfile: (profile: Partial<User["profile"]>) => void;
 }
 
 // Defines the structure for a single project
@@ -47,7 +50,10 @@ export interface Project {
   projectLink?: string;
   sourceCodeLink?: string;
   extraLinks?: { title: string; url: string }[];
-  author: Pick<User, "_id" | "username" | "firstName" | "lastName" | "profile">;
+  author: Pick<
+    User,
+    "_id" | "username" | "firstName" | "lastName" | "profile" | "updatedAt"
+  >;
   tags: string[];
   createdAt: string;
 }
@@ -58,7 +64,10 @@ export interface Blog {
   title: string;
   content: string;
   coverImage: string;
-  author: Pick<User, "_id" | "username" | "firstName" | "lastName" | "profile">;
+  author: Pick<
+    User,
+    "_id" | "username" | "firstName" | "lastName" | "profile" | "updatedAt"
+  >;
   tags: string[];
   createdAt: string;
 }

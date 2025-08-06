@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Blog } from "../../types";
+import { getAvatarUrl } from "@/lib/avatar";
 import { ArrowRight } from "lucide-react";
 
 interface BlogCardProps {
@@ -48,10 +49,10 @@ const BlogCard: React.FC<BlogCardProps> = ({ blog }) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img
-              src={
-                blog.author.profile?.avatar ||
-                `https://i.pravatar.cc/40?u=${blog.author._id}`
-              }
+              src={getAvatarUrl(
+                blog.author.profile?.avatar,
+                blog.author.updatedAt
+              )}
               alt={blog.author.username}
               className="h-8 w-8 rounded-full"
             />

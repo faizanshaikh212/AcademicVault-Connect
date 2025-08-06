@@ -43,18 +43,20 @@ const registerUser = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
+        settings: user.settings,
+        profile: user.profile,
+        premium: user.premium,
         token: generateToken(user._id),
+        updatedAt: user.updatedAt,
       });
     } else {
       res.status(400).json({ message: "Invalid user data." });
     }
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error during registration.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error during registration.",
+      error: error.message,
+    });
   }
 };
 
@@ -79,8 +81,11 @@ const loginUser = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
-        settings: user.settings, // Send settings for theme preference on login
+        settings: user.settings,
+        profile: user.profile,
+        premium: user.premium,
         token: generateToken(user._id),
+        updatedAt: user.updatedAt,
       });
     } else {
       // Use a generic message to avoid revealing whether the email or password was wrong

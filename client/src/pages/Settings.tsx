@@ -4,10 +4,11 @@ import { useAuth } from "@/hooks/useAuth";
 import api from "@/services/api";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { getAvatarUrl } from "@/lib/avatar";
 import { Textarea } from "@/components/ui/Textarea";
 
 const Settings: React.FC = () => {
-  const { user, login } = useAuth();
+  const { user, login, updateProfile } = useAuth();
   const [formData, setFormData] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
@@ -50,10 +51,7 @@ const Settings: React.FC = () => {
         profile: { avatar: uploadResult.filePath },
       });
 
-      login({
-        user: updatedUserResponse,
-        token: localStorage.getItem("token"),
-      });
+      updateProfile(updatedUserResponse.profile);
       setMessage({ type: "success", text: "Avatar updated successfully!" });
     } catch (err: any) {
       setMessage({
@@ -92,33 +90,115 @@ const Settings: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-8">
+    <div className="container mx-auto max-w-3xl px-4 py-8 pt-30">
       <h1 className="text-3xl font-bold mb-6">Account Settings</h1>
       <div className="space-y-8">
         {/* Avatar Settings */}
         <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Profile Picture</h2>
-          <div className="flex items-center gap-6">
-            <img
-              src={
-                user.profile?.avatar || `https://i.pravatar.cc/96?u=${user._id}`
-              }
-              alt="Avatar"
-              className="h-24 w-24 rounded-full object-cover"
-            />
-            <div>
-              <Input
-                type="file"
-                onChange={handleAvatarUpload}
-                disabled={isUploading}
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-6">
+              <img
+                src={getAvatarUrl(user.profile?.avatar, user.updatedAt)}
+                alt="Avatar"
+                className="h-24 w-24 rounded-full object-cover"
               />
-              <p className="text-xs text-gray-500 mt-2">
-                PNG, JPG, GIF up to 10MB.
-              </p>
-              {isUploading && (
-                <p className="text-sm text-blue-500 mt-2">Uploading...</p>
-              )}
+              <div className="flex flex-col gap-2">
+                <Input
+                  type="file"
+                  onChange={handleAvatarUpload}
+                  disabled={isUploading}
+                />
+                <p className="text-xs text-gray-500">
+                  PNG, JPG, GIF up to 10MB.
+                </p>
+                {isUploading && (
+                  <p className="text-sm text-blue-500">Uploading...</p>
+                )}
+                {user.profile?.avatar && (
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      try {
+                        await api.put("/users/profile", {
+                          profile: { avatar: null },
+                        });
+                        login({
+                          user: {
+                            ...user,
+                            profile: { ...user.profile, avatar: "" },
+                          },
+                          token: localStorage.getItem("token"),
+                        });
+                        setMessage({
+                          type: "success",
+                          text: "Avatar removed successfully!",
+                        });
+                      } catch (err: any) {
+                        setMessage({
+                          type: "error",
+                          text:
+                            err.response?.data?.message ||
+                            "Failed to remove avatar.",
+                        });
+                      }
+                    }}
+                  >
+                    Remove Avatar
+                  </Button>
+                )}
+              </div>
             </div>
+
+            {/* Previous Avatars */}
+            {user.profile?.avatarHistory &&
+              user.profile.avatarHistory.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Previous Avatars</h3>
+                  <div className="flex gap-4">
+                    {user.profile.avatarHistory.map((avatarUrl, index) => (
+                      <button
+                        key={index}
+                        onClick={async () => {
+                          try {
+                            const { data: updatedUser } = await api.put(
+                              "/users/profile",
+                              {
+                                profile: { avatar: avatarUrl },
+                              }
+                            );
+                            login({
+                              user: updatedUser,
+                              token: localStorage.getItem("token"),
+                            });
+                            setMessage({
+                              type: "success",
+                              text: "Avatar restored successfully!",
+                            });
+                          } catch (err: any) {
+                            setMessage({
+                              type: "error",
+                              text:
+                                err.response?.data?.message ||
+                                "Failed to restore avatar.",
+                            });
+                          }
+                        }}
+                        className="relative group"
+                      >
+                        <img
+                          src={getAvatarUrl(avatarUrl, user.updatedAt)}
+                          alt={`Previous avatar ${index + 1}`}
+                          className="h-12 w-12 rounded-full object-cover ring-2 ring-offset-2 ring-transparent group-hover:ring-blue-500"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-xs text-white">Restore</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
           </div>
         </div>
 

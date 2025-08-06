@@ -1,6 +1,7 @@
 // src/components/shared/UserCard.tsx
 
 import React, { useRef } from "react";
+import { getAvatarUrl } from "@/lib/avatar";
 import { Link } from "react-router-dom";
 import { User } from "../../types"; // Adjust this import path as needed
 
@@ -68,9 +69,7 @@ const UserCard: React.FC<UserCardProps> = ({
           {/* Image container with background color removed */}
           <div className="w-full h-[240px] flex items-center justify-center rounded-lg overflow-hidden">
             <img
-              src={
-                user.profile.avatar || `https://i.pravatar.cc/300?u=${user._id}`
-              }
+              src={getAvatarUrl(user.profile?.avatar, user.updatedAt)}
               alt={user.username}
               loading="lazy"
               className="max-w-full max-h-full object-contain"

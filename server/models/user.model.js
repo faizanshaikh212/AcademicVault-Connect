@@ -53,6 +53,7 @@ const userSchema = new mongoose.Schema(
       bio: { type: String, default: "" },
       avatar: { type: String, default: "" }, // URL to Cloudinary image
       isAvatarGif: { type: Boolean, default: false },
+      avatarHistory: [{ type: String }], // Store last 3 avatar URLs
       connections: [connectionSchema],
     },
     settings: {

@@ -40,7 +40,7 @@ const BlogDetail: React.FC = () => {
   const isAuthor = currentUser?._id === blog.author._id;
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
+    <div className="container mx-auto max-w-4xl px-4 py-8 pt-30">
       <div className="relative">
         <img
           src={blog.coverImage}
