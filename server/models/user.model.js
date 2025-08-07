@@ -76,6 +76,9 @@ const userSchema = new mongoose.Schema(
     premium: {
       isPremium: { type: Boolean, default: false },
       premiumSince: { type: Date, default: null },
+      premiumExpiry: { type: Date, default: null },
+      lastRenewal: { type: Date, default: null },
+      expiryNotified: { type: Boolean, default: false }, // Track if we've sent expiry notification
     },
   },
   {

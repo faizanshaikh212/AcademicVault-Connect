@@ -115,7 +115,24 @@ const Profile: React.FC = () => {
           </div>
           <div className="col-span-2 space-y-4">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-light">{profileUser.username}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-light">{profileUser.username}</h1>
+                {profileUser.premium?.isPremium && (
+                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 border border-yellow-300 dark:border-yellow-700">
+                    Premium
+                  </span>
+                )}
+                {profileUser.role &&
+                  Array.isArray(profileUser.role) &&
+                  profileUser.role.map((role: string) => (
+                    <span
+                      key={role}
+                      className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                    >
+                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                    </span>
+                  ))}
+              </div>
               {isOwnProfile ? (
                 <Button asChild variant="secondary">
                   <Link to="/settings">

@@ -21,6 +21,8 @@ const getUserProfile = async (req, res) => {
         username: user.username,
         profile: user.profile,
         createdAt: user.createdAt,
+        role: user.role,
+        premium: user.premium,
         socials: {
           followersCount: user.socials.followers.length,
           followingCount: user.socials.following.length,
@@ -104,8 +106,16 @@ const updateUserProfile = async (req, res) => {
 
       const updatedUser = await user.save();
 
-      // Return the full, updated user object
-      res.json(updatedUser);
+      // Return the full, updated user object without sensitive data
+      const userData = updatedUser.toObject();
+      delete userData.password;
+      delete userData.socials.blockedUsers;
+      userData.socials = {
+        followersCount: updatedUser.socials.followers.length,
+        followingCount: updatedUser.socials.following.length,
+        friendsCount: updatedUser.socials.friends.length,
+      };
+      res.json(userData);
     } else {
       res.status(404).json({ message: "User not found" });
     }

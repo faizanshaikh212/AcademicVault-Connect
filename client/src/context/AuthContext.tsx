@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, ReactNode } from "react";
 import { AuthContextType, AuthState, User } from "@/types";
+import api from "@/services/api";
 
 // Create the context with a default value
 export const AuthContext = createContext<AuthContextType | undefined>(
@@ -70,6 +71,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Function to update the entire user object
+  const updateUser = (userData: Partial<User>) => {
+    if (user) {
+      const updatedUser = {
+        ...user,
+        ...userData,
+        updatedAt: new Date().toISOString(),
+      };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    }
+  };
+
+  const verifyPassword = async (password: string): Promise<boolean> => {
+    if (!user || !token) {
+      throw new Error("You must be logged in to perform this action");
+    }
+    try {
+      const { data } = await api.post("/auth/verify-password", { password });
+      return data.valid;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        throw new Error("Incorrect password. Please verify and try again.");
+      }
+      throw new Error(
+        error.response?.data?.message ||
+          "Something went wrong. Please try again."
+      );
+    }
+  };
+
   const value = {
     user,
     token,
@@ -77,6 +109,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     isLoading,
     updateProfile,
+    updateUser,
+    verifyPassword,
   };
 
   // Provide the context value to child components

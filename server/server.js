@@ -6,6 +6,8 @@ import path from "path";
 import http from "http";
 import { Server } from "socket.io";
 import notificationRoutes from "./routes/notification.routes.js";
+// Import the premium expiration check job
+import "./jobs/premiumExpirationCheck.js";
 
 // --- ADD THIS ---
 // Recreate __dirname for ES Modules
@@ -25,6 +27,7 @@ import blogRoutes from "./routes/blog.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
+import premiumRoutes from "./routes/premium.routes.js";
 
 // Load environment variables from .env file (for development only)
 dotenv.config();
@@ -53,6 +56,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/premium", premiumRoutes);
 
 // --- ADD THIS SECTION ---
 // Serve static files from the React build folder in production

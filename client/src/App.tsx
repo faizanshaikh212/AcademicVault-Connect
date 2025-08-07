@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, Outlet } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 
@@ -17,10 +17,13 @@ import OurNetwork from "./pages/OurNetwork";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import RoleRequest from "./pages/RoleRequest";
+import RequestPremium from "./pages/RequestPremium";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import RoleRequests from "./pages/admin/RoleRequests";
 import AdminContentManager from "./pages/admin/AdminContentManager";
+import PremiumRequests from "./pages/admin/PremiumRequests";
+import PremiumUsersManagement from "./pages/admin/PremiumUsersManagement";
 import CustomerCare from "./pages/admin/CustomerCare";
 import NotFound from "./pages/NotFound";
 import TermsAndConditions from "./pages/TermsAndConditions";
@@ -49,7 +52,6 @@ const MainLayout = () => (
 
 function App() {
   const { isLoading: authLoading } = useAuth();
-  const audioStarted = useRef(false);
   const [pageLoading, setPageLoading] = useState(false);
 
   // Add event listeners for page refresh/reload
@@ -61,34 +63,6 @@ function App() {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, []);
-
-  useEffect(() => {
-    const startAudio = async () => {
-      if (window.Tone && !audioStarted.current) {
-        try {
-          await window.Tone.start();
-          console.log("Audio context started successfully.");
-          audioStarted.current = true;
-        } catch (e) {
-          console.error("Could not start audio context", e);
-        }
-      }
-    };
-    const handleFirstInteraction = () => {
-      startAudio();
-      window.removeEventListener("mousedown", handleFirstInteraction);
-      window.removeEventListener("keydown", handleFirstInteraction);
-      window.removeEventListener("touchstart", handleFirstInteraction);
-    };
-    window.addEventListener("mousedown", handleFirstInteraction);
-    window.addEventListener("keydown", handleFirstInteraction);
-    window.addEventListener("touchstart", handleFirstInteraction);
-    return () => {
-      window.removeEventListener("mousedown", handleFirstInteraction);
-      window.removeEventListener("keydown", handleFirstInteraction);
-      window.removeEventListener("touchstart", handleFirstInteraction);
     };
   }, []);
 
@@ -112,7 +86,9 @@ function App() {
           <Route path="/admin/*" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<UserManagement />} />
+            <Route path="premium-users" element={<PremiumUsersManagement />} />
             <Route path="requests" element={<RoleRequests />} />
+            <Route path="premium-requests" element={<PremiumRequests />} />
             <Route path="customer-care" element={<CustomerCare />} />
             <Route path="content" element={<AdminContentManager />} />
           </Route>
@@ -134,6 +110,7 @@ function App() {
             <Route path="blogs/edit/:id" element={<BlogForm />} />
             <Route path="settings" element={<Settings />} />
             <Route path="request-teacher-role" element={<RoleRequest />} />
+            <Route path="request-premium" element={<RequestPremium />} />
           </Route>
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />

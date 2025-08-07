@@ -1,11 +1,21 @@
 import React, { useState, useEffect } from "react";
 import api from "@/services/api";
-import { Users, FileText, CheckSquare } from "lucide-react";
+import {
+  Users,
+  FileText,
+  CheckSquare,
+  Crown,
+  GraduationCap,
+  CreditCard,
+} from "lucide-react";
 
 interface Stats {
   totalUsers: number;
   totalProjects: number;
-  pendingRequests: number;
+  pendingRoleRequests: number;
+  pendingPremiumRequests: number;
+  premiumUsers: number;
+  teacherUsers: number;
 }
 
 const StatCard: React.FC<{
@@ -47,28 +57,49 @@ const AdminDashboard: React.FC = () => {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard
-          title="Total Users"
-          value={stats?.totalUsers.toLocaleString() ?? "0"}
-          icon={Users}
-        />
-        <StatCard
-          title="Total Projects"
-          value={stats?.totalProjects.toLocaleString() ?? "0"}
-          icon={FileText}
-        />
-        <StatCard
-          title="Pending Role Requests"
-          value={stats?.pendingRequests.toLocaleString() ?? "0"}
-          icon={CheckSquare}
-        />
-      </div>
+      <div className="space-y-8">
+        {/* User Statistics */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">User Statistics</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <StatCard
+              title="Total Users"
+              value={stats?.totalUsers.toLocaleString() ?? "0"}
+              icon={Users}
+            />
+            <StatCard
+              title="Premium Users"
+              value={stats?.premiumUsers.toLocaleString() ?? "0"}
+              icon={Crown}
+            />
+            <StatCard
+              title="Teacher Users"
+              value={stats?.teacherUsers.toLocaleString() ?? "0"}
+              icon={GraduationCap}
+            />
+          </div>
+        </div>
 
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold mb-4">Recent Activity</h2>
-        <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md">
-          <p className="text-gray-500">Activity feed will be displayed here.</p>
+        {/* Content & Requests */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Content & Requests</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <StatCard
+              title="Total Projects"
+              value={stats?.totalProjects.toLocaleString() ?? "0"}
+              icon={FileText}
+            />
+            <StatCard
+              title="Pending Role Requests"
+              value={stats?.pendingRoleRequests.toLocaleString() ?? "0"}
+              icon={CheckSquare}
+            />
+            <StatCard
+              title="Pending Premium Requests"
+              value={stats?.pendingPremiumRequests.toLocaleString() ?? "0"}
+              icon={CreditCard}
+            />
+          </div>
         </div>
       </div>
     </div>

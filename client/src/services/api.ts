@@ -1,4 +1,9 @@
-import axios from "axios";
+import axios, { InternalAxiosRequestConfig } from "axios";
+
+// Function to get the current token
+const getAuthToken = () => {
+  return localStorage.getItem("token");
+};
 
 // Create an Axios instance with a base URL for our backend
 const api = axios.create({
@@ -7,14 +12,16 @@ const api = axios.create({
 
 // Add a request interceptor to include the auth token in every request
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
+  (config: InternalAxiosRequestConfig) => {
+    const token = getAuthToken();
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      // Ensure we're always sending the token with the Bearer prefix
+      config.headers.set("Authorization", `Bearer ${token}`);
+      config.headers.set("Content-Type", "application/json");
     }
     return config;
   },
-  (error) => {
+  (error: any) => {
     return Promise.reject(error);
   }
 );

@@ -202,6 +202,43 @@ const Settings: React.FC = () => {
           </div>
         </div>
 
+        {/* Account Status */}
+        <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">Account Status</h2>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Roles:</span>
+              <div className="flex gap-2">
+                {user.role.map((role: string) => (
+                  <span
+                    key={role}
+                    className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                  >
+                    {role.charAt(0).toUpperCase() + role.slice(1)}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Premium Status:</span>
+              {user.premium?.isPremium ? (
+                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                  Premium Member
+                  {user.premium.premiumSince
+                    ? ` since ${new Date(
+                        user.premium.premiumSince
+                      ).toLocaleDateString()}`
+                    : ""}
+                </span>
+              ) : (
+                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
+                  Free Plan
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Profile Information */}
         <form
           onSubmit={handleProfileSave}
@@ -280,7 +317,7 @@ const Settings: React.FC = () => {
         )}
 
         {/* Teacher Role Request Section */}
-        {user.role?.includes("student") && (
+        {!user.role?.includes("teacher") && !user.role?.includes("admin") && (
           <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-2">Become a Teacher</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -289,6 +326,20 @@ const Settings: React.FC = () => {
             </p>
             <Button asChild variant="outline">
               <Link to="/request-teacher-role">Apply Now</Link>
+            </Button>
+          </div>
+        )}
+
+        {/* Premium Request Section */}
+        {!user.premium?.isPremium && (
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-2">Upgrade to Premium</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Want to use animated avatars and get access to exclusive features?
+              Upgrade to a premium account today!
+            </p>
+            <Button asChild variant="outline">
+              <Link to="/request-premium">Upgrade Now</Link>
             </Button>
           </div>
         )}

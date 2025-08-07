@@ -16,6 +16,9 @@ export interface User {
   };
   premium: {
     isPremium: boolean;
+    premiumSince?: string;
+    premiumExpiry?: string;
+    lastRenewal?: string;
   };
   socials?: {
     followersCount: number;
@@ -38,6 +41,8 @@ export interface AuthContextType extends AuthState {
   logout: () => void;
   isLoading: boolean;
   updateProfile: (profile: Partial<User["profile"]>) => void;
+  updateUser: (userData: Partial<User>) => void;
+  verifyPassword: (password: string) => Promise<boolean>;
 }
 
 // Defines the structure for a single project

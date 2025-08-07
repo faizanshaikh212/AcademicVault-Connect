@@ -98,4 +98,29 @@ const loginUser = async (req, res) => {
   }
 };
 
-export { registerUser, loginUser };
+/**
+ * @desc    Verify user's password
+ * @route   POST /api/auth/verify-password
+ * @access  Private
+ */
+const verifyPassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (user && (await user.matchPassword(password))) {
+      res.json({ valid: true });
+    } else {
+      res
+        .status(401)
+        .json({ message: "Incorrect password. Please verify and try again." });
+    }
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error during password verification.",
+      error: error.message,
+    });
+  }
+};
+
+export { registerUser, loginUser, verifyPassword };
