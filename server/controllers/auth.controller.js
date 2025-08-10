@@ -1,10 +1,28 @@
+/**
+ * Authentication Controller Module
+ * Handles user registration, login, and password verification
+ * Implements JWT-based authentication system
+ * @module controllers/auth
+ */
+
 import User from "../models/user.model.js";
 import generateToken from "../utils/generateToken.js";
 
 /**
- * @desc    Register a new user
- * @route   POST /api/auth/register
- * @access  Public
+ * Register a new user in the system
+ * @async
+ * @function registerUser
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body containing user data
+ * @param {string} req.body.firstName - User's first name
+ * @param {string} req.body.lastName - User's last name
+ * @param {string} req.body.username - Unique username
+ * @param {string} req.body.email - User's email address
+ * @param {string} req.body.password - User's password (will be hashed)
+ * @param {Object} res - Express response object
+ * @returns {Promise<void>}
+ * @throws {Error} When registration fails
+ * @access Public
  */
 const registerUser = async (req, res) => {
   try {
@@ -61,9 +79,18 @@ const registerUser = async (req, res) => {
 };
 
 /**
- * @desc    Authenticate user & get token
- * @route   POST /api/auth/login
- * @access  Public
+ * Authenticate user and generate JWT token
+ * @async
+ * @function loginUser
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.email - User's email address
+ * @param {string} req.body.password - User's password
+ * @param {Object} res - Express response object
+ * @returns {Promise<void>}
+ * @throws {Error} When authentication fails
+ * @access Public
+ * @description Validates user credentials and returns user data with JWT token if valid
  */
 const loginUser = async (req, res) => {
   try {
@@ -99,9 +126,18 @@ const loginUser = async (req, res) => {
 };
 
 /**
- * @desc    Verify user's password
- * @route   POST /api/auth/verify-password
- * @access  Private
+ * Verify user's password for sensitive operations
+ * @async
+ * @function verifyPassword
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.password - Password to verify
+ * @param {Object} req.user - Authenticated user object (from middleware)
+ * @param {Object} res - Express response object
+ * @returns {Promise<void>}
+ * @throws {Error} When verification fails
+ * @access Private
+ * @description Used for confirming user's password before sensitive operations
  */
 const verifyPassword = async (req, res) => {
   try {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import api from "@/services/api";
 import {
   Users,
@@ -7,11 +8,14 @@ import {
   Crown,
   GraduationCap,
   CreditCard,
+  BookOpen,
+  Mail,
 } from "lucide-react";
 
 interface Stats {
   totalUsers: number;
   totalProjects: number;
+  totalBlogs: number;
   pendingRoleRequests: number;
   pendingPremiumRequests: number;
   premiumUsers: number;
@@ -83,11 +87,16 @@ const AdminDashboard: React.FC = () => {
         {/* Content & Requests */}
         <div>
           <h2 className="text-xl font-semibold mb-4">Content & Requests</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Total Projects"
               value={stats?.totalProjects.toLocaleString() ?? "0"}
               icon={FileText}
+            />
+            <StatCard
+              title="Total Blogs"
+              value={stats?.totalBlogs.toLocaleString() ?? "0"}
+              icon={BookOpen}
             />
             <StatCard
               title="Pending Role Requests"
@@ -99,6 +108,13 @@ const AdminDashboard: React.FC = () => {
               value={stats?.pendingPremiumRequests.toLocaleString() ?? "0"}
               icon={CreditCard}
             />
+            <Link
+              to="/admin/news"
+              className="flex items-center gap-2 p-4 bg-white dark:bg-gray-900 rounded-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <Mail className="h-6 w-6 text-blue-600 dark:text-blue-300" />
+              <span>News & Newsletter Management</span>
+            </Link>
           </div>
         </div>
       </div>

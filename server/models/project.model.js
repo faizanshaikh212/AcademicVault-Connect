@@ -1,6 +1,19 @@
+/**
+ * Project Model Module
+ * Defines the schema for user projects with comprehensive metadata
+ * Includes search indexing and social media integration
+ * @module models/project
+ */
+
 import mongoose from "mongoose";
 
-// Define a schema for extra links within a project
+/**
+ * Extra Link Schema Definition
+ * Used for additional project-related links
+ * @typedef {Object} ExtraLinkSchema
+ * @property {string} title - Display name for the link
+ * @property {string} url - URL of the resource
+ */
 const extraLinkSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
@@ -9,7 +22,24 @@ const extraLinkSchema = new mongoose.Schema(
   { _id: false }
 );
 
-// Define the main Project Schema
+/**
+ * Project Schema Definition
+ * Comprehensive project information schema with media support
+ *
+ * @typedef {Object} ProjectSchema
+ * @property {ObjectId} author - Reference to project creator
+ * @property {string} title - Project title
+ * @property {string} description - Project description
+ * @property {string} coverImage - Cloudinary URL for main image
+ * @property {string[]} screenshots - Array of Cloudinary image URLs
+ * @property {string} projectLink - Live project URL
+ * @property {string} sourceCodeLink - Repository URL
+ * @property {string[]} tags - Categorization tags
+ * @property {ExtraLink[]} extraLinks - Additional project links
+ * @property {Object} socialMediaLinks - Platform-specific links
+ * @property {Date} createdAt - Creation timestamp
+ * @property {Date} updatedAt - Last update timestamp
+ */
 const projectSchema = new mongoose.Schema(
   {
     author: {
@@ -52,7 +82,24 @@ const projectSchema = new mongoose.Schema(
         lowercase: true,
       },
     ],
+    /**
+     * Additional external links for the project
+     */
     extraLinks: [extraLinkSchema],
+
+    /**
+     * Social media profiles associated with the project
+     * Each field represents a different platform link
+     */
+    socialMediaLinks: {
+      github: { type: String, trim: true },
+      linkedin: { type: String, trim: true },
+      twitter: { type: String, trim: true },
+      instagram: { type: String, trim: true },
+      facebook: { type: String, trim: true },
+      youtube: { type: String, trim: true },
+      website: { type: String, trim: true },
+    },
   },
   {
     // Add timestamps for createdAt and updatedAt fields

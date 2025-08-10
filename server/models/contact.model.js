@@ -1,5 +1,30 @@
+/**
+ * Contact Form Model Module
+ * Handles user contact form submissions and tracking
+ * Supports both authenticated and anonymous submissions
+ * @module models/contact
+ */
+
 import mongoose from "mongoose";
 
+/**
+ * Contact Schema Definition
+ * @typedef {Object} ContactSchema
+ * @property {string} name - Sender's name
+ * @property {string} email - Sender's email address
+ * @property {string} message - Contact message content
+ * @property {ObjectId} userId - Optional link to registered user
+ * @property {string} status - Processing status of contact
+ * @property {Date} createdAt - Submission timestamp
+ * @property {Date} updatedAt - Last status update
+ *
+ * @description
+ * Status workflow:
+ * - pending: New submission
+ * - completed: Request handled
+ * - on-going: In process
+ * - marked-for-deletion: Flagged for removal
+ */
 const contactSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },

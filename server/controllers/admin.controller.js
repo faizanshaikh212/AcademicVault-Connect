@@ -3,6 +3,7 @@ import RoleRequest from "../models/roleRequest.model.js";
 import PremiumRequest from "../models/premiumRequest.model.js";
 import Notification from "../models/notification.model.js";
 import Project from "../models/project.model.js";
+import Blog from "../models/blog.model.js";
 
 /**
  * @desc    Get dashboard statistics
@@ -13,6 +14,7 @@ const getDashboardStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     const totalProjects = await Project.countDocuments();
+    const totalBlogs = await Blog.countDocuments();
     const pendingRoleRequests = await RoleRequest.countDocuments({
       status: "pending",
     });
@@ -27,6 +29,7 @@ const getDashboardStats = async (req, res) => {
     res.json({
       totalUsers,
       totalProjects,
+      totalBlogs,
       pendingRoleRequests,
       pendingPremiumRequests,
       premiumUsers,

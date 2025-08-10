@@ -1,4 +1,10 @@
-// Import necessary modules
+/**
+ * Academic Vault Server
+ * Main server file that sets up Express application with WebSocket support
+ * Handles API routes, static file serving, and real-time notifications
+ * @module server
+ */
+
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -28,6 +34,7 @@ import uploadRoutes from "./routes/upload.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
 import premiumRoutes from "./routes/premium.routes.js";
+import newsRoutes from "./routes/news.routes.js";
 
 // Load environment variables from .env file (for development only)
 dotenv.config();
@@ -57,13 +64,17 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/premium", premiumRoutes);
+app.use("/api", newsRoutes); // This includes both /api/news and /api/newsletter routes
 
 // --- ADD THIS SECTION ---
 // Serve static files from the React build folder in production
 app.use(express.static(path.join(__dirname, "..", "client", "dist")));
 
-// The "catchall" handler: for any request that doesn't
-// match one above, send back React's index.html file.
+/**
+ * Catchall route handler for client-side routing
+ * Serves the React application for all unmatched routes
+ * Enables client-side routing in production
+ */
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
 });
@@ -73,7 +84,13 @@ app.get("*", (req, res) => {
 const PORT = process.env.PORT || 5001;
 const server = http.createServer(app);
 
-// --- Socket.IO Setup ---
+/**
+ * WebSocket Server Configuration
+ * Handles real-time communication between clients and server
+ * - Configured with 60s ping timeout
+ * - CORS enabled for all origins
+ * - Used for notifications and real-time updates
+ */
 const io = new Server(server, {
   pingTimeout: 60000,
   cors: {
@@ -96,7 +113,10 @@ io.on("connection", (socket) => {
   });
 });
 
-// Start the server
+/**
+ * Initialize server and begin listening for requests
+ * Logs server mode and port information
+ */
 server.listen(PORT, () => {
   console.log(
     `Server is running in ${process.env.NODE_ENV} mode on port ${PORT}`

@@ -21,7 +21,7 @@ import RequestPremium from "./pages/RequestPremium";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import RoleRequests from "./pages/admin/RoleRequests";
-import AdminContentManager from "./pages/admin/AdminContentManager";
+import ContentManagement from "./pages/admin/ContentManagement";
 import PremiumRequests from "./pages/admin/PremiumRequests";
 import PremiumUsersManagement from "./pages/admin/PremiumUsersManagement";
 import CustomerCare from "./pages/admin/CustomerCare";
@@ -29,6 +29,11 @@ import NotFound from "./pages/NotFound";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ContactUs from "./pages/ContactUs";
+import News from "./pages/News";
+import NewsDetail from "./pages/NewsDetail";
+import NewsForm from "./pages/admin/NewsForm";
+import NewsManagement from "./pages/admin/NewsManagement";
+import SubscriberList from "./pages/admin/SubscriberList";
 
 // Layout Imports
 import Navbar from "./components/layout/Navbar";
@@ -90,7 +95,10 @@ function App() {
             <Route path="requests" element={<RoleRequests />} />
             <Route path="premium-requests" element={<PremiumRequests />} />
             <Route path="customer-care" element={<CustomerCare />} />
-            <Route path="content" element={<AdminContentManager />} />
+            <Route path="content" element={<ContentManagement />} />
+            <Route path="news" element={<NewsManagement />} />
+            <Route path="news/new" element={<NewsForm />} />
+            <Route path="subscribers" element={<SubscriberList />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoute />}></Route>
@@ -100,6 +108,8 @@ function App() {
           <Route path="projects/:id" element={<ProjectDetail />} />
           <Route path="blogs" element={<Blogs />} />
           <Route path="blogs/:id" element={<BlogDetail />} />
+          <Route path="news" element={<News />} />
+          <Route path="news/:id" element={<NewsDetail />} />
           <Route path="purpose" element={<OurPurpose />} />
           <Route path="network" element={<OurNetwork />} />
           <Route path="profile/:username" element={<Profile />} />

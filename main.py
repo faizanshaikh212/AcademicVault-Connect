@@ -3,6 +3,10 @@
 import webview
 import subprocess
 import os
+import sys
+
+# This is a flag from the Windows API to hide the console window for a subprocess
+CREATE_NO_WINDOW = 0x08000000
 
 # 1. Define your secrets here, taken from your .env file
 # This is how you securely provide them to the packaged app
@@ -27,20 +31,21 @@ server_entry_file = os.path.join(os.path.dirname(__file__), 'server', 'server.js
 # 3. Start the Node.js server with the secrets in its environment
 server_process = subprocess.Popen(
     ['node', server_entry_file],
-    env=server_env  # Pass the environment with your secrets
+    env=server_env,  # Pass the environment with your secrets
+    creationflags=CREATE_NO_WINDOW  # This hides the console window for the Node.js server
 )
 
 # Define the URL your server is running on
 app_url = f"http://localhost:{SECRETS['PORT']}"
 
 if __name__ == '__main__':
-    webview.create_window(
+    pywebview.create_window(
         'Academic Vault',
         app_url,
         width=1280,
         height=720
     )
-    webview.start()
+    pywebview.start()
 
     # When the window is closed, stop the Node.js server
     server_process.kill()

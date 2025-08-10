@@ -15,7 +15,10 @@ const BlogCard: React.FC<BlogCardProps> = ({ blog }) => {
     return null; // Or render a placeholder for a post with a deleted author
   }
 
-  const createExcerpt = (text: string, length = 100) => {
+  const ownerIsPremium = blog.author.premium?.isPremium || false;
+
+  const createExcerpt = (text: string | undefined, length = 100) => {
+    if (!text) return "";
     if (text.length <= length) return text;
     return text.substring(0, length) + "...";
   };
@@ -30,7 +33,7 @@ const BlogCard: React.FC<BlogCardProps> = ({ blog }) => {
 
       <div className="aspect-video overflow-hidden">
         <img
-          src={blog.coverImage}
+          src={getAvatarUrl(blog.coverImage, ownerIsPremium)}
           alt={blog.title}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
@@ -51,6 +54,7 @@ const BlogCard: React.FC<BlogCardProps> = ({ blog }) => {
             <img
               src={getAvatarUrl(
                 blog.author.profile?.avatar,
+                ownerIsPremium,
                 blog.author.updatedAt
               )}
               alt={blog.author.username}

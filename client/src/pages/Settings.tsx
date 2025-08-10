@@ -99,7 +99,11 @@ const Settings: React.FC = () => {
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-6">
               <img
-                src={getAvatarUrl(user.profile?.avatar, user.updatedAt)}
+                src={getAvatarUrl(
+                  user.profile?.avatar,
+                  user.premium?.isPremium,
+                  user.updatedAt
+                )}
                 alt="Avatar"
                 className="h-24 w-24 rounded-full object-cover"
               />
@@ -187,7 +191,11 @@ const Settings: React.FC = () => {
                         className="relative group"
                       >
                         <img
-                          src={getAvatarUrl(avatarUrl, user.updatedAt)}
+                          src={getAvatarUrl(
+                            avatarUrl,
+                            user.premium?.isPremium,
+                            user.updatedAt
+                          )}
                           alt={`Previous avatar ${index + 1}`}
                           className="h-12 w-12 rounded-full object-cover ring-2 ring-offset-2 ring-transparent group-hover:ring-blue-500"
                         />

@@ -25,7 +25,11 @@ const UserGrid: React.FC<UserGridProps> = ({ users }) => {
     const theme = cardThemes[index % cardThemes.length]; // Cycle through themes
     return {
       id: user._id, // Use a unique ID from your user object
-      image: getAvatarUrl(user.profile?.avatar, user.updatedAt),
+      image: getAvatarUrl(
+        user.profile?.avatar,
+        user.premium?.isPremium,
+        user.updatedAt
+      ),
       title: `${user.firstName} ${user.lastName}`,
       subtitle: user.profile.bio || "No bio provided.",
       handle: `@${user.username}`,

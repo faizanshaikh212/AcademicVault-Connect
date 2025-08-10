@@ -1,6 +1,34 @@
+/**
+ * Notification Model Module
+ * Defines the schema for user notifications system
+ * Supports various notification types and real-time updates
+ * @module models/notification
+ */
+
 import mongoose from "mongoose";
 
-// Define the Notification Schema
+/**
+ * Notification Schema Definition
+ * @typedef {Object} NotificationSchema
+ * @property {ObjectId} recipient - User receiving the notification
+ * @property {ObjectId} sender - User or system generating the notification
+ * @property {string} type - Type of notification
+ * @property {string} link - URL or path related to notification
+ * @property {boolean} isRead - Read status of notification
+ * @property {Date} createdAt - Creation timestamp
+ * @property {Date} updatedAt - Last update timestamp
+ *
+ * @description
+ * Supported notification types:
+ * - follow: When someone follows the user
+ * - friend_request: New friend request received
+ * - friend_request_accepted: Friend request was accepted
+ * - message: New message received
+ * - project_mention: User mentioned in project
+ * - blog_comment: New comment on user's blog
+ * - role_approved: Role request approved
+ * - role_rejected: Role request rejected
+ */
 const notificationSchema = new mongoose.Schema(
   {
     recipient: {

@@ -13,6 +13,7 @@ export interface User {
     avatar?: string;
     bio?: string;
     avatarHistory?: string[];
+    isAvatarGif?: boolean;
   };
   premium: {
     isPremium: boolean;
@@ -55,9 +56,24 @@ export interface Project {
   projectLink?: string;
   sourceCodeLink?: string;
   extraLinks?: { title: string; url: string }[];
+  socialMediaLinks?: {
+    github?: string;
+    linkedin?: string;
+    twitter?: string;
+    instagram?: string;
+    facebook?: string;
+    youtube?: string;
+    website?: string;
+  };
   author: Pick<
     User,
-    "_id" | "username" | "firstName" | "lastName" | "profile" | "updatedAt"
+    | "_id"
+    | "username"
+    | "firstName"
+    | "lastName"
+    | "profile"
+    | "updatedAt"
+    | "premium"
   >;
   tags: string[];
   createdAt: string;
@@ -71,7 +87,13 @@ export interface Blog {
   coverImage: string;
   author: Pick<
     User,
-    "_id" | "username" | "firstName" | "lastName" | "profile" | "updatedAt"
+    | "_id"
+    | "username"
+    | "firstName"
+    | "lastName"
+    | "profile"
+    | "updatedAt"
+    | "premium"
   >;
   tags: string[];
   createdAt: string;

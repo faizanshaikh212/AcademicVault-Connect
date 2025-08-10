@@ -9,11 +9,12 @@ interface ProjectCardProps {
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
-  // THE FIX: If for some reason a project's author was deleted,
-  // we prevent the component from crashing.
+  // Get premium status of the project author
   if (!project.author) {
     return null;
   }
+
+  const ownerIsPremium = project.author.premium?.isPremium || false;
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-all hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
@@ -25,7 +26,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
 
       <div className="aspect-video overflow-hidden">
         <img
-          src={project.coverImage}
+          src={getAvatarUrl(project.coverImage, ownerIsPremium)}
           alt={project.title}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
@@ -57,6 +58,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
             <img
               src={getAvatarUrl(
                 project.author.profile?.avatar,
+                ownerIsPremium,
                 project.author.updatedAt
               )}
               alt={project.author.username}

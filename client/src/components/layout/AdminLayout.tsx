@@ -6,6 +6,8 @@ import {
   UserCheck,
   CreditCard,
   Menu,
+  FileText,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Navbar from "./Navbar";
@@ -21,7 +23,9 @@ const adminNavLinks = [
     href: "/admin/premium-requests",
     icon: CreditCard,
   },
+  { name: "Content Management", href: "/admin/content", icon: FileText },
   { name: "Customer Care", href: "/admin/customer-care", icon: UserCheck },
+  { name: "News Management", href: "/admin/news", icon: Mail },
 ];
 
 const AdminLayout: React.FC = () => {

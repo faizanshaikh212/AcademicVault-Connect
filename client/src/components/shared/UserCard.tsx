@@ -1,9 +1,9 @@
 // src/components/shared/UserCard.tsx
 
 import React, { useRef } from "react";
-import { getAvatarUrl } from "@/lib/avatar";
 import { Link } from "react-router-dom";
-import { User } from "../../types"; // Adjust this import path as needed
+import { User } from "../../types";
+import { getAvatarUrl } from "@/lib/avatar";
 
 interface UserCardProps {
   user: User;
@@ -17,6 +17,7 @@ const UserCard: React.FC<UserCardProps> = ({
   gradient = "linear-gradient(145deg, #4F46E5, #000)",
 }) => {
   const cardRef = useRef<HTMLElement>(null);
+  const ownerIsPremium = user?.premium?.isPremium || false;
 
   // This handler creates the 3D tilt effect based on mouse position.
   const handleCardMove = (e: React.MouseEvent<HTMLElement>) => {
@@ -66,13 +67,17 @@ const UserCard: React.FC<UserCardProps> = ({
         style={{ transform: "translateZ(20px)" }} // Lifts content slightly
       >
         <div className="flex-1 p-2.5">
-          {/* Image container with background color removed */}
-          <div className="w-full h-[240px] flex items-center justify-center rounded-lg overflow-hidden">
+          {/* Image container with 1:1 aspect ratio */}
+          <div className="w-48 h-48 mx-auto rounded-full overflow-hidden">
             <img
-              src={getAvatarUrl(user.profile?.avatar, user.updatedAt)}
+              src={getAvatarUrl(
+                user.profile?.avatar,
+                ownerIsPremium,
+                user.updatedAt
+              )}
               alt={user.username}
               loading="lazy"
-              className="max-w-full max-h-full object-contain"
+              className="w-full h-full object-cover"
             />
           </div>
         </div>

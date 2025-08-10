@@ -1,7 +1,18 @@
 import Blog from "../models/blog.model.js";
 import User from "../models/user.model.js";
 
-// ... (createBlog, getAllBlogs, getBlogById, updateBlog, deleteBlog functions are unchanged)
+/**
+ * Creates a new blog post
+ * @route POST /api/blogs
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body containing blog data
+ * @param {string} req.body.title - Blog title
+ * @param {string} req.body.content - Blog content
+ * @param {string} req.body.coverImage - URL of the blog cover image
+ * @param {string[]} req.body.tags - Array of blog tags
+ * @param {Object} res - Express response object
+ * @returns {Object} Created blog post
+ */
 const createBlog = async (req, res) => {
   try {
     const { title, content, coverImage, tags } = req.body;
@@ -20,12 +31,10 @@ const createBlog = async (req, res) => {
     const createdBlog = await blog.save();
     res.status(201).json(createdBlog);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error creating blog post.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error creating blog post.",
+      error: error.message,
+    });
   }
 };
 const getAllBlogs = async (req, res) => {
@@ -60,12 +69,10 @@ const getBlogById = async (req, res) => {
       res.status(404).json({ message: "Blog post not found" });
     }
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error fetching blog post.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error fetching blog post.",
+      error: error.message,
+    });
   }
 };
 const updateBlog = async (req, res) => {
@@ -74,11 +81,17 @@ const updateBlog = async (req, res) => {
     if (!blog) {
       return res.status(404).json({ message: "Blog post not found" });
     }
-    if (blog.author.toString() !== req.user._id.toString()) {
+
+    // Allow admins to edit any blog post
+    if (
+      !req.user.role.includes("admin") &&
+      blog.author.toString() !== req.user._id.toString()
+    ) {
       return res
         .status(401)
         .json({ message: "Not authorized to update this blog post." });
     }
+
     const { title, content, coverImage, tags } = req.body;
     blog.title = title || blog.title;
     blog.content = content || blog.content;
@@ -87,12 +100,10 @@ const updateBlog = async (req, res) => {
     const updatedBlog = await blog.save();
     res.json(updatedBlog);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error updating blog post.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error updating blog post.",
+      error: error.message,
+    });
   }
 };
 const deleteBlog = async (req, res) => {
@@ -101,20 +112,24 @@ const deleteBlog = async (req, res) => {
     if (!blog) {
       return res.status(404).json({ message: "Blog post not found" });
     }
-    if (blog.author.toString() !== req.user._id.toString()) {
+
+    // Allow admins to delete any blog post
+    if (
+      !req.user.role.includes("admin") &&
+      blog.author.toString() !== req.user._id.toString()
+    ) {
       return res
         .status(401)
         .json({ message: "Not authorized to delete this blog post." });
     }
+
     await blog.deleteOne();
     res.json({ message: "Blog post removed successfully." });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error deleting blog post.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error deleting blog post.",
+      error: error.message,
+    });
   }
 };
 
@@ -131,12 +146,10 @@ const getBlogsByUserId = async (req, res) => {
 
     res.json(blogs);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error fetching user blogs.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error fetching user blogs.",
+      error: error.message,
+    });
   }
 };
 

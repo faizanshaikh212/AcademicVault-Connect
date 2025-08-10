@@ -1,9 +1,25 @@
+/**
+ * Authentication Middleware Module
+ * Provides route protection and optional authentication functionality
+ * @module middleware/auth
+ */
+
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 
 /**
- * Middleware to protect routes that require authentication.
- * It verifies the JWT and attaches the user to the request object.
+ * Middleware to protect routes that require authentication
+ * Verifies JWT token and attaches user to request object
+ *
+ * @async
+ * @function protect
+ * @param {Object} req - Express request object
+ * @param {Object} req.headers - Request headers
+ * @param {string} req.headers.authorization - Bearer token
+ * @param {Object} res - Express response object
+ * @param {Function} next - Next middleware function
+ * @throws {401} If no token provided or token is invalid
+ * @throws {401} If user not found
  */
 const protect = async (req, res, next) => {
   let token;
@@ -42,9 +58,23 @@ const protect = async (req, res, next) => {
 };
 
 /**
- * Middleware to optionally authenticate a user.
- * If a valid token is provided, it attaches the user to the request object.
- * If no token or invalid token, it still allows the request to proceed.
+ * Optional authentication middleware
+ * Attempts to authenticate user but allows request to proceed regardless
+ * Used for routes that can work with or without authentication
+ *
+ * @async
+ * @function optionalAuth
+ * @param {Object} req - Express request object
+ * @param {Object} req.headers - Request headers
+ * @param {string} req.headers.authorization - Optional bearer token
+ * @param {Object} res - Express response object
+ * @param {Function} next - Next middleware function
+ * @description
+ * If valid token provided:
+ * - Verifies token and attaches user to request
+ * If no token or invalid token:
+ * - Sets req.user to undefined
+ * - Allows request to proceed
  */
 const optionalAuth = async (req, res, next) => {
   let token;

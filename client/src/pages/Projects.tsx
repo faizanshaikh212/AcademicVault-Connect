@@ -6,6 +6,7 @@ import ProjectCard from "@/components/shared/ProjectCard";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Search, Plus } from "lucide-react";
+import NewsletterSubscribe from "@/components/shared/NewsletterSubscribe";
 
 const Projects: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -95,6 +96,9 @@ const Projects: React.FC = () => {
               No projects found. Try a different search term!
             </p>
           )}
+        </div>
+        <div className="mt-16">
+          <NewsletterSubscribe />
         </div>
       </div>
     </div>

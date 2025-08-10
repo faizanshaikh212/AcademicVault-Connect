@@ -19,6 +19,7 @@ const createProject = async (req, res) => {
       sourceCodeLink,
       tags,
       extraLinks,
+      socialMediaLinks,
     } = req.body;
     if (!title || !description || !coverImage) {
       return res
@@ -35,16 +36,15 @@ const createProject = async (req, res) => {
       sourceCodeLink,
       tags,
       extraLinks,
+      socialMediaLinks,
     });
     const createdProject = await project.save();
     res.status(201).json(createdProject);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error creating project.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error creating project.",
+      error: error.message,
+    });
   }
 };
 
@@ -69,12 +69,10 @@ const getAllProjects = async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(projects);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error fetching projects.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error fetching projects.",
+      error: error.message,
+    });
   }
 };
 
@@ -95,12 +93,10 @@ const getProjectById = async (req, res) => {
       res.status(404).json({ message: "Project not found" });
     }
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error fetching project.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error fetching project.",
+      error: error.message,
+    });
   }
 };
 
@@ -115,7 +111,11 @@ const updateProject = async (req, res) => {
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
     }
-    if (project.author.toString() !== req.user._id.toString()) {
+    // Allow admins to edit any project
+    if (
+      !req.user.role.includes("admin") &&
+      project.author.toString() !== req.user._id.toString()
+    ) {
       return res
         .status(401)
         .json({ message: "Not authorized to update this project." });
@@ -129,6 +129,7 @@ const updateProject = async (req, res) => {
       sourceCodeLink,
       tags,
       extraLinks,
+      socialMediaLinks,
     } = req.body;
     project.title = title || project.title;
     project.description = description || project.description;
@@ -138,15 +139,14 @@ const updateProject = async (req, res) => {
     project.sourceCodeLink = sourceCodeLink ?? project.sourceCodeLink;
     project.tags = tags ?? project.tags;
     project.extraLinks = extraLinks ?? project.extraLinks;
+    project.socialMediaLinks = socialMediaLinks ?? project.socialMediaLinks;
     const updatedProject = await project.save();
     res.json(updatedProject);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error updating project.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error updating project.",
+      error: error.message,
+    });
   }
 };
 
@@ -161,7 +161,11 @@ const deleteProject = async (req, res) => {
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
     }
-    if (project.author.toString() !== req.user._id.toString()) {
+    // Allow admins to delete any project
+    if (
+      !req.user.role.includes("admin") &&
+      project.author.toString() !== req.user._id.toString()
+    ) {
       return res
         .status(401)
         .json({ message: "Not authorized to delete this project." });
@@ -169,12 +173,10 @@ const deleteProject = async (req, res) => {
     await project.deleteOne();
     res.json({ message: "Project removed successfully." });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error deleting project.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error deleting project.",
+      error: error.message,
+    });
   }
 };
 
@@ -191,12 +193,10 @@ const getProjectsByUserId = async (req, res) => {
 
     res.json(projects);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Server error fetching user projects.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Server error fetching user projects.",
+      error: error.message,
+    });
   }
 };
 

@@ -6,6 +6,7 @@ import BlogCard from "@/components/shared/BlogCard";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Search, Plus } from "lucide-react";
+import NewsletterSubscribe from "@/components/shared/NewsletterSubscribe";
 
 const Blogs: React.FC = () => {
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -89,6 +90,7 @@ const Blogs: React.FC = () => {
             )}
           </div>
         </div>
+        <NewsletterSubscribe />
       </div>
     </div>
   );

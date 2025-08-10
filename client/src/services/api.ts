@@ -17,7 +17,11 @@ api.interceptors.request.use(
     if (token) {
       // Ensure we're always sending the token with the Bearer prefix
       config.headers.set("Authorization", `Bearer ${token}`);
-      config.headers.set("Content-Type", "application/json");
+
+      // Only set Content-Type for non-FormData requests
+      if (!(config.data instanceof FormData)) {
+        config.headers.set("Content-Type", "application/json");
+      }
     }
     return config;
   },

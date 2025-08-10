@@ -1,0 +1,50 @@
+/* Override default SyntaxHighlighter styles */
+pre,
+pre > div {
+  margin: 0 !important;
+  padding: 16px !important;
+  background: transparent !important;
+  border: 1px solid #30363d !important;
+  border-radius: 6px !important;
+}
+
+/* Light mode */
+.github-markdown {
+  color: #1f2328 !important;
+}
+
+/* Dark mode */
+.dark .github-markdown {
+  color: #e6edf3 !important;
+}
+
+/* Code block specific overrides */
+.github-markdown pre {
+  background-color: #0d1117 !important;
+  border: 1px solid #30363d !important;
+}
+
+.github-markdown pre > div {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Ensure code is clearly visible */
+.github-markdown pre code,
+.github-markdown pre span {
+  color: #e6edf3 !important;
+  text-shadow: none !important;
+  background: none !important;
+}
+
+/* Inline code styling */
+.github-markdown :not(pre) > code {
+  color: #e6edf3 !important;
+  background-color: #1f2428 !important;
+  border-radius: 6px !important;
+  padding: 0.2em 0.4em !important;
+  margin: 0 !important;
+  font-size: 85% !important;
+}

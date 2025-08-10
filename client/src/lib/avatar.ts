@@ -7,17 +7,68 @@ export const DEFAULT_AVATAR = `data:image/svg+xml,${encodeURIComponent(`
 `)}`;
 
 /**
- * Gets the avatar URL with cache busting if needed
- * @param avatarUrl - The avatar URL from the user's profile
- * @param updatedAt - The user's last update timestamp
- * @returns The final avatar URL with cache busting if needed
+ * Transforms Cloudinary URL to ensure proper GIF handling
+ * @param url - The Cloudinary URL to transform
+ * @param ownerIsPremium - Whether the OWNER of the content has premium status
+ * @returns The transformed URL
+ */
+export function transformCloudinaryUrl(
+  url: string,
+  ownerIsPremium: boolean
+): string {
+  // Return original URL if it's not a Cloudinary URL or is empty
+  if (!url || !url.includes("cloudinary.com")) return url || "";
+
+  // Split the URL at /upload/
+  const [baseUrl, ...rest] = url.split("/upload/");
+  if (!baseUrl || !rest.length) return url;
+
+  // Join all parts after /upload/ in case there were multiple
+  const imagePath = rest.join("/upload/");
+
+  // Check if it's a GIF
+  const isGif = imagePath.toLowerCase().includes(".gif");
+
+  if (isGif) {
+    if (ownerIsPremium) {
+      // If owner is premium, preserve GIF animation
+      return url; // Return original URL to ensure animation works
+    } else {
+      // If not premium, convert to static image
+      return `${baseUrl}/upload/q_auto:good,f_jpg/${imagePath}`;
+    }
+  }
+
+  // For non-GIFs, just ensure quality optimization
+  return `${baseUrl}/upload/q_auto:good/${imagePath}`;
+}
+
+/**
+ * Gets the avatar or image URL with appropriate transformations based on content owner's premium status
+ * @param imageUrl - The URL from the user's profile or content
+ * @param ownerIsPremium - Whether the OWNER of the content has premium status
+ * @param updatedAt - The update timestamp for cache busting (optional)
+ * @returns The final URL with proper transformations and cache busting
  */
 export function getAvatarUrl(
-  avatarUrl: string | undefined,
-  updatedAt: string | undefined
+  imageUrl: string | undefined,
+  ownerIsPremium: boolean = false,
+  updatedAt?: string
 ): string {
-  if (!avatarUrl) return DEFAULT_AVATAR;
+  // Handle empty or invalid URLs
+  if (!imageUrl || imageUrl.trim() === "") return DEFAULT_AVATAR;
 
-  const timestamp = updatedAt ? new Date(updatedAt).getTime() : Date.now();
-  return `${avatarUrl}?t=${timestamp}`;
+  // Ensure URL is properly formatted
+  const cleanUrl = imageUrl.trim();
+
+  // Transform the URL based on premium status and type
+  const transformedUrl = transformCloudinaryUrl(cleanUrl, ownerIsPremium);
+
+  // Add cache busting for avatar updates
+  if (updatedAt) {
+    const timestamp = new Date(updatedAt).getTime();
+    return `${transformedUrl}?t=${timestamp}`;
+  }
+
+  return transformedUrl;
 }

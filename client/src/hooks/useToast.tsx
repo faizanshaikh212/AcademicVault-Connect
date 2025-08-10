@@ -7,7 +7,7 @@ import {
   ToastProvider,
   ToastTitle,
   ToastViewport,
-} from "@/components/ui/Toast";
+} from "@/components/ui/toast";
 
 type ToastProps = {
   title?: string;
