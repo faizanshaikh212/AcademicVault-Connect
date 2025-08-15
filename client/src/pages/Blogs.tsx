@@ -74,7 +74,7 @@ const Blogs: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div>
+          <div className="min-h-[400px]">
             {isLoading ? (
               <p className="text-center">Loading articles...</p>
             ) : error ? (
@@ -82,15 +82,36 @@ const Blogs: React.FC = () => {
             ) : filteredBlogs.length > 0 ? (
               <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredBlogs.map((blog) => (
-                  <BlogCard key={blog._id} blog={blog} />
+                  <BlogCard
+                    key={blog._id}
+                    blog={blog}
+                    onDelete={() => {
+                      setBlogs((prevBlogs) =>
+                        prevBlogs.filter((b) => b._id !== blog._id)
+                      );
+                    }}
+                  />
                 ))}
               </div>
             ) : (
-              <p className="text-center text-gray-500">No articles found.</p>
+              <div className="flex flex-col items-center justify-center min-h-[400px] bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  No Articles Found
+                </p>
+                <p className="text-gray-600 dark:text-gray-400 text-center max-w-md">
+                  {searchTerm
+                    ? "Try different keywords or remove some filters."
+                    : "Be the first to share your insights with the community!"}
+                </p>
+              </div>
             )}
           </div>
         </div>
-        <NewsletterSubscribe />
+        <div className="border-t border-gray-200 dark:border-gray-800">
+          <div className="container mx-auto px-4 py-12">
+            <NewsletterSubscribe />
+          </div>
+        </div>
       </div>
     </div>
   );

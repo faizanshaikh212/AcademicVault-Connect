@@ -35,15 +35,18 @@ import adminRoutes from "./routes/admin.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
 import premiumRoutes from "./routes/premium.routes.js";
 import newsRoutes from "./routes/news.routes.js";
+import pageRoutes from "./routes/page.routes.js";
 
 // Load environment variables from .env file (for development only)
 dotenv.config();
 
 // Establish database connection
-connectDB();
+const connection = await connectDB();
 
 // Initialize the Express application
 const app = express();
+
+// Removed unnecessary initialization code
 
 // --- Middleware ---
 app.use(
@@ -65,6 +68,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/premium", premiumRoutes);
 app.use("/api", newsRoutes); // This includes both /api/news and /api/newsletter routes
+app.use("/api", pageRoutes); // This includes /api/pages routes
 
 // --- ADD THIS SECTION ---
 // Serve static files from the React build folder in production

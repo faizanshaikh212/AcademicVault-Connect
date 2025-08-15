@@ -45,7 +45,7 @@ const NewsPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-950 min-h-screen">
+    <div className="bg-white dark:bg-gray-950 min-h-screen pt-30">
       <div className="container mx-auto px-4 py-12">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
           Latest News

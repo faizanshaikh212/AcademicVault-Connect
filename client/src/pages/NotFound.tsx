@@ -5,7 +5,7 @@ import { AlertTriangle } from "lucide-react";
 
 const NotFound: React.FC = () => {
   return (
-    <div className="flex flex-col items-center justify-center text-center py-20 pt-30">
+    <div className="flex flex-col items-center justify-center text-center py-20 pt-40">
       <AlertTriangle className="h-16 w-16 text-yellow-500 mb-4" />
       <h1 className="text-6xl font-extrabold text-gray-800 dark:text-white">
         404

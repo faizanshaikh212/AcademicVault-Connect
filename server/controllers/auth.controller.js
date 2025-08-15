@@ -43,13 +43,14 @@ const registerUser = async (req, res) => {
         .json({ message: "User with this email or username already exists." });
     }
 
-    // Create a new user
+    // Create a new user with default student role
     const user = await User.create({
       firstName,
       lastName,
       username,
       email,
       password, // Password will be hashed by the pre-save middleware in the model
+      role: ["student"], // Explicitly set the default role as an array
     });
 
     if (user) {

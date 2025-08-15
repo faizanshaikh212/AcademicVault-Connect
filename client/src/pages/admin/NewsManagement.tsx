@@ -3,14 +3,17 @@ import api from "@/services/api";
 import { useToast } from "@/hooks/useToast";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NewsItem {
   _id: string;
   title: string;
   content: string;
   author: {
+    _id: string;
     username: string;
-  };
+  } | null;
   createdAt: string;
   isPublished: boolean;
 }
@@ -20,13 +23,22 @@ interface Subscriber {
   email: string;
   isActive: boolean;
   createdAt: string;
+  user?: {
+    _id: string;
+    username: string;
+    email: string;
+  };
+  displayEmail?: string;
 }
 
 const NewsManagement: React.FC = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchNewsQuery, setSearchNewsQuery] = useState("");
+  const [searchSubscriberQuery, setSearchSubscriberQuery] = useState("");
   const { toast } = useToast();
+  const { login } = useAuth();
 
   // Form state
   const [title, setTitle] = useState("");
@@ -147,14 +159,30 @@ const NewsManagement: React.FC = () => {
 
   const handleUpdateSubscriber = async (id: string, isActive: boolean) => {
     try {
-      await api.put(`/news/subscribers/${id}`, { isActive });
+      const response = await api.put(`/news/subscribers/${id}`, { isActive });
       toast({
         title: "Success",
         description: `Subscriber ${
           isActive ? "activated" : "deactivated"
         } successfully`,
       });
+
+      // Update subscribers list
       fetchSubscribers();
+
+      // If this was a user subscription, refresh user data
+      if (response.data.userId) {
+        try {
+          const { data: updatedUser } = await api.get("/users/me");
+          // Update the user context
+          login({
+            user: updatedUser,
+            token: localStorage.getItem("token"),
+          });
+        } catch (error) {
+          console.error("Failed to refresh user data:", error);
+        }
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -166,12 +194,28 @@ const NewsManagement: React.FC = () => {
 
   const handleDeleteSubscriber = async (id: string) => {
     try {
-      await api.delete(`/news/subscribers/${id}`);
+      const response = await api.delete(`/news/subscribers/${id}`);
       toast({
         title: "Success",
         description: "Subscriber deleted successfully",
       });
+
+      // Update subscribers list
       fetchSubscribers();
+
+      // If this was a user subscription, trigger a user data refresh
+      if (response.data.userId) {
+        try {
+          const { data: updatedUser } = await api.get("/users/me");
+          // Update the user context
+          login({
+            user: updatedUser,
+            token: localStorage.getItem("token"),
+          });
+        } catch (error) {
+          console.error("Failed to refresh user data:", error);
+        }
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -255,61 +299,53 @@ const NewsManagement: React.FC = () => {
       {/* News List */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
         <h2 className="text-2xl font-semibold mb-4">News List</h2>
-        <div className="space-y-4">
-          {news.map((item) => (
-            <div key={item._id} className="border-b dark:border-gray-700 pb-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-medium">{item.title}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    By {item.author?.username || "Anonymous"} •{" "}
-                    {new Date(item.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <Button
-                  onClick={() => handleDeleteNews(item._id)}
-                  variant="destructive"
-                  size="sm"
-                >
-                  Delete
-                </Button>
-              </div>
-            </div>
-          ))}
+        <div className="mb-4">
+          <Input
+            placeholder="Search news..."
+            value={searchNewsQuery}
+            onChange={(e) => setSearchNewsQuery(e.target.value)}
+            className="max-w-md"
+          />
         </div>
-      </div>
-
-      {/* Subscribers List */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-semibold mb-4">Newsletter Subscribers</h2>
         <div className="space-y-4">
-          {subscribers.map((subscriber) => (
-            <div
-              key={subscriber._id}
-              className="border-b dark:border-gray-700 pb-4"
-            >
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-medium">{subscriber.email}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Joined {new Date(subscriber.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex gap-2">
+          {news
+            .filter((item) =>
+              item.title.toLowerCase().includes(searchNewsQuery.toLowerCase())
+            )
+            .map((item) => (
+              <div
+                key={item._id}
+                className="border-b dark:border-gray-700 pb-4"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-medium">
+                      <Link
+                        to={`/news/${item._id}`}
+                        className="text-blue-600 hover:underline"
+                        target="_blank"
+                      >
+                        {item.title}
+                      </Link>
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      By{" "}
+                      {item.author ? (
+                        <Link
+                          to={`/profile/${item.author.username}`}
+                          className="text-blue-600 hover:underline"
+                          target="_blank"
+                        >
+                          {item.author.username}
+                        </Link>
+                      ) : (
+                        "Anonymous"
+                      )}{" "}
+                      • {new Date(item.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
                   <Button
-                    onClick={() =>
-                      handleUpdateSubscriber(
-                        subscriber._id,
-                        !subscriber.isActive
-                      )
-                    }
-                    variant={subscriber.isActive ? "destructive" : "default"}
-                    size="sm"
-                  >
-                    {subscriber.isActive ? "Deactivate" : "Activate"}
-                  </Button>
-                  <Button
-                    onClick={() => handleDeleteSubscriber(subscriber._id)}
+                    onClick={() => handleDeleteNews(item._id)}
                     variant="destructive"
                     size="sm"
                   >
@@ -317,8 +353,83 @@ const NewsManagement: React.FC = () => {
                   </Button>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+        </div>
+      </div>
+
+      {/* Subscribers List */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+        <h2 className="text-2xl font-semibold mb-4">Newsletter Subscribers</h2>
+        <div className="mb-4">
+          <Input
+            placeholder="Search subscribers..."
+            value={searchSubscriberQuery}
+            onChange={(e) => setSearchSubscriberQuery(e.target.value)}
+            className="max-w-md"
+          />
+        </div>
+        <div className="space-y-4">
+          {subscribers
+            .filter((subscriber) =>
+              subscriber.email
+                .toLowerCase()
+                .includes(searchSubscriberQuery.toLowerCase())
+            )
+            .map((subscriber) => (
+              <div
+                key={subscriber._id}
+                className="border-b dark:border-gray-700 pb-4"
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">
+                      {subscriber.user ? (
+                        <>
+                          <Link
+                            to={`/profile/${subscriber.user.username}`}
+                            className="text-blue-600 hover:underline"
+                            target="_blank"
+                          >
+                            {subscriber.user.email}
+                          </Link>
+                          <span className="ml-2 text-green-500">(Member)</span>
+                        </>
+                      ) : (
+                        <>
+                          {subscriber.email}{" "}
+                          <span className="text-gray-500">(Guest)</span>
+                        </>
+                      )}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Joined{" "}
+                      {new Date(subscriber.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() =>
+                        handleUpdateSubscriber(
+                          subscriber._id,
+                          !subscriber.isActive
+                        )
+                      }
+                      variant={subscriber.isActive ? "destructive" : "default"}
+                      size="sm"
+                    >
+                      {subscriber.isActive ? "Deactivate" : "Activate"}
+                    </Button>
+                    <Button
+                      onClick={() => handleDeleteSubscriber(subscriber._id)}
+                      variant="destructive"
+                      size="sm"
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
         </div>
       </div>
     </div>

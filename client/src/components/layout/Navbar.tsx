@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   RotateCw,
   RefreshCcw,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAvatarUrl } from "@/lib/avatar";
@@ -224,6 +225,16 @@ const Navbar: React.FC = () => {
                     <Link to="/blogs/new" className="flex items-center w-full">
                       <Rss className="mr-2 h-4 w-4" />
                       <span>Post Blog</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <Link
+                      to="/notification-history"
+                      className="flex items-center w-full"
+                    >
+                      <Bell className="mr-2 h-4 w-4" />
+                      <span>Notification History</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

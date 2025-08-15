@@ -14,8 +14,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import CodeBlock from "@/components/shared/CodeBlock";
 
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -53,7 +52,7 @@ const ProjectDetail: React.FC = () => {
   const isAuthor = currentUser?._id === project.author._id;
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-30">
+    <div className="container mx-auto px-4 py-8 pt-32">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="relative">
@@ -124,72 +123,7 @@ const ProjectDetail: React.FC = () => {
                   </h4>
                 ),
                 code: (props) => {
-                  const { children, className } = props;
-                  const language = className
-                    ? className.replace("language-", "")
-                    : "text";
-                  // If the code block is not wrapped in ``` (i.e., it's inline code)
-                  if (!className) {
-                    return (
-                      <code className="bg-[#1f2428] text-[#e6edf3] rounded px-1.5 py-0.5 text-[0.9em] font-mono">
-                        {children}
-                      </code>
-                    );
-                  }
-
-                  // For code blocks
-                  const copyCode = () => {
-                    navigator.clipboard.writeText(
-                      String(children).replace(/\n$/, "")
-                    );
-                  };
-
-                  return (
-                    <div className="relative group my-4">
-                      <button
-                        onClick={copyCode}
-                        className="absolute right-2 top-2 p-2 rounded-lg bg-[#30363d] opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
-                        title="Copy code"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="text-gray-300 hover:text-white"
-                        >
-                          <rect
-                            x="9"
-                            y="9"
-                            width="13"
-                            height="13"
-                            rx="2"
-                            ry="2"
-                          />
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                        </svg>
-                      </button>
-                      <SyntaxHighlighter
-                        language={language}
-                        style={vscDarkPlus}
-                        customStyle={{
-                          margin: "0",
-                          padding: "16px",
-                          background: "none",
-                          backgroundColor: "#0d1117",
-                          border: "1px solid #30363d",
-                          borderRadius: "6px",
-                        }}
-                      >
-                        {String(children).replace(/\n$/, "")}
-                      </SyntaxHighlighter>
-                    </div>
-                  );
+                  return <CodeBlock {...props} />;
                 },
                 a: ({ href, children }) => (
                   <a
@@ -238,8 +172,8 @@ const ProjectDetail: React.FC = () => {
 
         {/* Sidebar Column */}
         <aside className="lg:col-span-1">
-          <div className="sticky top-24 space-y-6 rounded-lg border bg-white p-8 shadow-sm dark:bg-gray-900 dark:border-gray-800 mx-4">
-            <h3 className="text-lg font-semibold border-b pb-3 dark:border-gray-700">
+          <div className="sticky top-32 space-y-4 rounded-lg border bg-white p-6 shadow-sm dark:bg-gray-900 dark:border-gray-800 mx-4 max-h-[calc(100vh-8rem)] overflow-y-auto">
+            <h3 className="text-lg font-semibold border-b pb-2 dark:border-gray-700">
               Project Details
             </h3>
 
@@ -263,7 +197,7 @@ const ProjectDetail: React.FC = () => {
             </div>
 
             {/* Links */}
-            <div className="space-y-3 pt-4 border-t dark:border-gray-700">
+            <div className="space-y-2 pt-3 border-t dark:border-gray-700">
               {project.projectLink && (
                 <Button asChild className="w-full">
                   <a
@@ -293,8 +227,8 @@ const ProjectDetail: React.FC = () => {
               Object.entries(project.socialMediaLinks).some(
                 ([_, value]) => value
               ) && (
-                <div className="pt-4 border-t dark:border-gray-700">
-                  <h4 className="font-semibold mb-3">Connect</h4>
+                <div className="pt-3 border-t dark:border-gray-700">
+                  <h4 className="font-semibold mb-2">Connect</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {project.socialMediaLinks.github && (
                       <Button asChild variant="outline" size="sm">
@@ -413,21 +347,6 @@ const ProjectDetail: React.FC = () => {
                   </div>
                 </div>
               )}
-
-            {/* Tags */}
-            <div className="pt-4 border-t dark:border-gray-700">
-              <h4 className="font-semibold mb-3">Tags</h4>
-              <div className="flex flex-wrap gap-2">
-                {project.tags.map((tag: string) => (
-                  <span
-                    key={tag}
-                    className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-300"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
           </div>
         </aside>
       </div>

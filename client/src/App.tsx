@@ -29,11 +29,13 @@ import NotFound from "./pages/NotFound";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ContactUs from "./pages/ContactUs";
+import NotificationHistory from "./pages/NotificationHistory";
 import News from "./pages/News";
 import NewsDetail from "./pages/NewsDetail";
 import NewsForm from "./pages/admin/NewsForm";
 import NewsManagement from "./pages/admin/NewsManagement";
 import SubscriberList from "./pages/admin/SubscriberList";
+import AboutUs from "./pages/AboutUs";
 
 // Layout Imports
 import Navbar from "./components/layout/Navbar";
@@ -121,10 +123,15 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="request-teacher-role" element={<RoleRequest />} />
             <Route path="request-premium" element={<RequestPremium />} />
+            <Route
+              path="notification-history"
+              element={<NotificationHistory />}
+            />
           </Route>
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/contact" element={<ContactUs />} />
+          <Route path="/about-us" element={<AboutUs />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

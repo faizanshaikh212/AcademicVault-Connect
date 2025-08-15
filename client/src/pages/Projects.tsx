@@ -80,7 +80,7 @@ const Projects: React.FC = () => {
         </div>
 
         {/* Content Grid */}
-        <div className="mt-8">
+        <div className="mt-8 min-h-[400px]">
           {isLoading ? (
             <p className="text-center">Loading projects...</p>
           ) : error ? (
@@ -88,17 +88,34 @@ const Projects: React.FC = () => {
           ) : filteredProjects.length > 0 ? (
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredProjects.map((project) => (
-                <ProjectCard key={project._id} project={project} />
+                <ProjectCard
+                  key={project._id}
+                  project={project}
+                  onDelete={() => {
+                    setProjects((prevProjects) =>
+                      prevProjects.filter((p) => p._id !== project._id)
+                    );
+                  }}
+                />
               ))}
             </div>
           ) : (
-            <p className="text-center text-gray-500">
-              No projects found. Try a different search term!
-            </p>
+            <div className="flex flex-col items-center justify-center min-h-[400px] bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                No Projects Found
+              </p>
+              <p className="text-gray-600 dark:text-gray-400 text-center max-w-md">
+                {searchTerm
+                  ? "Try different keywords or remove some filters."
+                  : "Be the first to showcase your project to the community!"}
+              </p>
+            </div>
           )}
         </div>
-        <div className="mt-16">
-          <NewsletterSubscribe />
+        <div className="border-t border-gray-200 dark:border-gray-800 mt-8">
+          <div className="py-12">
+            <NewsletterSubscribe />
+          </div>
         </div>
       </div>
     </div>

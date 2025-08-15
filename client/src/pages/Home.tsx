@@ -75,7 +75,7 @@ const Home: React.FC = () => {
                 variant="outline"
                 className="bg-transparent border-white text-white hover:bg-white/90 hover:text-gray-900"
               >
-                <Link to="/projects">Discover Projects</Link>
+                <Link to="/about-us">Learn More</Link>
               </Button>
             </div>
           </div>

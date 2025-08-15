@@ -18,8 +18,41 @@ import {
   submitRoleRequest,
 } from "../controllers/user.controller.js";
 import { protect, optionalAuth } from "../middleware/auth.middleware.js";
+import { NewsletterSubscriber } from "../models/news.model.js";
+import User from "../models/user.model.js";
 
 const router = express.Router();
+
+/**
+ * @route GET /api/users/me
+ * @description Get current user's full profile including newsletter subscription
+ * @access Private
+ * @returns {Object} User data with subscription status
+ */
+router.get("/me", protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+    const subscription = await NewsletterSubscriber.findOne({
+      email: user.email,
+    });
+
+    const userData = user.toObject();
+    userData.newsletterSubscription = subscription
+      ? {
+          _id: subscription._id,
+          isActive: subscription.isActive,
+          subscriptionDate: subscription.subscriptionDate,
+        }
+      : null;
+
+    res.json(userData);
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch user data",
+      error: error.message,
+    });
+  }
+});
 
 /**
  * @route GET /api/users/all

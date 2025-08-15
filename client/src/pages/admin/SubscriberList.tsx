@@ -8,6 +8,9 @@ interface Subscriber {
   email: string;
   isActive: boolean;
   createdAt: string;
+  isRegisteredUser: boolean;
+  displayName: string;
+  userType: "Registered User" | "Guest";
 }
 
 type ActionState = {
@@ -127,17 +130,31 @@ const SubscriberList = () => {
               <li key={subscriber._id} className="px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {subscriber.email}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Subscribed{" "}
-                      {formatDistance(
-                        new Date(subscriber.createdAt),
-                        new Date(),
-                        { addSuffix: true }
-                      )}
-                    </p>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {subscriber.displayName}
+                        <span
+                          className={`ml-2 text-xs px-2 py-1 rounded ${
+                            subscriber.isRegisteredUser
+                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                              : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                          }`}
+                        >
+                          {subscriber.userType}
+                        </span>
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {subscriber.email}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Subscribed{" "}
+                        {formatDistance(
+                          new Date(subscriber.createdAt),
+                          new Date(),
+                          { addSuffix: true }
+                        )}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <button

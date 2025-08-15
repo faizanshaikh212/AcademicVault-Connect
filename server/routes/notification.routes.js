@@ -9,6 +9,8 @@ import express from "express";
 import {
   getNotifications,
   markNotificationsAsRead,
+  getNotificationHistory,
+  clearNotifications,
 } from "../controllers/notification.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 
@@ -30,5 +32,21 @@ router.route("/").get(protect, getNotifications);
  * @returns {Object} Updated notification status
  */
 router.route("/read").post(protect, markNotificationsAsRead);
+
+/**
+ * @route GET /api/notifications/history
+ * @description Get all notification history for the authenticated user
+ * @access Private
+ * @returns {Array<Object>} Array of notification objects
+ */
+router.route("/history").get(protect, getNotificationHistory);
+
+/**
+ * @route POST /api/notifications/clear
+ * @description Clear all uncleared notifications for the authenticated user
+ * @access Private
+ * @returns {Object} Success message
+ */
+router.route("/clear").post(protect, clearNotifications);
 
 export default router;

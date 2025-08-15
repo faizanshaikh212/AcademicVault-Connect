@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/useToast";
 import api from "@/services/api";
 
 const NewsletterSubscribe: React.FC = () => {
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState(user?.email || "");
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -46,8 +46,21 @@ const NewsletterSubscribe: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await api.post("/news/subscribe", { email });
+      await api.post("/news/subscribe", {
+        email,
+        userId: user?._id, // Pass userId if user is logged in
+      });
       setIsSubscribed(true);
+
+      // Refresh user data if user is logged in
+      if (user?._id) {
+        const { data: updatedUser } = await api.get("/users/me");
+        login({
+          user: updatedUser,
+          token: localStorage.getItem("token"),
+        });
+      }
+
       // The subscription status check useEffect will handle localStorage
       toast({
         title: "Success!",

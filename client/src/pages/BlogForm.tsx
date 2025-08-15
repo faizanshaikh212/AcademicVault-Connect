@@ -6,11 +6,14 @@ import { Blog } from "../types";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
+import { useToast } from "@/hooks/useToast";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 
 const BlogForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const isEditMode = Boolean(id);
 
   const [formData, setFormData] = useState({
@@ -23,6 +26,7 @@ const BlogForm: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (isEditMode) {
@@ -46,7 +50,22 @@ const BlogForm: React.FC = () => {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    // Check if user is trying to add a GIF URL without premium
+    if (name === "coverImageUrl" && value) {
+      const isGif =
+        value.toLowerCase().endsWith(".gif") ||
+        value.toLowerCase().includes("/image/gif") ||
+        value.toLowerCase().includes("format=gif");
+      if (isGif && !user?.premium?.isPremium) {
+        setError("Please upgrade to premium to use animated GIF images.");
+        return;
+      }
+    }
+
+    setFormData({ ...formData, [name]: value });
+    setError(null);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,17 +87,17 @@ const BlogForm: React.FC = () => {
       return;
     }
 
-    // Set allowed types based on premium status
-    const basicTypes = ["image/jpeg", "image/png", "image/gif"];
-    const premiumTypes = [...basicTypes, "video/mp4", "video/webm"];
-    const allowedTypes = isPremium ? premiumTypes : basicTypes;
+    // Check if it's a GIF and user is not premium
+    if (file.type === "image/gif" && !isPremium) {
+      setError("Please upgrade to premium to use animated GIF images.");
+      e.target.value = "";
+      return;
+    }
 
+    // Only allow supported image types
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
-      setError(
-        user?.premium
-          ? "Please upload a JPEG, PNG, GIF, MP4, or WEBM file"
-          : "Please upload a JPEG, PNG, or GIF image"
-      );
+      setError("Please upload only JPEG, JPG, PNG, or GIF images.");
       e.target.value = "";
       return;
     }
@@ -125,6 +144,17 @@ const BlogForm: React.FC = () => {
     if (!coverImageFinal) {
       coverImageFinal =
         "https://res.cloudinary.com/dy7fw9h6s/image/upload/v1754894548/22_kcl6sr.jpg"; // Set your default image path here
+    }
+
+    // Final GIF validation check
+    const isGif =
+      coverImageFinal.toLowerCase().endsWith(".gif") ||
+      coverImageFinal.toLowerCase().includes("/image/gif") ||
+      coverImageFinal.toLowerCase().includes("format=gif");
+    if (isGif && !user?.premium?.isPremium) {
+      setError("Please upgrade to premium to use animated GIF images.");
+      setIsLoading(false);
+      return;
     }
 
     const submissionData = {
@@ -187,6 +217,7 @@ const BlogForm: React.FC = () => {
           <label className="block text-sm font-medium mb-1">Cover Image</label>
           <Input
             type="file"
+            accept="image/jpeg,image/jpg,image/png,image/gif"
             onChange={handleFileUpload}
             disabled={isUploading}
           />
@@ -259,18 +290,55 @@ const BlogForm: React.FC = () => {
 
         {error && <p className="text-red-500">{error}</p>}
 
-        <Button
-          type="submit"
-          disabled={isLoading || isUploading}
-          className="w-full"
-        >
-          {isLoading
-            ? "Saving..."
-            : isEditMode
-            ? "Update Article"
-            : "Publish Article"}
-        </Button>
+        <div className="flex gap-4">
+          <Button
+            type="submit"
+            disabled={isLoading || isUploading}
+            className="flex-1"
+          >
+            {isLoading
+              ? "Saving..."
+              : isEditMode
+              ? "Update Article"
+              : "Publish Article"}
+          </Button>
+          {isEditMode && (
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isLoading}
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              Delete Article
+            </Button>
+          )}
+        </div>
       </form>
+
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={async () => {
+          try {
+            await api.delete(`/blogs/${id}`);
+            toast({
+              title: "Success",
+              description: "Blog deleted successfully",
+            });
+            navigate("/blogs");
+          } catch (error) {
+            toast({
+              title: "Error",
+              description: "Failed to delete blog",
+              variant: "destructive",
+            });
+          }
+        }}
+        title="Delete Blog"
+        description="Are you sure you want to delete this blog? This action cannot be undone."
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   );
 };

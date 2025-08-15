@@ -8,6 +8,11 @@ const newsletterSubscriberSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
+    },
     isActive: {
       type: Boolean,
       default: true,

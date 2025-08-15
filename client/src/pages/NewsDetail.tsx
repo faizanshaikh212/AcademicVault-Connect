@@ -6,8 +6,7 @@ import { formatDistance } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import CodeBlock from "@/components/shared/CodeBlock";
 
 interface NewsItem {
   _id: string;
@@ -60,7 +59,7 @@ const NewsDetail: React.FC = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-950 min-h-screen py-12">
+    <div className="bg-white dark:bg-gray-950 min-h-screen py-12 pt-30">
       <article className="container mx-auto px-4 max-w-6xl">
         {/* Cover Image */}
         <div className="w-full h-[500px] relative mb-8">
@@ -156,73 +155,7 @@ const NewsDetail: React.FC = () => {
                   </h4>
                 ),
                 code: (props) => {
-                  const { children, className } = props;
-                  const language = className
-                    ? className.replace("language-", "")
-                    : "text";
-
-                  // For inline code
-                  if (!className) {
-                    return (
-                      <code className="bg-[#1f2428] text-[#e6edf3] rounded px-1.5 py-0.5 text-[0.9em] font-mono">
-                        {children}
-                      </code>
-                    );
-                  }
-
-                  // For code blocks
-                  const copyCode = () => {
-                    navigator.clipboard.writeText(
-                      String(children).replace(/\n$/, "")
-                    );
-                  };
-
-                  return (
-                    <div className="relative group my-4">
-                      <button
-                        onClick={copyCode}
-                        className="absolute right-2 top-2 p-2 rounded-lg bg-[#30363d] opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
-                        title="Copy code"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="text-gray-300 hover:text-white"
-                        >
-                          <rect
-                            x="9"
-                            y="9"
-                            width="13"
-                            height="13"
-                            rx="2"
-                            ry="2"
-                          />
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                        </svg>
-                      </button>
-                      <SyntaxHighlighter
-                        language={language}
-                        style={vscDarkPlus}
-                        customStyle={{
-                          margin: "0",
-                          padding: "16px",
-                          background: "none",
-                          backgroundColor: "#0d1117",
-                          border: "1px solid #30363d",
-                          borderRadius: "6px",
-                        }}
-                      >
-                        {String(children).replace(/\n$/, "")}
-                      </SyntaxHighlighter>
-                    </div>
-                  );
+                  return <CodeBlock {...props} />;
                 },
                 a: ({ href, children }) => (
                   <a

@@ -24,6 +24,7 @@ const adminNavLinks = [
     icon: CreditCard,
   },
   { name: "Content Management", href: "/admin/content", icon: FileText },
+  { name: "Pages", href: "/admin/pages", icon: FileText },
   { name: "Customer Care", href: "/admin/customer-care", icon: UserCheck },
   { name: "News Management", href: "/admin/news", icon: Mail },
 ];

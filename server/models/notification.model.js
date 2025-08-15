@@ -53,8 +53,17 @@ const notificationSchema = new mongoose.Schema(
         "blog_comment",
         "role_approved",
         "role_rejected",
+        "premium_approved",
+        "premium_rejected",
+        "new_news",
+        "newsletter_status_change",
       ],
       required: true,
+    },
+    // Optional message for the notification (e.g., news title)
+    message: {
+      type: String,
+      required: false,
     },
     // A link to the content the notification is about (e.g., a chat, a profile)
     link: {
@@ -62,6 +71,10 @@ const notificationSchema = new mongoose.Schema(
       required: true,
     },
     isRead: {
+      type: Boolean,
+      default: false,
+    },
+    isCleared: {
       type: Boolean,
       default: false,
     },
