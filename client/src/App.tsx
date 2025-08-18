@@ -29,13 +29,6 @@ import NotFound from "./pages/NotFound";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ContactUs from "./pages/ContactUs";
-import NotificationHistory from "./pages/NotificationHistory";
-import News from "./pages/News";
-import NewsDetail from "./pages/NewsDetail";
-import NewsForm from "./pages/admin/NewsForm";
-import NewsManagement from "./pages/admin/NewsManagement";
-import SubscriberList from "./pages/admin/SubscriberList";
-import AboutUs from "./pages/AboutUs";
 
 // Layout Imports
 import Navbar from "./components/layout/Navbar";
@@ -98,9 +91,6 @@ function App() {
             <Route path="premium-requests" element={<PremiumRequests />} />
             <Route path="customer-care" element={<CustomerCare />} />
             <Route path="content" element={<ContentManagement />} />
-            <Route path="news" element={<NewsManagement />} />
-            <Route path="news/new" element={<NewsForm />} />
-            <Route path="subscribers" element={<SubscriberList />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoute />}></Route>
@@ -110,8 +100,6 @@ function App() {
           <Route path="projects/:id" element={<ProjectDetail />} />
           <Route path="blogs" element={<Blogs />} />
           <Route path="blogs/:id" element={<BlogDetail />} />
-          <Route path="news" element={<News />} />
-          <Route path="news/:id" element={<NewsDetail />} />
           <Route path="purpose" element={<OurPurpose />} />
           <Route path="network" element={<OurNetwork />} />
           <Route path="profile/:username" element={<Profile />} />
@@ -123,15 +111,10 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="request-teacher-role" element={<RoleRequest />} />
             <Route path="request-premium" element={<RequestPremium />} />
-            <Route
-              path="notification-history"
-              element={<NotificationHistory />}
-            />
           </Route>
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/contact" element={<ContactUs />} />
-          <Route path="/about-us" element={<AboutUs />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

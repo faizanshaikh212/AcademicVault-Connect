@@ -4,7 +4,6 @@ import { User } from "../types";
 import UserCard from "@/components/shared/UserCard";
 import { Input } from "@/components/ui/Input";
 import { Search } from "lucide-react";
-import NewsletterSubscribe from "@/components/shared/NewsletterSubscribe";
 
 const cardThemes = [
   { borderColor: "#4F46E5", gradient: "linear-gradient(145deg,#4F46E5,#000)" },
@@ -99,9 +98,6 @@ const OurNetwork: React.FC = () => {
           ) : (
             <p className="text-center text-gray-500">No users found.</p>
           )}
-        </div>
-        <div className="mt-20">
-          <NewsletterSubscribe />
         </div>
       </div>
     </div>

@@ -4,7 +4,6 @@ import PremiumRequest from "../models/premiumRequest.model.js";
 import Notification from "../models/notification.model.js";
 import Project from "../models/project.model.js";
 import Blog from "../models/blog.model.js";
-import { News } from "../models/news.model.js";
 
 /**
  * @desc    Get dashboard statistics
@@ -13,31 +12,24 @@ import { News } from "../models/news.model.js";
  */
 const getDashboardStats = async (req, res) => {
   try {
-    const [
-      totalUsers,
-      totalProjects,
-      totalBlogs,
-      totalNews,
-      pendingRoleRequests,
-      pendingPremiumRequests,
-      premiumUsers,
-      teacherUsers,
-    ] = await Promise.all([
-      User.countDocuments(),
-      Project.countDocuments(),
-      Blog.countDocuments(),
-      News.countDocuments(),
-      RoleRequest.countDocuments({ status: "pending" }),
-      PremiumRequest.countDocuments({ status: "pending" }),
-      User.countDocuments({ "premium.isPremium": true }),
-      User.countDocuments({ role: "teacher" }),
-    ]);
+    const totalUsers = await User.countDocuments();
+    const totalProjects = await Project.countDocuments();
+    const totalBlogs = await Blog.countDocuments();
+    const pendingRoleRequests = await RoleRequest.countDocuments({
+      status: "pending",
+    });
+    const pendingPremiumRequests = await PremiumRequest.countDocuments({
+      status: "pending",
+    });
+    const premiumUsers = await User.countDocuments({
+      "premium.isPremium": true,
+    });
+    const teacherUsers = await User.countDocuments({ role: "teacher" });
 
     res.json({
       totalUsers,
       totalProjects,
       totalBlogs,
-      totalNews,
       pendingRoleRequests,
       pendingPremiumRequests,
       premiumUsers,

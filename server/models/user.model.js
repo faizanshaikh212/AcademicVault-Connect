@@ -1,19 +1,7 @@
-/**
- * User Model Module
- * Defines the schema and methods for user data in the application
- * Includes authentication, profile management, and social features
- * @module models/user
- */
-
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-/**
- * Schema for external platform connections
- * @typedef {Object} ConnectionSchema
- * @property {string} platform - The name of the external platform
- * @property {string} url - The URL to the user's profile on that platform
- */
+// Define the schema for a user's connections (e.g., GitHub, LinkedIn)
 const connectionSchema = new mongoose.Schema(
   {
     platform: { type: String, required: true },
@@ -22,18 +10,9 @@ const connectionSchema = new mongoose.Schema(
   { _id: false }
 ); // _id is not needed for this sub-document
 
-/**
- * Main User Schema
- * Comprehensive user model with profile, settings, social features, and premium status
- * @typedef {Object} UserSchema
- */
+// Define the main User Schema
 const userSchema = new mongoose.Schema(
   {
-    /**
-     * User's first name
-     * @type {String}
-     * @required
-     */
     firstName: {
       type: String,
       required: [true, "First name is required"],

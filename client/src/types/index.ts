@@ -28,11 +28,6 @@ export interface User {
   };
   isFollowing?: boolean;
   updatedAt?: string;
-  newsletterSubscription?: {
-    _id: string;
-    isActive: boolean;
-    subscriptionDate: string;
-  };
 }
 
 // Defines the structure of the authentication context's state
@@ -108,15 +103,8 @@ export interface Blog {
 export interface Notification {
   _id: string;
   sender: Pick<User, "_id" | "username" | "profile">;
-  type:
-    | "follow"
-    | "friend_request"
-    | "new_news"
-    | "role_approved"
-    | "premium_approved";
+  type: "follow" | "friend_request";
   link: string;
-  message?: string;
   isRead: boolean;
-  isCleared?: boolean;
   createdAt: string;
 }

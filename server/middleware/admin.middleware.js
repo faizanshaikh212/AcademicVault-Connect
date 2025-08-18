@@ -1,25 +1,5 @@
 /**
- * Admin Authorization Middleware Module
- * Protects admin-only routes by verifying admin role
- * @module middleware/admin
- */
-
-/**
- * Verifies that the authenticated user has admin privileges
- * Must be used after authentication middleware
- *
- * @function admin
- * @param {Object} req - Express request object
- * @param {Object} req.user - Authenticated user object from auth middleware
- * @param {string[]} req.user.role - User's roles array
- * @param {Object} res - Express response object
- * @param {Function} next - Next middleware function
- * @throws {403} If user is not an admin
- * @description
- * Checks if:
- * 1. User object exists on request (auth middleware ran)
- * 2. User has role property
- * 3. User's roles include "admin"
+ * Middleware to check if the user is an administrator.
  */
 const admin = (req, res, next) => {
   /*

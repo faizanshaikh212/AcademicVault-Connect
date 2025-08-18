@@ -8,14 +8,12 @@ import {
   GraduationCap,
   CreditCard,
   BookOpen,
-  Mail,
 } from "lucide-react";
 
 interface Stats {
   totalUsers: number;
   totalProjects: number;
   totalBlogs: number;
-  totalNews: number;
   pendingRoleRequests: number;
   pendingPremiumRequests: number;
   premiumUsers: number;
@@ -56,21 +54,7 @@ const AdminDashboard: React.FC = () => {
     fetchStats();
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <p className="text-lg">Loading dashboard...</p>
-      </div>
-    );
-  }
-
-  if (!stats) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <p className="text-lg text-red-500">Failed to load dashboard data.</p>
-      </div>
-    );
-  }
+  if (isLoading) return <p className="text-center">Loading dashboard...</p>;
 
   return (
     <div>
@@ -82,17 +66,17 @@ const AdminDashboard: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <StatCard
               title="Total Users"
-              value={stats.totalUsers.toLocaleString()}
+              value={stats?.totalUsers.toLocaleString() ?? "0"}
               icon={Users}
             />
             <StatCard
               title="Premium Users"
-              value={stats.premiumUsers.toLocaleString()}
+              value={stats?.premiumUsers.toLocaleString() ?? "0"}
               icon={Crown}
             />
             <StatCard
               title="Teacher Users"
-              value={stats.teacherUsers.toLocaleString()}
+              value={stats?.teacherUsers.toLocaleString() ?? "0"}
               icon={GraduationCap}
             />
           </div>
@@ -104,28 +88,23 @@ const AdminDashboard: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Total Projects"
-              value={stats.totalProjects.toLocaleString()}
+              value={stats?.totalProjects.toLocaleString() ?? "0"}
               icon={FileText}
             />
             <StatCard
               title="Total Blogs"
-              value={stats.totalBlogs.toLocaleString()}
+              value={stats?.totalBlogs.toLocaleString() ?? "0"}
               icon={BookOpen}
             />
             <StatCard
               title="Pending Role Requests"
-              value={stats.pendingRoleRequests.toLocaleString()}
+              value={stats?.pendingRoleRequests.toLocaleString() ?? "0"}
               icon={CheckSquare}
             />
             <StatCard
               title="Pending Premium Requests"
-              value={stats.pendingPremiumRequests.toLocaleString()}
+              value={stats?.pendingPremiumRequests.toLocaleString() ?? "0"}
               icon={CreditCard}
-            />
-            <StatCard
-              title="Total News"
-              value={stats.totalNews.toLocaleString()}
-              icon={Mail}
             />
           </div>
         </div>

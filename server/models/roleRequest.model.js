@@ -1,29 +1,6 @@
-/**
- * Role Request Model Module
- * Handles teacher/admin role upgrade requests
- * Enforces one pending request per user policy
- * @module models/roleRequest
- */
-
 import mongoose from "mongoose";
 
-/**
- * Role Request Schema Definition
- * @typedef {Object} RoleRequestSchema
- * @property {ObjectId} user - Reference to requesting user
- * @property {string} fullName - User's full name
- * @property {string} qualifications - Academic/Professional qualifications
- * @property {string} bio - Professional biography
- * @property {string} status - Request status (pending/approved/rejected)
- * @property {Date} createdAt - Request submission timestamp
- * @property {Date} updatedAt - Last status update timestamp
- *
- * @description
- * Business Rules:
- * - One active request per user
- * - Required qualification details
- * - Status workflow management
- */
+// Define the Role Request Schema
 const roleRequestSchema = new mongoose.Schema(
   {
     user: {

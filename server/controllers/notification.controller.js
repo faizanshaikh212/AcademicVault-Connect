@@ -7,10 +7,7 @@ import Notification from "../models/notification.model.js";
  */
 const getNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({
-      recipient: req.user._id,
-      isCleared: false,
-    })
+    const notifications = await Notification.find({ recipient: req.user._id })
       .populate("sender", "username profile.avatar")
       .sort({ createdAt: -1 });
 
@@ -39,47 +36,4 @@ const markNotificationsAsRead = async (req, res) => {
   }
 };
 
-/**
- * @desc    Get all notifications history for the logged-in user
- * @route   GET /api/notifications/history
- * @access  Private
- */
-const getNotificationHistory = async (req, res) => {
-  try {
-    const notifications = await Notification.find({
-      recipient: req.user._id,
-    })
-      .populate("sender", "username profile.avatar")
-      .sort({ createdAt: -1 });
-
-    res.json(notifications);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Server error fetching notification history." });
-  }
-};
-
-/**
- * @desc    Clear notifications by marking them as cleared
- * @route   POST /api/notifications/clear
- * @access  Private
- */
-const clearNotifications = async (req, res) => {
-  try {
-    await Notification.updateMany(
-      { recipient: req.user._id, isCleared: false },
-      { $set: { isCleared: true } }
-    );
-    res.status(200).json({ message: "Notifications cleared." });
-  } catch (error) {
-    res.status(500).json({ message: "Server error clearing notifications." });
-  }
-};
-
-export {
-  getNotifications,
-  markNotificationsAsRead,
-  getNotificationHistory,
-  clearNotifications,
-};
+export { getNotifications, markNotificationsAsRead };

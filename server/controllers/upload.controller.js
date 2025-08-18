@@ -13,15 +13,6 @@
  * @route   POST /api/upload
  * @access  Private
  */
-/**
- * Handles file uploads with premium user considerations
- * @function uploadFile
- * @async
- * @param {Request} req - Express request object
- * @param {Response} res - Express response object
- * @returns {Promise<void>}
- * @throws {Error} When file upload fails or validation fails
- */
 const uploadFile = async (req, res) => {
   try {
     // Check if user is authenticated
