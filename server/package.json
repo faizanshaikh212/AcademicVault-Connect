@@ -1,15 +1,30 @@
 {
   "name": "academic-vault-server",
   "version": "1.0.0",
-  "description": "Backend for the Academic Vault platform.",
+  "description": "Backend server for Academic Vault",
   "main": "server.js",
   "type": "module",
+  "author": {
+    "name": "Fayz212",
+    "url": "https://github.com/faiz-n-shk"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/faiz-n-shk/academic-vault"
+  },
+  "bugs": {
+    "url": "https://github.com/faiz-n-shk/academic-vault/issues"
+  },
+  "homepage": "http://localhost:5173",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.17.0",
+    "npm": ">=10.9.2"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "author": "Fayz212 & Gemini",
-  "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cloudinary": "1.41.3",

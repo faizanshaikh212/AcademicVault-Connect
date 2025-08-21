@@ -1,5 +1,6 @@
 import PremiumRequest from "../models/premiumRequest.model.js";
 import User from "../models/user.model.js";
+import logger from "../utils/logger.js";
 
 /**
  * @desc    Submit a request for premium status
@@ -93,7 +94,7 @@ export const deletePremiumRequest = async (req, res) => {
     await request.deleteOne();
     res.json({ message: "Premium request deleted successfully." });
   } catch (error) {
-    console.error("Error deleting premium request:", error);
+    logger.error("Error deleting premium request:", error);
     res.status(500).json({
       message: "Server error deleting premium request.",
       error: error.message,
@@ -106,13 +107,13 @@ export const updatePremiumRequestStatus = async (req, res) => {
   const { status, adminNotes } = req.body;
 
   try {
-    console.log("Processing request:", id);
-    console.log("Status:", status);
-    console.log("Admin Notes:", adminNotes);
+    logger.debug("Processing request:", id);
+    logger.debug("Status:", status);
+    logger.debug("Admin Notes:", adminNotes);
 
     // Find the request and populate the user information
     const request = await PremiumRequest.findById(id).populate("user");
-    console.log("Found request:", request);
+    logger.debug("Found request:", request);
 
     if (!request) {
       return res.status(404).json({ message: "Premium request not found." });
@@ -156,12 +157,12 @@ export const updatePremiumRequestStatus = async (req, res) => {
         request: updatedRequest,
       });
     } catch (saveError) {
-      console.error("Error saving changes:", saveError);
+      logger.error("Error saving changes:", saveError);
       throw saveError;
     }
   } catch (error) {
-    console.error("Error details:", error);
-    console.error("Error stack:", error.stack);
+    logger.error("Error details:", error);
+    logger.error("Error stack:", error.stack);
     res.status(500).json({
       message: "Server error updating premium request.",
       error: error.message,

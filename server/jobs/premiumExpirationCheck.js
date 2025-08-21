@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
+import logger from "../utils/logger.js";
 
 // Schedule job to run daily at midnight
 cron.schedule("0 0 * * *", async () => {
@@ -51,6 +52,6 @@ cron.schedule("0 0 * * *", async () => {
       }
     }
   } catch (error) {
-    console.error("Premium expiration check error:", error);
+    logger.error("Premium expiration check error:", error);
   }
 });

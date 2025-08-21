@@ -205,6 +205,6 @@ export {
   getAllProjects,
   getProjectById,
   updateProject,
-  deleteProject, // The duplicate was here
+  deleteProject,
   getProjectsByUserId,
 };

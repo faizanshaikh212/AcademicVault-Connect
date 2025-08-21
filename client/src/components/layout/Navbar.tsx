@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   RotateCw,
   RefreshCcw,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAvatarUrl } from "@/lib/avatar";
@@ -27,10 +28,12 @@ import {
 } from "@/components/ui/DropdownMenu";
 import NotificationBell from "./NotificationBell";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
+import CopyTooltip from "@/components/ui/CopyTooltip";
 
 const navLinks = [
   { name: "Our Purpose", href: "/purpose", icon: Users },
   { name: "Our Network", href: "/network", icon: Code },
+  { name: "News", href: "/news", icon: Rss },
   { name: "Blogs", href: "/blogs", icon: Rss },
   { name: "Projects", href: "/projects", icon: Layers },
 ];
@@ -40,6 +43,9 @@ const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRelogging, setIsRelogging] = useState(false);
+  const [copied, setCopied] = useState<{ type: "name" | "username" | null }>({
+    type: null,
+  });
   const scrollDirection = useScrollDirection();
 
   const handleRelogin = async () => {
@@ -88,6 +94,12 @@ const Navbar: React.FC = () => {
     setTimeout(() => {
       window.location.reload();
     }, 300);
+  };
+
+  const handleCopy = (text: string, type: "name" | "username") => {
+    navigator.clipboard.writeText(text);
+    setCopied({ type });
+    setTimeout(() => setCopied({ type: null }), 1500);
   };
 
   return (
@@ -143,18 +155,47 @@ const Navbar: React.FC = () => {
             <>
               <NotificationBell />
               <DropdownMenu>
-                <DropdownMenuTrigger>
-                  <img
-                    className="h-10 w-10 rounded-full object-cover cursor-pointer ring-2 ring-offset-2 ring-transparent hover:ring-blue-500 transition-all"
-                    src={getAvatarUrl(
-                      user.profile?.avatar,
-                      user.premium?.isPremium,
-                      user.updatedAt
-                    )}
-                    alt={user.username}
-                  />
+                <DropdownMenuTrigger asChild>
+                  <button>
+                    <img
+                      className="h-10 w-10 rounded-full object-cover cursor-pointer ring-2 ring-offset-2 ring-transparent hover:ring-blue-500 transition-all"
+                      src={getAvatarUrl(
+                        user.profile?.avatar,
+                        user.premium?.isPremium,
+                        user.updatedAt
+                      )}
+                      alt={user.username}
+                    />
+                  </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <div className="px-4 pt-4 pb-2 flex flex-col items-start gap-2 relative">
+                    <div className="flex flex-col gap-1 w-full">
+                      <button
+                        className="text-base font-semibold text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 px-2 py-1 rounded w-fit relative"
+                        onClick={() =>
+                          handleCopy(
+                            `${user.firstName} ${user.lastName}`,
+                            "name"
+                          )
+                        }
+                      >
+                        {user.firstName} {user.lastName}
+                        {copied.type === "name" && (
+                          <CopyTooltip show={true} text="Copied!" />
+                        )}
+                      </button>
+                      <button
+                        className="text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 px-2 py-1 rounded w-fit relative"
+                        onClick={() => handleCopy(user.username, "username")}
+                      >
+                        @{user.username}
+                        {copied.type === "username" && (
+                          <CopyTooltip show={true} text="Copied!" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
                   <DropdownMenuItem>
                     <Link
                       to={`/profile/${user.username}`}
@@ -168,6 +209,32 @@ const Navbar: React.FC = () => {
                     <Link to="/settings" className="flex items-center w-full">
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <Link
+                      to="/projects/new"
+                      className="flex items-center w-full"
+                    >
+                      <Layers className="mr-2 h-4 w-4" />
+                      <span>Post Project</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link to="/blogs/new" className="flex items-center w-full">
+                      <Rss className="mr-2 h-4 w-4" />
+                      <span>Post Blog</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <Link
+                      to="/notification-history"
+                      className="flex items-center w-full"
+                    >
+                      <Bell className="mr-2 h-4 w-4" />
+                      <span>Notification History</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -215,7 +282,20 @@ const Navbar: React.FC = () => {
             </>
           )}
         </div>
-        <div className="md:hidden">
+        <div className="md:hidden flex items-center gap-4">
+          {user && (
+            <Link to={`/profile/${user.username}`}>
+              <img
+                className="h-8 w-8 rounded-full object-cover ring-2 ring-offset-2 ring-transparent hover:ring-blue-500 transition-all"
+                src={getAvatarUrl(
+                  user.profile?.avatar,
+                  user.premium?.isPremium,
+                  user.updatedAt
+                )}
+                alt={user.username}
+              />
+            </Link>
+          )}
           <Button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             variant="ghost"
@@ -266,15 +346,51 @@ const Navbar: React.FC = () => {
             )}
             <div className="border-t border-gray-200/50 dark:border-gray-800/50 pt-4 mt-2 flex flex-col space-y-2">
               {user ? (
-                <Button
-                  onClick={() => {
-                    logout();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  variant="outline"
-                >
-                  Logout
-                </Button>
+                <>
+                  <NavLink
+                    to={`/profile/${user.username}`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                  >
+                    <User className="h-5 w-5" />
+                    My Profile
+                  </NavLink>
+                  <NavLink
+                    to="/settings"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                  >
+                    <Settings className="h-5 w-5" />
+                    Settings
+                  </NavLink>
+                  <NavLink
+                    to="/projects/new"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                  >
+                    <Layers className="h-5 w-5" />
+                    Post Project
+                  </NavLink>
+                  <NavLink
+                    to="/blogs/new"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                  >
+                    <Rss className="h-5 w-5" />
+                    Post Blog
+                  </NavLink>
+                  <Button
+                    onClick={() => {
+                      logout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    variant="outline"
+                    className="mt-2"
+                  >
+                    <LogOut className="mr-2 h-5 w-5" />
+                    Logout
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button asChild variant="outline">

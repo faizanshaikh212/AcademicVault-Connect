@@ -1,1 +1,197 @@
 @import "tailwindcss";
+
+/* In your main index.css or App.css file */
+
+html,
+body {
+  overflow: auto !important; /* Ensures scrollbars appear when content overflows */
+  height: auto !important; /* Allows the body to grow with the content */
+}
+
+/* Markdown Base Styles */
+.markdown-content {
+  color: #e6edf3;
+  line-height: 1.6;
+  font-size: 16px;
+  max-width: 100%;
+  margin: 0 auto;
+  word-wrap: break-word;
+}
+
+/* GitHub Markdown Styles */
+.github-markdown {
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  margin: 0;
+  color: #24292f;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: 16px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.dark .github-markdown {
+  color: #c9d1d9;
+  background-color: #0d1117;
+}
+
+/* Code Block Styles */
+pre {
+  margin: 0 !important;
+  padding: 16px !important;
+  background: rgb(17, 19, 23) !important;
+  border-radius: 6px !important;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  border: 1px solid rgb(48, 54, 61) !important;
+}
+
+pre > div {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Code and inline code styling */
+.github-markdown code,
+.markdown-content code {
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas,
+    Liberation Mono, monospace;
+  font-size: 85%;
+  background-color: #1f2428;
+  color: #e6edf3;
+  padding: 0.2em 0.4em;
+  border-radius: 6px;
+}
+
+.github-markdown pre code,
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: 100%;
+}
+
+/* Headers */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #e6edf3;
+}
+
+.markdown-content h1 {
+  font-size: 2.5rem;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 0.75rem;
+}
+
+.markdown-content h2 {
+  font-size: 2rem;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 0.5rem;
+}
+
+.markdown-content h3 {
+  font-size: 1.5rem;
+}
+
+.markdown-content h4 {
+  font-size: 1.25rem;
+}
+
+/* Lists */
+.markdown-content ul {
+  list-style-type: disc;
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.markdown-content ol {
+  list-style-type: decimal;
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.markdown-content li {
+  margin-bottom: 0.5rem;
+  color: #e6edf3;
+  display: list-item;
+  padding-left: 0.5rem;
+}
+
+/* Links */
+.markdown-content a {
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+/* Blockquotes */
+.markdown-content blockquote {
+  border-left: 4px solid #30363d;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #8b949e;
+}
+
+/* Tables */
+.markdown-content table {
+  width: 100%;
+  margin-bottom: 1rem;
+  border-collapse: collapse;
+}
+
+.markdown-content th,
+.markdown-content td {
+  padding: 0.5rem;
+  border: 1px solid #30363d;
+  color: #e6edf3;
+}
+
+.markdown-content th {
+  background-color: #161b22;
+  font-weight: 600;
+}
+
+/* Images */
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  box-sizing: content-box;
+  background-color: #0d1117;
+  border-radius: 6px;
+  border-style: none;
+  margin: 1rem 0;
+  align-self: center;
+  display: block;
+}
+
+.markdown-content img[align="right"] {
+  padding-left: 20px;
+  float: right;
+}
+
+.markdown-content img[align="left"] {
+  padding-right: 20px;
+  float: left;
+}
+
+/* Other elements */
+.markdown-content hr {
+  border: 0;
+  border-top: 1px solid #30363d;
+  margin: 1.5rem 0;
+}

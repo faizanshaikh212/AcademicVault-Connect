@@ -1,17 +1,38 @@
 # In main.spec
 
 # -*- mode: python ; coding: utf-8 -*-
+import os
+
 block_cipher = None
 
+# Custom function to collect server files, excluding .env
+def get_server_files():
+    data_files = []
+    server_dir = 'server'
+    for root, dirs, files in os.walk(server_dir):
+        for file_name in files:
+            source_path = os.path.join(root, file_name)
+            dest_path = os.path.relpath(source_path, '.')
+            if dest_path == os.path.join('server', '.env'):
+                print(f"INFO: Excluding {dest_path}")
+                continue
+            data_files.append((source_path, os.path.dirname(dest_path)))
+    return data_files
+
+# The Analysis block, updated to include the 'bin' folder
 a = Analysis(
-    ['main.py'],
+    ['dist_obfuscated/main.py'], # Points to your scrambled script
     pathex=[],
     binaries=[],
     datas=[
         ('client/dist', 'client/dist'),
-        ('server', 'server')
+        ('node_modules', 'node_modules'),
+        ('bin', 'bin')  # <-- ADD THIS LINE TO INCLUDE NODE.JS
+    ] + get_server_files(),
+    hiddenimports=[
+        'webview',
+        'requests'
     ],
-    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -28,12 +49,12 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='Academic Vault',  # This sets the final name to 'Academic Vault.exe'
+    name='Academic Vault',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False, # This is the line that hides the command prompt
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

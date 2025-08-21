@@ -1,7 +1,18 @@
 import Blog from "../models/blog.model.js";
 import User from "../models/user.model.js";
 
-// ... (createBlog, getAllBlogs, getBlogById, updateBlog, deleteBlog functions are unchanged)
+/**
+ * Creates a new blog post
+ * @route POST /api/blogs
+ * @param {Object} req - Express request object
+ * @param {Object} req.body - Request body containing blog data
+ * @param {string} req.body.title - Blog title
+ * @param {string} req.body.content - Blog content
+ * @param {string} req.body.coverImage - URL of the blog cover image
+ * @param {string[]} req.body.tags - Array of blog tags
+ * @param {Object} res - Express response object
+ * @returns {Object} Created blog post
+ */
 const createBlog = async (req, res) => {
   try {
     const { title, content, coverImage, tags } = req.body;

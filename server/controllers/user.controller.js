@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import RoleRequest from "../models/roleRequest.model.js";
 import Notification from "../models/notification.model.js";
+import logger from "../utils/logger.js";
 
 /**
  * @desc    Get user profile by username
@@ -216,7 +217,7 @@ const followUser = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Follow Error:", error);
+    logger.error("Follow Error:", error);
     res.status(500).json({
       message: "Server error during follow action.",
       error: error.message,

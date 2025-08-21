@@ -1,6 +1,23 @@
+/**
+ * Blog Model Module
+ * Defines the schema for blog posts in the application
+ * Includes text indexing for search functionality
+ * @module models/blog
+ */
+
 import mongoose from "mongoose";
 
-// Define the main Blog Schema
+/**
+ * Blog Schema Definition
+ * @typedef {Object} BlogSchema
+ * @property {ObjectId} author - Reference to User model
+ * @property {string} title - Blog post title
+ * @property {string} content - Blog post content in Markdown
+ * @property {string} coverImage - Cloudinary URL for blog cover
+ * @property {string[]} tags - Array of categorization tags
+ * @property {Date} createdAt - Automatic timestamp
+ * @property {Date} updatedAt - Automatic timestamp
+ */
 const blogSchema = new mongoose.Schema(
   {
     author: {

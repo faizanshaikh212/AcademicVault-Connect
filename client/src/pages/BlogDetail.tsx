@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { Calendar, User as UserIcon, Edit } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
+import CodeBlock from "@/components/shared/CodeBlock";
 
 const BlogDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -75,9 +77,81 @@ const BlogDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* ADDED PROSE CLASS HERE */}
-      <article className="prose prose-lg dark:prose-invert max-w-none">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+      {/* Markdown content with syntax highlighting */}
+      <article className="markdown-content">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw]}
+          components={{
+            img: ({ node, alt, src, ...props }) => (
+              <img
+                alt={alt}
+                src={src}
+                {...props}
+                className="max-w-full h-auto"
+              />
+            ),
+            ul: ({ node, ...props }) => (
+              <ul className="list-disc list-inside my-4" {...props} />
+            ),
+            ol: ({ node, ...props }) => (
+              <ol className="list-decimal list-inside my-4" {...props} />
+            ),
+            li: ({ node, children, ...props }) => (
+              <li className="ml-4 mb-2" {...props}>
+                {children}
+              </li>
+            ),
+            h1: ({ node, children, ...props }) => (
+              <h1
+                className="text-4xl font-bold mb-6 pb-2 border-b border-gray-600"
+                {...props}
+              >
+                {children}
+              </h1>
+            ),
+            h2: ({ node, children, ...props }) => (
+              <h2
+                className="text-3xl font-bold mb-4 pb-2 border-b border-gray-600"
+                {...props}
+              >
+                {children}
+              </h2>
+            ),
+            h3: ({ node, children, ...props }) => (
+              <h3 className="text-2xl font-bold mb-3" {...props}>
+                {children}
+              </h3>
+            ),
+            h4: ({ node, children, ...props }) => (
+              <h4 className="text-xl font-bold mb-2" {...props}>
+                {children}
+              </h4>
+            ),
+            code: (props) => {
+              return <CodeBlock {...props} />;
+            },
+            a: ({ href, children }) => (
+              <a
+                href={href}
+                className="text-blue-600 dark:text-blue-400 no-underline hover:underline"
+                target={href?.startsWith("http") ? "_blank" : undefined}
+                rel={
+                  href?.startsWith("http") ? "noopener noreferrer" : undefined
+                }
+              >
+                {children}
+              </a>
+            ),
+            table: ({ children }) => (
+              <div className="overflow-x-auto my-4">
+                <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+                  {children}
+                </table>
+              </div>
+            ),
+          }}
+        >
           {blog.content}
         </ReactMarkdown>
       </article>

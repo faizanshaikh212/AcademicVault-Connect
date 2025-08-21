@@ -4,48 +4,79 @@ import webview
 import subprocess
 import os
 import sys
+import time
+import requests
 
 # This is a flag from the Windows API to hide the console window for a subprocess
 CREATE_NO_WINDOW = 0x08000000
 
-# 1. Define your secrets here, taken from your .env file
-# This is how you securely provide them to the packaged app
+# --- THIS FUNCTION IS NOW UPDATED ---
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    # If the _MEIPASS attribute exists, use it. Otherwise, use the current directory.
+    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
+    return os.path.join(base_path, relative_path)
+# ------------------------------------
+
+# --- Your Secrets ---
 SECRETS = {
     'MONGO_URI': '',
     'NODE_ENV': 'production',
     'PORT': '',
-    'JWT_SECRET':'',
-    'CLOUDINARY_CLOUD_NAME':'',
-    'CLOUDINARY_API_KEY':'',
-    'CLOUDINARY_API_SECRET':''
-    # Add any other required environment variables here
+    'JWT_SECRET': '',
+    'CLOUDINARY_CLOUD_NAME': '',
+    'CLOUDINARY_API_KEY': '',
+    'CLOUDINARY_API_SECRET': ''
 }
 
-# 2. Prepare the environment for the Node.js process
+# --- Environment and Paths Setup ---
 server_env = os.environ.copy()
 server_env.update(SECRETS)
 
-# Define the path to your Node.js server's main file
-server_entry_file = os.path.join(os.path.dirname(__file__), 'server', 'server.js')
+# Define paths using the resource_path function
+node_executable_path = resource_path(os.path.join('bin', 'node-v22.18.0-win-x64', 'node.exe'))
+server_entry_file = resource_path(os.path.join('server', 'server.js'))
 
-# 3. Start the Node.js server with the secrets in its environment
+# --- Start the Node.js Server ---
 server_process = subprocess.Popen(
-    ['node', server_entry_file],
-    env=server_env,  # Pass the environment with your secrets
-    creationflags=CREATE_NO_WINDOW  # This hides the console window for the Node.js server
+    [node_executable_path, server_entry_file],
+    env=server_env,
+    creationflags=CREATE_NO_WINDOW
 )
 
-# Define the URL your server is running on
+# --- Start the Application Window ---
 app_url = f"http://localhost:{SECRETS['PORT']}"
 
+# --- NEW HEALTH CHECK FUNCTION ---
+def is_server_ready(url):
+    try:
+        response = requests.get(url)
+        # If we get a 200 OK, the server is ready
+        if response.status_code == 200:
+            print("Server is ready!")
+            return True
+    except requests.ConnectionError:
+        # Server is not ready yet
+        return False
+    return False
+# --------------------------------
+
 if __name__ == '__main__':
-    pywebview.create_window(
+    # --- NEW HEALTH CHECK LOOP ---
+    # Wait for the server to be ready before creating the window
+    while not is_server_ready(app_url):
+        print("Waiting for server to start...")
+        time.sleep(1) # Wait 1 second before checking again
+    # ---------------------------
+
+    webview.create_window(
         'Academic Vault',
         app_url,
         width=1280,
-        height=720
+        height=720,
+        resizable=True,
+        min_size=(360, 640)
     )
-    pywebview.start()
+    webview.start()
 
-    # When the window is closed, stop the Node.js server
     server_process.kill()

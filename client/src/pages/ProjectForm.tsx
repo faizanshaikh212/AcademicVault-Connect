@@ -6,12 +6,16 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/useToast";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 
 const ProjectForm: React.FC = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const isEditMode = Boolean(id);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -79,9 +83,33 @@ const ProjectForm: React.FC = (): JSX.Element => {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    // Check if user is trying to add a GIF URL without premium
+    if (name === "coverImageUrl" && value) {
+      const isGif =
+        value.toLowerCase().endsWith(".gif") ||
+        value.toLowerCase().includes("/image/gif") ||
+        value.toLowerCase().includes("format=gif");
+      if (isGif && !user?.premium?.isPremium) {
+        setError("Please upgrade to premium to use animated GIF images.");
+        return;
+      }
+    }
+
+    setFormData({ ...formData, [name]: value });
+    setError(null);
   };
 
+  /**
+   * Handles file upload for project media
+   * - Validates file type and size
+   * - Supports different file types for premium users
+   * - Uploads to Cloudinary and updates form state
+   *
+   * @param {React.ChangeEvent<HTMLInputElement>} e - File input change event
+   * @returns {Promise<void>}
+   */
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -101,17 +129,17 @@ const ProjectForm: React.FC = (): JSX.Element => {
       return;
     }
 
-    // Set allowed types based on premium status
-    const basicTypes = ["image/jpeg", "image/png", "image/gif"];
-    const premiumTypes = [...basicTypes, "video/mp4", "video/webm"];
-    const allowedTypes = isPremium ? premiumTypes : basicTypes;
+    // Check if it's a GIF and user is not premium
+    if (file.type === "image/gif" && !isPremium) {
+      setError("Please upgrade to premium to use animated GIF images.");
+      e.target.value = "";
+      return;
+    }
 
+    // Only allow supported image types
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
-      setError(
-        user?.premium
-          ? "Please upload a JPEG, PNG, GIF, MP4, or WEBM file"
-          : "Please upload a JPEG, PNG, or GIF image"
-      );
+      setError("Please upload only JPEG, JPG, PNG, or GIF images.");
       e.target.value = "";
       return;
     }
@@ -145,6 +173,13 @@ const ProjectForm: React.FC = (): JSX.Element => {
     }
   };
 
+  /**
+   * Handles the project form submission
+   * Processes and validates form data before sending to the server
+   * Handles media uploads and URL validations
+   * @param {React.FormEvent} e - Form submission event
+   * @returns {Promise<void>}
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -155,6 +190,17 @@ const ProjectForm: React.FC = (): JSX.Element => {
     if (!coverImageFinal) {
       coverImageFinal =
         "https://res.cloudinary.com/dy7fw9h6s/image/upload/v1754894472/23_cetqb9.jpg"; // Set your default image path here
+    }
+
+    // Final GIF validation check
+    const isGif =
+      coverImageFinal.toLowerCase().endsWith(".gif") ||
+      coverImageFinal.toLowerCase().includes("/image/gif") ||
+      coverImageFinal.toLowerCase().includes("format=gif");
+    if (isGif && !user?.premium?.isPremium) {
+      setError("Please upgrade to premium to use animated GIF images.");
+      setIsLoading(false);
+      return;
     }
 
     // Filter out empty social media links
@@ -241,6 +287,7 @@ const ProjectForm: React.FC = (): JSX.Element => {
           <label className="block text-sm font-medium mb-1">Cover Image</label>
           <Input
             type="file"
+            accept="image/jpeg,image/jpg,image/png,image/gif"
             onChange={handleFileUpload}
             disabled={isUploading}
           />
@@ -516,18 +563,55 @@ const ProjectForm: React.FC = (): JSX.Element => {
 
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
-        <Button
-          type="submit"
-          disabled={isLoading || isUploading}
-          className="w-full"
-        >
-          {isLoading
-            ? "Saving..."
-            : isEditMode
-            ? "Update Project"
-            : "Create Project"}
-        </Button>
+        <div className="flex gap-4">
+          <Button
+            type="submit"
+            disabled={isLoading || isUploading}
+            className="flex-1"
+          >
+            {isLoading
+              ? "Saving..."
+              : isEditMode
+              ? "Update Project"
+              : "Create Project"}
+          </Button>
+          {isEditMode && (
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isLoading}
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              Delete Project
+            </Button>
+          )}
+        </div>
       </form>
+
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={async () => {
+          try {
+            await api.delete(`/projects/${id}`);
+            toast({
+              title: "Success",
+              description: "Project deleted successfully",
+            });
+            navigate("/projects");
+          } catch (error) {
+            toast({
+              title: "Error",
+              description: "Failed to delete project",
+              variant: "destructive",
+            });
+          }
+        }}
+        title="Delete Project"
+        description="Are you sure you want to delete this project? This action cannot be undone."
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   );
 };

@@ -13,6 +13,15 @@
  * @route   POST /api/upload
  * @access  Private
  */
+/**
+ * Handles file uploads with premium user considerations
+ * @function uploadFile
+ * @async
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @returns {Promise<void>}
+ * @throws {Error} When file upload fails or validation fails
+ */
 const uploadFile = async (req, res) => {
   try {
     // Check if user is authenticated
@@ -88,12 +97,14 @@ const uploadFile = async (req, res) => {
       isAvatar: req.path.includes("avatar"), // Indicate if this was an avatar upload
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    logger.error("Upload error:", error);
     res.status(500).json({
       message: "Error uploading file. Please try again.",
       error: error.message,
     });
   }
 };
+
+import logger from "../utils/logger.js";
 
 export { uploadFile };

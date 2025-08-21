@@ -40,6 +40,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
+  // Check subscription status whenever user or token changes
+  useEffect(() => {
+    const checkSubscriptionStatus = async () => {
+      if (!user?.email || !token) return;
+
+      try {
+        const { data } = await api.get(
+          `/news/check-subscription/${user.email}`
+        );
+        if (data?.isSubscribed !== undefined) {
+          // If the subscription status is different from what we have, update user
+          if (!user.newsletterSubscription?.isActive === data.isActive) {
+            const { data: updatedUser } = await api.get("/users/me");
+            if (updatedUser) {
+              updateUser(updatedUser);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check subscription status:", error);
+      }
+    };
+
+    checkSubscriptionStatus();
+  }, [user?.email, token]);
+
   // Function to handle user login
   const login = (data: AuthState) => {
     if (data.user && data.token) {

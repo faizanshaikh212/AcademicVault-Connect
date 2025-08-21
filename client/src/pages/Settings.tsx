@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/services/api";
@@ -9,6 +9,64 @@ import { Textarea } from "@/components/ui/Textarea";
 
 const Settings: React.FC = () => {
   const { user, login, updateProfile } = useAuth();
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
+
+  // Check subscription status on mount
+  useEffect(() => {
+    let mounted = true;
+
+    const checkSubscription = async () => {
+      if (!user?.email) return;
+
+      setIsCheckingSubscription(true);
+      try {
+        const { data: subscriptionStatus } = await api.get(
+          `/news/check-subscription/${user.email}`
+        );
+
+        if (!mounted) return;
+
+        if (!subscriptionStatus || !subscriptionStatus.isActive) {
+          // Only update if we currently think we're subscribed
+          if (user.newsletterSubscription?.isActive) {
+            const { data: updatedUser } = await api.get("/users/me");
+            if (mounted) {
+              login({
+                user: updatedUser,
+                token: localStorage.getItem("token"),
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Subscription check failed:", error);
+        // On error, update only if we think we're subscribed
+        if (mounted && user.newsletterSubscription?.isActive) {
+          login({
+            user: {
+              ...user,
+              newsletterSubscription: {
+                ...user.newsletterSubscription,
+                isActive: false,
+              },
+            },
+            token: localStorage.getItem("token"),
+          });
+        }
+      } finally {
+        if (mounted) {
+          setIsCheckingSubscription(false);
+        }
+      }
+    };
+
+    checkSubscription();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user?._id, user?.email, login]);
+
   const [formData, setFormData] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
@@ -244,6 +302,117 @@ const Settings: React.FC = () => {
                 </span>
               )}
             </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">
+                  Newsletter Subscription:
+                </span>
+                <span
+                  className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    isCheckingSubscription
+                      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                      : user.newsletterSubscription?.isActive
+                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                      : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                  }`}
+                >
+                  {isCheckingSubscription
+                    ? "Checking..."
+                    : user.newsletterSubscription?.isActive
+                    ? "Subscribed"
+                    : "Not Subscribed"}
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant={
+                  user.newsletterSubscription?.isActive
+                    ? "destructive"
+                    : "default"
+                }
+                disabled={isCheckingSubscription}
+                onClick={async () => {
+                  try {
+                    if (user.newsletterSubscription?.isActive) {
+                      // If already subscribed, deactivate
+                      await api.put(
+                        `/news/subscribers/${user.newsletterSubscription._id}`,
+                        {
+                          isActive: false,
+                        }
+                      );
+                      setMessage({
+                        type: "success",
+                        text: "Newsletter subscription deactivated",
+                      });
+                    } else {
+                      // If not subscribed, activate or reactivate
+                      await api.post("/news/subscribe", {
+                        email: user.email,
+                        userId: user._id,
+                      });
+                      setMessage({
+                        type: "success",
+                        text: "Newsletter subscription activated",
+                      });
+                    }
+
+                    // Always refresh user data after subscription change
+                    const { data: updatedUser } = await api.get("/users/me");
+                    login({
+                      user: updatedUser,
+                      token: localStorage.getItem("token"),
+                    });
+                  } catch (error: any) {
+                    console.error(
+                      "Subscription error:",
+                      error.response?.data || error
+                    );
+                    // If already subscribed, try to reactivate instead
+                    if (
+                      error.response?.data?.message ===
+                      "Email already subscribed"
+                    ) {
+                      try {
+                        const { data: subscriber } = await api.get(
+                          `/news/check-subscription/${user.email}`
+                        );
+                        if (subscriber) {
+                          await api.put(`/news/subscribers/${subscriber._id}`, {
+                            isActive: true,
+                            userId: user._id,
+                          });
+                          const { data: updatedUser } = await api.get(
+                            "/users/me"
+                          );
+                          login({
+                            user: updatedUser,
+                            token: localStorage.getItem("token"),
+                          });
+                          setMessage({
+                            type: "success",
+                            text: "Newsletter subscription activated",
+                          });
+                          return;
+                        }
+                      } catch (reactivateError) {
+                        console.error("Reactivation error:", reactivateError);
+                      }
+                    }
+                    setMessage({
+                      type: "error",
+                      text:
+                        error.response?.data?.message ||
+                        "Failed to update newsletter subscription",
+                    });
+                  }
+                }}
+              >
+                {user.newsletterSubscription?.isActive
+                  ? "Unsubscribe"
+                  : "Subscribe"}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -325,7 +494,7 @@ const Settings: React.FC = () => {
         )}
 
         {/* Teacher Role Request Section */}
-        {!user.role?.includes("teacher") && !user.role?.includes("admin") && (
+        {Array.isArray(user.role) && !user.role.includes("teacher") && (
           <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-2">Become a Teacher</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">

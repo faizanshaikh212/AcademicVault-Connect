@@ -1,4 +1,10 @@
-// Import necessary modules
+/**
+ * Academic Vault Server
+ * Main server file that sets up Express application with WebSocket support
+ * Handles API routes, static file serving, and real-time notifications
+ * @module server
+ */
+
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -28,15 +34,19 @@ import uploadRoutes from "./routes/upload.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
 import premiumRoutes from "./routes/premium.routes.js";
+import newsRoutes from "./routes/news.routes.js";
+import pageRoutes from "./routes/page.routes.js";
 
 // Load environment variables from .env file (for development only)
 dotenv.config();
 
 // Establish database connection
-connectDB();
+const connection = await connectDB();
 
 // Initialize the Express application
 const app = express();
+
+// Removed unnecessary initialization code
 
 // --- Middleware ---
 app.use(
@@ -57,13 +67,18 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/premium", premiumRoutes);
+app.use("/api", newsRoutes); // This includes both /api/news and /api/newsletter routes
+app.use("/api", pageRoutes); // This includes /api/pages routes
 
 // --- ADD THIS SECTION ---
 // Serve static files from the React build folder in production
 app.use(express.static(path.join(__dirname, "..", "client", "dist")));
 
-// The "catchall" handler: for any request that doesn't
-// match one above, send back React's index.html file.
+/**
+ * Catchall route handler for client-side routing
+ * Serves the React application for all unmatched routes
+ * Enables client-side routing in production
+ */
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
 });
@@ -73,7 +88,13 @@ app.get("*", (req, res) => {
 const PORT = process.env.PORT || 5001;
 const server = http.createServer(app);
 
-// --- Socket.IO Setup ---
+/**
+ * WebSocket Server Configuration
+ * Handles real-time communication between clients and server
+ * - Configured with 60s ping timeout
+ * - CORS enabled for all origins
+ * - Used for notifications and real-time updates
+ */
 const io = new Server(server, {
   pingTimeout: 60000,
   cors: {
@@ -84,27 +105,33 @@ app.use((req, res, next) => {
   req.io = io;
   next();
 });
+// Import logger
+import logger from "./utils/logger.js";
+
 io.on("connection", (socket) => {
-  console.log("User Connected", { $userId: socket.id });
+  logger.info("User Connected", { $userId: socket.id });
   socket.on("setup", (userData) => {
     socket.join(userData._id);
     socket.emit("connected");
   });
 
   socket.on("disconnect", () => {
-    console.log("USER DISCONNECTED");
+    logger.info("USER DISCONNECTED");
   });
 });
 
-// Start the server
+/**
+ * Initialize server and begin listening for requests
+ * Logs server mode and port information
+ */
 server.listen(PORT, () => {
-  console.log(
+  logger.info(
     `Server is running in ${process.env.NODE_ENV} mode on port ${PORT}`
   );
 });
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err, promise) => {
-  console.error(`Error: ${err.message}`);
+  logger.error(`Error: ${err.message}`);
   server.close(() => process.exit(1));
 });

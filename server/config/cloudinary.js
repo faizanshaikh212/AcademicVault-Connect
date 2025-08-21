@@ -65,7 +65,12 @@ const storage = new CloudinaryStorage({
       ];
     }
 
-    // Return configuration with optimizations
+    /**
+     * Configuration settings for Cloudinary uploads
+     * - Handles different file formats and sizes based on user premium status
+     * - Applies automatic optimization and transformations
+     * - Enforces size limits and format restrictions
+     */
     return {
       folder: "academic-vault",
       allowed_formats: ["jpg", "jpeg", "png", "gif"],
