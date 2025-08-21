@@ -11,10 +11,7 @@ import {
   User as UserIcon,
   Edit,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
-import CodeBlock from "@/components/shared/CodeBlock";
+import MarkdownContent from "@/components/shared/MarkdownContent";
 
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -53,7 +50,7 @@ const ProjectDetail: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 pt-32">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="relative">
             <img
@@ -72,84 +69,8 @@ const ProjectDetail: React.FC = () => {
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mt-6">
             {project.title}
           </h1>
-          <article className="markdown-content">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
-              components={{
-                img: ({ node, alt, src, ...props }) => (
-                  <img
-                    alt={alt}
-                    src={src}
-                    {...props}
-                    className="max-w-full h-auto"
-                  />
-                ),
-                ul: ({ node, ...props }) => (
-                  <ul className="list-disc list-inside my-4" {...props} />
-                ),
-                ol: ({ node, ...props }) => (
-                  <ol className="list-decimal list-inside my-4" {...props} />
-                ),
-                li: ({ node, children, ...props }) => (
-                  <li className="ml-4 mb-2" {...props}>
-                    {children}
-                  </li>
-                ),
-                h1: ({ node, children, ...props }) => (
-                  <h1
-                    className="text-4xl font-bold mb-6 pb-2 border-b border-gray-600"
-                    {...props}
-                  >
-                    {children}
-                  </h1>
-                ),
-                h2: ({ node, children, ...props }) => (
-                  <h2
-                    className="text-3xl font-bold mb-4 pb-2 border-b border-gray-600"
-                    {...props}
-                  >
-                    {children}
-                  </h2>
-                ),
-                h3: ({ node, children, ...props }) => (
-                  <h3 className="text-2xl font-bold mb-3" {...props}>
-                    {children}
-                  </h3>
-                ),
-                h4: ({ node, children, ...props }) => (
-                  <h4 className="text-xl font-bold mb-2" {...props}>
-                    {children}
-                  </h4>
-                ),
-                code: (props) => {
-                  return <CodeBlock {...props} />;
-                },
-                a: ({ href, children }) => (
-                  <a
-                    href={href}
-                    className="text-blue-600 dark:text-blue-400 no-underline hover:underline"
-                    target={href?.startsWith("http") ? "_blank" : undefined}
-                    rel={
-                      href?.startsWith("http")
-                        ? "noopener noreferrer"
-                        : undefined
-                    }
-                  >
-                    {children}
-                  </a>
-                ),
-                table: ({ children }) => (
-                  <div className="overflow-x-auto my-4">
-                    <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
-                      {children}
-                    </table>
-                  </div>
-                ),
-              }}
-            >
-              {project.description}
-            </ReactMarkdown>
+          <article>
+            <MarkdownContent content={project.description} />
           </article>
 
           {/* Screenshots */}
@@ -172,7 +93,7 @@ const ProjectDetail: React.FC = () => {
 
         {/* Sidebar Column */}
         <aside className="lg:col-span-1">
-          <div className="sticky top-32 space-y-4 rounded-lg border bg-white p-6 shadow-sm dark:bg-gray-900 dark:border-gray-800 mx-4 max-h-[calc(100vh-8rem)] overflow-y-auto">
+          <div className="fixed lg:w-[calc(100%/3-2rem)] space-y-4 rounded-lg border bg-white p-6 shadow-sm dark:bg-gray-900 dark:border-gray-800 overflow-y-auto max-h-[calc(100vh-8rem)] z-10">
             <h3 className="text-lg font-semibold border-b pb-2 dark:border-gray-700">
               Project Details
             </h3>

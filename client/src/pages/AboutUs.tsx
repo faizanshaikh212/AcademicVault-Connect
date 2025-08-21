@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "@/services/api";
 import MarkdownPage from "@/components/shared/MarkdownPage";
+import Particles from "@/components/background/Particles";
 
 const AboutUs: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -48,7 +49,23 @@ const AboutUs: React.FC = () => {
     );
   }
 
-  return <MarkdownPage title={page.title} content={page.content} />;
+  return (
+    <div className="relative w-full min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Particles
+        className="absolute inset-0 z-0 opacity-50 dark:opacity-100"
+        particleCount={100}
+        particleSpread={10}
+        speed={0.1}
+        particleBaseSize={100}
+        moveParticlesOnHover={true}
+        alphaParticles={false}
+        disableRotation={false}
+      />
+      <div className="relative z-10">
+        <MarkdownPage title={page.title} content={page.content} />
+      </div>
+    </div>
+  );
 };
 
 export default AboutUs;

@@ -87,13 +87,13 @@ const NewsletterSubscribe: React.FC = () => {
 
   return (
     <section className="bg-white dark:bg-gray-900 py-16">
-      <div className="relative isolate overflow-hidden bg-gradient-to-b from-gray-900 to-gray-800 py-16 sm:py-24 rounded-3xl mx-4">
+      <div className="relative isolate overflow-hidden bg-gradient-to-b from-blue-400 to-blue-500 dark:from-gray-900 dark:to-gray-800 py-16 sm:py-24 rounded-3xl mx-4">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
               Stay Updated with Academic Vault
             </h2>
-            <p className="mt-4 text-lg leading-8 text-gray-300">
+            <p className="mt-4 text-lg leading-8 text-gray-100 dark:text-gray-300">
               Get the latest news, updates, and insights delivered directly to
               your inbox.
             </p>
@@ -109,12 +109,13 @@ const NewsletterSubscribe: React.FC = () => {
                   onChange={(e) => !user?.email && setEmail(e.target.value)}
                   disabled={!!user?.email || isLoading}
                   placeholder="Enter your email address"
-                  className={`w-full rounded-md border-0 px-3.5 py-2 text-white shadow-sm ring-1 ring-inset ring-white/10 
+                  className={`w-full rounded-md border-0 px-3.5 py-2 text-white shadow-sm ring-1 ring-inset 
+                    ring-white/20 dark:ring-white/10
                     focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm sm:leading-6
                     ${
                       user?.email
-                        ? "bg-gray-700 cursor-not-allowed"
-                        : "bg-white/5"
+                        ? "bg-blue-700/50 dark:bg-gray-700 cursor-not-allowed"
+                        : "bg-white/20 dark:bg-white/5"
                     }
                     ${isLoading ? "opacity-50" : ""}`}
                 />
