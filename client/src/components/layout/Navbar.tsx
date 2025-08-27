@@ -17,6 +17,7 @@ import {
   RotateCw,
   RefreshCcw,
   Bell,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAvatarUrl } from "@/lib/avatar";
@@ -37,6 +38,8 @@ const navLinks = [
   { name: "News", href: "/news", icon: Rss },
   { name: "Blogs", href: "/blogs", icon: Rss },
   { name: "Projects", href: "/projects", icon: Layers },
+  { name: "Notices", href: "/notices", icon: Bell },
+  { name: "Assignments", href: "/assignments", icon: ClipboardList },
 ];
 
 const Navbar: React.FC = () => {
@@ -135,7 +138,7 @@ const Navbar: React.FC = () => {
               {link.name}
             </NavLink>
           ))}
-          {/*Conditionally render Admin Panel link */}
+          {/* Conditionally render Admin Panel link */}
           {user && user.role.includes("admin") && (
             <NavLink
               to="/admin"
@@ -148,6 +151,29 @@ const Navbar: React.FC = () => {
             >
               <ShieldCheck className="h-4 w-4" />
               Admin Panel
+            </NavLink>
+          )}
+          {/* Conditionally render Teacher Panel link */}
+          {user && user.role.includes("teacher") && (
+            <NavLink
+              to="/teacher"
+              className={({ isActive }) =>
+                cn(
+                  "text-sm font-medium text-green-500 transition-colors hover:text-green-600 dark:text-green-400 dark:hover:text-green-500 flex items-center gap-1",
+                  { "font-bold": isActive }
+                )
+              }
+            >
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M20 6h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8 0h-4V4h4v2z" />
+              </svg>
+              Teacher Panel
             </NavLink>
           )}
         </nav>
@@ -329,7 +355,7 @@ const Navbar: React.FC = () => {
                 {link.name}
               </NavLink>
             ))}
-            {/* THE FIX: Conditionally render Admin Panel link in mobile menu */}
+            {/* Conditionally render Admin Panel link in mobile menu */}
             {user && user.role.includes("admin") && (
               <NavLink
                 to="/admin"
@@ -343,6 +369,30 @@ const Navbar: React.FC = () => {
               >
                 <ShieldCheck className="h-5 w-5" />
                 Admin Panel
+              </NavLink>
+            )}
+            {/* Conditionally render Teacher Panel link in mobile menu */}
+            {user && user.role.includes("teacher") && (
+              <NavLink
+                to="/teacher"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 rounded-md p-2 text-base font-medium text-green-500 hover:bg-gray-100 dark:hover:bg-gray-800",
+                    { "bg-gray-100 dark:bg-gray-800": isActive }
+                  )
+                }
+              >
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M20 6h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8 0h-4V4h4v2z" />
+                </svg>
+                Teacher Panel
               </NavLink>
             )}
             <div className="border-t border-gray-200/50 dark:border-gray-800/50 pt-4 mt-2 flex flex-col space-y-2">

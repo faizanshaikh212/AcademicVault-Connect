@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/useToast";
+import { useToast } from "@/hooks/useToast.tsx";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 
 const ProjectForm: React.FC = (): JSX.Element => {

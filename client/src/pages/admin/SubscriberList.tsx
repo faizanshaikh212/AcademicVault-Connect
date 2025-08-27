@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "@/services/api";
-import { useToast } from "@/hooks/useToast";
+import { useToast } from "@/hooks/useToast.tsx";
 import { formatDistance } from "date-fns";
 
 interface Subscriber {

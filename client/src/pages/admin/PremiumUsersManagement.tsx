@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { RefreshCcw, Shield, ExternalLink } from "lucide-react";
-import { useToast } from "@/hooks/useToast";
+import { useToast } from "@/hooks/useToast.tsx";
 
 const PremiumUsersManagement = () => {
   const { toast } = useToast();

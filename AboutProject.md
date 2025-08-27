@@ -102,7 +102,7 @@ src/
 
 5. Networking
    - User network building
-   - Contact management
+   - Contact Us (Customer care form) management
    - Notification system
 
 ### Admin Features

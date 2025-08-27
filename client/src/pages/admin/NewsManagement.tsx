@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "@/services/api";
-import { useToast } from "@/hooks/useToast";
+import { useToast } from "@/hooks/useToast.tsx";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Link } from "react-router-dom";

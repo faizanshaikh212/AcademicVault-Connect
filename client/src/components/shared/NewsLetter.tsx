@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/services/api";
 import { Button } from "@/components/ui/Button";
-import { useToast } from "@/hooks/useToast";
+import { useToast } from "@/hooks/useToast.tsx";
 
 const NewsLetter: React.FC = () => {
   const { user } = useAuth();

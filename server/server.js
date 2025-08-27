@@ -11,6 +11,7 @@ import cors from "cors";
 import path from "path";
 import http from "http";
 import { Server } from "socket.io";
+import multer from "multer";
 import notificationRoutes from "./routes/notification.routes.js";
 // Import the premium expiration check job
 import "./jobs/premiumExpirationCheck.js";
@@ -36,6 +37,18 @@ import contactRoutes from "./routes/contact.routes.js";
 import premiumRoutes from "./routes/premium.routes.js";
 import newsRoutes from "./routes/news.routes.js";
 import pageRoutes from "./routes/page.routes.js";
+import { default as courseRoutes } from "./routes/course.routes.js";
+import teacherRoutes from "./routes/teacher.routes.js";
+import noticeRoutes from "./routes/notice.routes.js";
+import assignmentRoutes from "./routes/assignment.routes.js";
+import uploadDriveRoutes from "./routes/upload.routes.js"; // reuse existing upload route for placeholder
+import { getTeacherStats } from "./controllers/teacherStats.controller.js";
+import { getTeacherStudents } from "./controllers/teacher.controller.js";
+// Import models for quick API endpoints
+import Notice from "./models/notice.model.js";
+import Assignment from "./models/assignment.model.js";
+import User from "./models/user.model.js";
+import { protect } from "./middleware/auth.middleware.js";
 
 // Load environment variables from .env file (for development only)
 dotenv.config();
@@ -69,8 +82,32 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/premium", premiumRoutes);
 app.use("/api", newsRoutes); // This includes both /api/news and /api/newsletter routes
 app.use("/api", pageRoutes); // This includes /api/pages routes
+app.use("/api/courses", courseRoutes);
+app.use("/api/teacher", teacherRoutes);
+// Register new teacher-related API routes before static serving
+app.use("/api", noticeRoutes);
+app.use("/api", assignmentRoutes);
+app.use("/api/upload", uploadDriveRoutes);
+// Teacher stats endpoint
+app.get("/api/teacher/stats", protect, getTeacherStats);
 
-// --- ADD THIS SECTION ---
+// Route handlers moved to notice.routes.js
+
+// Teacher assignments
+app.get("/api/teacher/assignments", protect, async (req, res) => {
+  try {
+    const assignments = await Assignment.find({
+      createdBy: req.user._id,
+      isDeleted: { $ne: true },
+    }).sort({ createdAt: -1 });
+    res.json(assignments);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch assignments" });
+  }
+});
+
+app.get("/api/teacher/students", protect, getTeacherStudents);
+
 // Serve static files from the React build folder in production
 app.use(express.static(path.join(__dirname, "..", "client", "dist")));
 
@@ -82,7 +119,6 @@ app.use(express.static(path.join(__dirname, "..", "client", "dist")));
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
 });
-// --------------------
 
 // --- Server Setup ---
 const PORT = process.env.PORT || 5001;
