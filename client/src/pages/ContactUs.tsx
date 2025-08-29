@@ -6,7 +6,7 @@ import Particles from "@/components/background/Particles";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/services/api";
 import NewsletterSubscribe from "@/components/shared/NewsletterSubscribe";
-import { useToast } from "@/hooks/useToast.tsx";
+import { useToast } from "@/hooks/useToast";
 
 const ContactUs: React.FC = () => {
   const { user } = useAuth();

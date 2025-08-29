@@ -60,6 +60,19 @@ const newsSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    attachments: [
+      {
+        title: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        url: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );

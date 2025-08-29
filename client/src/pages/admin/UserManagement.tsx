@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/Dialog";
 import { ExternalLink, Trash2, Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/hooks/useToast.tsx";
+import { useToast } from "@/hooks/useToast";
 
 const availableRoles = ["student", "teacher", "admin"];
 

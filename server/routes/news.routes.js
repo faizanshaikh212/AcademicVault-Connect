@@ -243,6 +243,7 @@ newsRouter.post("/news/create", [auth, admin], async (req, res) => {
       coverImage,
       author: req.user._id,
       isPublished: true,
+      attachments: req.body.attachments || [],
     });
 
     logger.debug("Created news:", news);

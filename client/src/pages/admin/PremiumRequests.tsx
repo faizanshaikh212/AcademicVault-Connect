@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/Table";
 import { Textarea } from "@/components/ui/Textarea";
 import EnhancedSearchBar from "@/components/shared/EnhancedSearchBar";
-import { useToast } from "@/hooks/useToast.tsx";
+import { useToast } from "@/hooks/useToast";
 import { Trash2 } from "lucide-react";
 import PasswordConfirmDialog from "@/components/shared/PasswordConfirmDialog";
 

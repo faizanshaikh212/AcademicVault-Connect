@@ -7,7 +7,7 @@ import { ArrowRight, Edit2, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "../ui/Button";
 import ConfirmDialog from "./ConfirmDialog";
-import { useToast } from "@/hooks/useToast.tsx";
+import { useToast } from "@/hooks/useToast";
 import api from "@/services/api";
 
 interface BlogCardProps {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/useToast.tsx";
+import { useToast } from "@/hooks/useToast";
 import api from "@/services/api";
 
 const NewsletterSubscribe: React.FC = () => {

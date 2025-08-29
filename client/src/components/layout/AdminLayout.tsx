@@ -16,7 +16,6 @@ import { useAuth } from "@/hooks/useAuth";
 const adminNavLinks = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "User Management", href: "/admin/users", icon: Users },
-  { name: "Teacher Management", href: "/admin/teachers", icon: Users },
   { name: "Premium Users", href: "/admin/premium-users", icon: CreditCard },
   { name: "Role Requests", href: "/admin/requests", icon: UserCheck },
   {
@@ -24,7 +23,6 @@ const adminNavLinks = [
     href: "/admin/premium-requests",
     icon: CreditCard,
   },
-  { name: "Course Management", href: "/admin/courses", icon: FileText },
   { name: "Content Management", href: "/admin/content", icon: FileText },
   { name: "Customer Care", href: "/admin/customer-care", icon: UserCheck },
   { name: "News Management", href: "/admin/news", icon: Mail },

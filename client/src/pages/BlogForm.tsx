@@ -6,7 +6,7 @@ import { Blog } from "../types";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
-import { useToast } from "@/hooks/useToast.tsx";
+import { useToast } from "@/hooks/useToast";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 
 const BlogForm: React.FC = () => {

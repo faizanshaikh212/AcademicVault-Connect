@@ -9,7 +9,6 @@ import express from "express";
 import multer from "multer";
 import { storage } from "../config/cloudinary.js";
 import { uploadFile } from "../controllers/upload.controller.js";
-import { uploadToDrive } from "../controllers/uploadDrive.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -32,7 +31,5 @@ router.post("/", protect, upload.single("file"), uploadFile);
  * @returns {Object} Uploaded avatar details with Cloudinary URL
  */
 router.post("/avatar", protect, upload.single("file"), uploadFile);
-// Drive upload placeholder used by frontend (POST /api/upload/drive)
-router.post("/drive", protect, upload.single("file"), uploadToDrive);
 
 export default router;

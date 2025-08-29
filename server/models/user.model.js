@@ -20,55 +20,7 @@ const connectionSchema = new mongoose.Schema(
     url: { type: String, required: true },
   },
   { _id: false }
-);
-
-/**
- * Schema for teacher's course assignments
- * @typedef {Object} TeacherCourseSchema
- * @property {ObjectId} course - Reference to the Course model
- * @property {Array<Number>} semesters - Array of semester numbers the teacher is assigned to
- */
-const teacherCourseSchema = new mongoose.Schema(
-  {
-    course: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Course",
-      required: true,
-    },
-    semesters: [
-      {
-        type: Number,
-        required: true,
-        min: 1,
-        max: 12,
-      },
-    ],
-  },
-  { _id: false }
-);
-
-/**
- * Schema for student's enrolled courses
- * @typedef {Object} StudentCourseSchema
- * @property {ObjectId} course - Reference to the Course model
- * @property {Number} semester - Current semester number
- */
-const studentCourseSchema = new mongoose.Schema(
-  {
-    course: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Course",
-      required: true,
-    },
-    semester: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 12,
-    },
-  },
-  { _id: false }
-);
+); // _id is not needed for this sub-document
 
 /**
  * Main User Schema
@@ -114,13 +66,10 @@ const userSchema = new mongoose.Schema(
       minlength: [6, "Password must be at least 6 characters long"],
     },
     role: {
-      type: [String],
+      type: [String], // THE FIX: Changed from String to an Array of Strings
       enum: ["student", "teacher", "admin"],
-      default: ["student"],
+      default: ["student"], // Default is now an array
     },
-    // New fields for teacher and student course management
-    teacherCourses: [teacherCourseSchema],
-    studentCourses: [studentCourseSchema],
     profile: {
       bio: { type: String, default: "" },
       avatar: { type: String, default: "" }, // URL to Cloudinary image

@@ -1,13 +1,6 @@
-import { NoticeForm } from "./components/forms/NoticeForm";
-import { AssignmentForm } from "./components/forms/AssignmentForm";
-import NoticeDetail from "./pages/NoticeDetail";
-import AssignmentDetail from "./pages/AssignmentDetail";
-import Notices from "./pages/Notices";
-import Assignments from "./pages/Assignments";
 import { useEffect, useState } from "react";
 import { Routes, Route, Outlet } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
-import { useToast } from "./hooks/useToast.tsx";
 
 // Page Imports
 import Home from "./pages/Home";
@@ -29,7 +22,6 @@ import AdminDashboard from "./pages/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import RoleRequests from "./pages/admin/RoleRequests";
 import ContentManagement from "./pages/admin/ContentManagement";
-import CourseManagement from "./pages/admin/CourseManagement";
 import PremiumRequests from "./pages/admin/PremiumRequests";
 import PremiumUsersManagement from "./pages/admin/PremiumUsersManagement";
 import CustomerCare from "./pages/admin/CustomerCare";
@@ -51,17 +43,10 @@ import Footer from "./components/layout/Footer";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import AdminRoute from "./components/layout/AdminRoute";
 import AdminLayout from "./components/layout/AdminLayout";
-import { TeacherRoute } from "./components/shared/TeacherRoute";
-import { TeacherLayout } from "./components/layout/TeacherLayout";
-
-import { TeacherDashboard } from "./pages/TeacherDashboard";
-import { TeacherCourses } from "./pages/TeacherCourses";
-import { TeacherAssignments } from "./pages/TeacherAssignments";
-import { TeacherNotices } from "./pages/TeacherNotices";
-import { TeacherStudents } from "./pages/TeacherStudents";
-import TeacherCourseRequests from "./pages/TeacherCourseRequests";
-import StudentManagement from "./pages/StudentManagement";
-import { TeacherManagement } from "./pages/admin/TeacherManagement";
+import TeacherRoute from "./components/layout/TeacherRoute";
+import TeacherLayout from "./components/layout/TeacherLayout";
+import TeacherNewsManagement from "./pages/teacher/NewsManagement";
+import TeacherDashboard from "./pages/teacher/Dashboard";
 
 /**
  * Main application layout with Navbar and Footer.
@@ -77,19 +62,8 @@ const MainLayout = () => (
 );
 
 function App() {
-  // Handlers for form routes
-  const handleCreateNotice = async () => {};
-  const handleCreateAssignment = async () => {};
-  const [courses, setCourses] = useState<
-    Array<{
-      value: string;
-      label: string;
-      semesters: number;
-    }>
-  >([]);
   const { isLoading: authLoading } = useAuth();
   const [pageLoading, setPageLoading] = useState(false);
-  const { ToastContainer } = useToast();
 
   // Add event listeners for page refresh/reload
   useEffect(() => {
@@ -116,7 +90,6 @@ function App() {
 
   return (
     <div className="text-gray-800 dark:text-gray-200">
-      <ToastContainer />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -128,44 +101,17 @@ function App() {
             <Route path="requests" element={<RoleRequests />} />
             <Route path="premium-requests" element={<PremiumRequests />} />
             <Route path="customer-care" element={<CustomerCare />} />
-            <Route path="courses" element={<CourseManagement />} />
-            <Route path="teachers" element={<TeacherManagement />} />
             <Route path="content" element={<ContentManagement />} />
             <Route path="news" element={<NewsManagement />} />
             <Route path="news/new" element={<NewsForm />} />
             <Route path="subscribers" element={<SubscriberList />} />
           </Route>
         </Route>
+        {/* Teacher Panel Routes */}
         <Route element={<TeacherRoute />}>
           <Route path="/teacher/*" element={<TeacherLayout />}>
             <Route index element={<TeacherDashboard />} />
-            <Route path="courses" element={<TeacherCourses />} />
-            <Route path="assignments" element={<TeacherAssignments />} />
-            <Route path="notices" element={<TeacherNotices />} />
-            <Route path="students" element={<TeacherStudents />} />
-            <Route path="student-management" element={<StudentManagement />} />
-            <Route path="course-requests" element={<TeacherCourseRequests />} />
-            <Route
-              path="notices/new"
-              element={
-                <NoticeForm
-                  onSubmit={handleCreateNotice}
-                  isSubmitting={false}
-                />
-              }
-            />
-            <Route path="notices/:id" element={<NoticeDetail />} />
-            <Route
-              path="assignments/new"
-              element={
-                <AssignmentForm
-                  onSubmit={handleCreateAssignment}
-                  courses={[]} // Removed courses prop as it's handled in TeacherAssignments
-                  isLoading={false}
-                />
-              }
-            />
-            <Route path="assignments/:id" element={<AssignmentDetail />} />
+            <Route path="news" element={<TeacherNewsManagement />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoute />}></Route>
@@ -177,10 +123,6 @@ function App() {
           <Route path="blogs/:id" element={<BlogDetail />} />
           <Route path="news" element={<News />} />
           <Route path="news/:id" element={<NewsDetail />} />
-          <Route path="notices" element={<Notices />} />
-          <Route path="notices/:id" element={<NoticeDetail />} />
-          <Route path="assignments" element={<Assignments />} />
-          <Route path="assignments/:id" element={<AssignmentDetail />} />
           <Route path="purpose" element={<OurPurpose />} />
           <Route path="network" element={<OurNetwork />} />
           <Route path="profile/:username" element={<Profile />} />

@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import api from "@/services/api";
 import { Blog } from "../types";
 import BlogCard from "@/components/shared/BlogCard";
-import Particles from "@/components/background/Particles";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Search, Plus } from "lucide-react";
@@ -43,32 +42,19 @@ const Blogs: React.FC = () => {
   }, [searchTerm, blogs]);
 
   return (
-    <div className="relative w-full min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Particles
-        className="absolute inset-0 z-0 opacity-50 dark:opacity-100"
-        particleCount={100}
-        particleSpread={10}
-        speed={0.1}
-        particleBaseSize={100}
-        moveParticlesOnHover={true}
-        alphaParticles={false}
-        disableRotation={false}
-      />
-      <div className="relative z-10 container mx-auto px-4 pb-12 text-gray-900 dark:text-white pt-8">
+    <div className="relative w-full min-h-screen pt-30">
+      <div className="absolute inset-0 -z-10"></div>
+      <div className="container mx-auto px-4 pb-12 text-white">
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
             <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
               Community Blogs
             </h1>
-            <p className="mt-2 text-gray-600 dark:text-gray-300">
+            <p className="mt-2 text-gray-300">
               Insights, tutorials, and stories from our community.
             </p>
           </div>
-          <Button
-            asChild
-            variant="outline"
-            className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
-          >
+          <Button asChild>
             <Link to="/blogs/new">
               <Plus className="mr-2 h-4 w-4" /> Write an Article
             </Link>
@@ -76,14 +62,14 @@ const Blogs: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-gray-50 dark:bg-gray-950 backdrop-blur-sm">
+      <div className="bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-12">
           <div className="relative mb-8">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <Input
               type="text"
               placeholder="Search articles..."
-              className="w-full pl-10 bg-white/90 dark:bg-gray-800/90"
+              className="w-full pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

@@ -23,10 +23,6 @@ import {
   deletePremiumRequest,
 } from "../controllers/admin.controller.js";
 import {
-  getTeachers,
-  assignCourseToTeacher,
-} from "../controllers/teacher.controller.js";
-import {
   getAllPremiumRequests,
   updatePremiumRequestStatus,
 } from "../controllers/premium.controller.js";
@@ -224,28 +220,5 @@ router.put("/premium-requests/:id", updatePremiumRequestStatus);
  * @returns {Object} Success message
  */
 router.delete("/premium-requests/:id", deletePremiumRequest);
-
-/**
- * Teacher Management Routes
- */
-
-/**
- * @route GET /api/admin/teachers
- * @description Get all teachers with their courses
- * @access Private/Admin
- * @returns {Array<Object>} Array of teachers with their assigned courses
- */
-router.get("/teachers", getTeachers);
-
-/**
- * @route POST /api/admin/teachers/:teacherId/courses
- * @description Assign a course to a teacher
- * @access Private/Admin
- * @param {string} teacherId - Teacher ID
- * @body {Object} courseId - Course ID to assign
- * @body {Array} semesters - Array of semester numbers
- * @returns {Object} Updated teacher with courses
- */
-router.post("/teachers/:teacherId/courses", assignCourseToTeacher);
 
 export default router;

@@ -13,24 +13,15 @@ const api = axios.create({
 // Add a request interceptor to include the auth token in every request
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    try {
-      const token = getAuthToken();
-      config.headers = config.headers || {};
-      if (token) {
-        // Ensure we're always sending the token with the Bearer prefix
-        (config.headers as Record<string, any>)[
-          "Authorization"
-        ] = `Bearer ${token}`;
-      }
+    const token = getAuthToken();
+    if (token) {
+      // Ensure we're always sending the token with the Bearer prefix
+      config.headers.set("Authorization", `Bearer ${token}`);
 
       // Only set Content-Type for non-FormData requests
       if (!(config.data instanceof FormData)) {
-        (config.headers as Record<string, any>)["Content-Type"] =
-          "application/json";
+        config.headers.set("Content-Type", "application/json");
       }
-    } catch (err) {
-      // If anything goes wrong setting headers, don't break the request
-      // (leave headers as-is)
     }
     return config;
   },

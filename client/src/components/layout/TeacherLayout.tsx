@@ -1,35 +1,21 @@
 import React, { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import {
-  LayoutDashboard,
-  FileText,
-  GraduationCap,
-  UserPlus,
-  Bell,
-  Menu,
-} from "lucide-react";
+import { Menu, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
 import { useAuth } from "@/hooks/useAuth";
 
+import { LayoutDashboard } from "lucide-react";
 const teacherNavLinks = [
   { name: "Dashboard", href: "/teacher", icon: LayoutDashboard },
-  { name: "Notices", href: "/teacher/notices", icon: Bell },
-  { name: "Assignments", href: "/teacher/assignments", icon: FileText },
-  { name: "Students", href: "/teacher/students", icon: GraduationCap },
-  {
-    name: "Student Management",
-    href: "/teacher/student-management",
-    icon: UserPlus,
-  },
-  { name: "Course Requests", href: "/teacher/course-requests", icon: UserPlus },
-  { name: "My Courses", href: "/teacher/courses", icon: LayoutDashboard },
+  { name: "News Management", href: "/teacher/news", icon: Mail },
+  // Add more links here as needed
 ];
 
-export const TeacherLayout: React.FC = () => {
+const TeacherLayout: React.FC = () => {
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-950">
       {/* Top Navbar */}
@@ -38,7 +24,7 @@ export const TeacherLayout: React.FC = () => {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="lg:hidden fixed bottom-4 right-4 z-20 p-3 rounded-full bg-blue-600 text-white shadow-lg"
+          className="lg:hidden fixed bottom-4 right-4 z-20 p-3 rounded-full bg-green-600 text-white shadow-lg"
         >
           <Menu className="h-6 w-6" />
         </button>
@@ -53,7 +39,9 @@ export const TeacherLayout: React.FC = () => {
           )}
         >
           <div className="h-20 flex items-center justify-center border-b dark:border-gray-800">
-            <h1 className="text-xl font-bold">Teacher Panel</h1>
+            <h1 className="text-xl font-bold text-green-700 dark:text-green-400">
+              Teacher Panel
+            </h1>
           </div>
           <nav className="p-4">
             <ul className="space-y-2">
@@ -61,13 +49,15 @@ export const TeacherLayout: React.FC = () => {
                 <li key={link.name}>
                   <NavLink
                     to={link.href}
-                    end={link.href === "/teacher"}
+                    end={
+                      link.href === "/teacher" || link.href === "/teacher/news"
+                    }
                     onClick={() => setIsSidebarOpen(false)}
                     className={({ isActive }) =>
                       cn(
                         "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                         isActive
-                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-white"
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-white"
                           : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
                       )
                     }
@@ -96,9 +86,9 @@ export const TeacherLayout: React.FC = () => {
               {user ? (
                 <a
                   href={`/profile/${user.username}`}
-                  className="text-base sm:text-lg font-semibold text-blue-600 hover:underline truncate"
+                  className="text-base sm:text-lg font-semibold text-green-700 dark:text-green-400 hover:underline truncate"
                 >
-                  Welcome, {user.firstName} {user.lastName}!
+                  Welcome, {user.username}!
                 </a>
               ) : (
                 <h2 className="text-base sm:text-lg font-semibold truncate">
@@ -112,6 +102,9 @@ export const TeacherLayout: React.FC = () => {
           </main>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };
+
+export default TeacherLayout;

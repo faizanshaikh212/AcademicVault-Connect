@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
 import api from "@/services/api";
-import { useToast } from "@/hooks/useToast.tsx";
+import { useToast } from "@/hooks/useToast";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+
+interface Attachment {
+  title: string;
+  url: string;
+}
 
 interface NewsItem {
   _id: string;
@@ -16,6 +21,7 @@ interface NewsItem {
   } | null;
   createdAt: string;
   isPublished: boolean;
+  attachments: Attachment[];
 }
 
 interface Subscriber {
@@ -45,6 +51,7 @@ const NewsManagement: React.FC = () => {
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   useEffect(() => {
     fetchNews();
@@ -118,6 +125,7 @@ const NewsManagement: React.FC = () => {
         content,
         summary,
         coverImage: coverImageUrl,
+        attachments,
         isPublished: true,
       });
 
@@ -130,6 +138,7 @@ const NewsManagement: React.FC = () => {
       setContent("");
       setImage(null);
       setImagePreview("");
+      setAttachments([]);
       fetchNews();
     } catch (error: any) {
       toast({
@@ -292,6 +301,79 @@ const NewsManagement: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Attachments Section */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              Attachments
+            </label>
+            <div className="space-y-4">
+              {attachments.map((attachment, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                >
+                  <div className="flex-1">
+                    <Input
+                      value={attachment.title}
+                      onChange={(e) => {
+                        const newAttachments = [...attachments];
+                        newAttachments[index].title = e.target.value;
+                        setAttachments(newAttachments);
+                      }}
+                      placeholder="Attachment title"
+                      className="mb-2"
+                    />
+                    <Input
+                      value={attachment.url}
+                      onChange={(e) => {
+                        const newAttachments = [...attachments];
+                        newAttachments[index].url = e.target.value;
+                        setAttachments(newAttachments);
+                      }}
+                      placeholder="Attachment URL"
+                    />
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => {
+                      const newAttachments = attachments.filter(
+                        (_, i) => i !== index
+                      );
+                      setAttachments(newAttachments);
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  setAttachments([...attachments, { title: "", url: "" }])
+                }
+                className="w-full"
+              >
+                Add Attachment
+              </Button>
+            </div>
+          </div>
+
           <Button type="submit">Create News</Button>
         </form>
       </div>

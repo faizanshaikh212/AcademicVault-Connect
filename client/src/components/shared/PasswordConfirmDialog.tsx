@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/useToast.tsx";
+import { useToast } from "@/hooks/useToast";
 import { Eye, EyeOff } from "lucide-react";
 
 interface PasswordConfirmDialogProps {

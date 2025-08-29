@@ -51,7 +51,7 @@ export const getNewsById = async (req, res) => {
 // Create news
 export const createNews = async (req, res) => {
   try {
-    const { title, content, summary, coverImage } = req.body;
+    const { title, content, summary, coverImage, attachments } = req.body;
 
     // Validate required fields
     if (!title || !content || !summary || !coverImage) {
@@ -60,14 +60,41 @@ export const createNews = async (req, res) => {
       });
     }
 
-    const news = await News.create({
+    console.log("Received request body:", req.body); // Debug log
+
+    // Validate attachments if provided
+    if (attachments && !Array.isArray(attachments)) {
+      console.log("Attachments validation failed - not an array:", attachments); // Debug log
+      return res.status(400).json({
+        message: "Attachments must be an array",
+      });
+    }
+
+    // Validate each attachment
+    if (attachments) {
+      console.log("Processing attachments:", attachments); // Debug log
+      for (const attachment of attachments) {
+        if (!attachment.title || !attachment.url) {
+          console.log("Invalid attachment:", attachment); // Debug log
+          return res.status(400).json({
+            message: "Each attachment must have a title and url",
+          });
+        }
+      }
+    }
+
+    const newsData = {
       title,
       content,
       summary,
       coverImage,
       author: req.user._id,
       isPublished: true,
-    });
+      attachments: attachments || [],
+    };
+    console.log("Creating news with data:", newsData); // Debug log
+    const news = await News.create(newsData);
+    console.log("Created news:", news.toObject()); // Debug log
 
     // Send notifications to all active subscribers who are registered users
     const activeSubscribers = await NewsletterSubscriber.find({

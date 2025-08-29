@@ -35,24 +35,6 @@ export interface User {
   };
 }
 
-// Course related interfaces
-export interface Course {
-  _id: string;
-  name: string;
-  batch: string;
-  totalSemesters: number;
-}
-
-export interface TeacherCourse {
-  course: Course;
-  semesters: number[];
-}
-
-export interface Teacher
-  extends Pick<User, "_id" | "firstName" | "lastName" | "email" | "username"> {
-  teacherCourses: TeacherCourse[];
-}
-
 // Defines the structure of the authentication context's state
 export interface AuthState {
   user: User | null;
