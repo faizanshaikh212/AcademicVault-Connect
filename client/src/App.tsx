@@ -32,8 +32,11 @@ import ContactUs from "./pages/ContactUs";
 import NotificationHistory from "./pages/NotificationHistory";
 import News from "./pages/News";
 import NewsDetail from "./pages/NewsDetail";
+import NoticesPage from "./pages/Notices";
+import NoticeDetail from "./pages/NoticeDetail";
 import NewsForm from "./pages/admin/NewsForm";
 import NewsManagement from "./pages/admin/NewsManagement";
+import NoticeManagement from "./pages/admin/NoticeManagement";
 import SubscriberList from "./pages/admin/SubscriberList";
 import AboutUs from "./pages/AboutUs";
 
@@ -46,6 +49,7 @@ import AdminLayout from "./components/layout/AdminLayout";
 import TeacherRoute from "./components/layout/TeacherRoute";
 import TeacherLayout from "./components/layout/TeacherLayout";
 import TeacherNewsManagement from "./pages/teacher/NewsManagement";
+import TeacherNoticesManagement from "./pages/teacher/NoticesManagement";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 
 /**
@@ -104,6 +108,8 @@ function App() {
             <Route path="content" element={<ContentManagement />} />
             <Route path="news" element={<NewsManagement />} />
             <Route path="news/new" element={<NewsForm />} />
+            <Route path="notices" element={<NoticeManagement />} />
+            <Route path="notices/new" element={<NewsForm />} />
             <Route path="subscribers" element={<SubscriberList />} />
           </Route>
         </Route>
@@ -112,6 +118,7 @@ function App() {
           <Route path="/teacher/*" element={<TeacherLayout />}>
             <Route index element={<TeacherDashboard />} />
             <Route path="news" element={<TeacherNewsManagement />} />
+            <Route path="notices" element={<TeacherNoticesManagement />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoute />}></Route>
@@ -123,6 +130,8 @@ function App() {
           <Route path="blogs/:id" element={<BlogDetail />} />
           <Route path="news" element={<News />} />
           <Route path="news/:id" element={<NewsDetail />} />
+          <Route path="notices" element={<NoticesPage />} />
+          <Route path="notices/:id" element={<NoticeDetail />} />
           <Route path="purpose" element={<OurPurpose />} />
           <Route path="network" element={<OurNetwork />} />
           <Route path="profile/:username" element={<Profile />} />

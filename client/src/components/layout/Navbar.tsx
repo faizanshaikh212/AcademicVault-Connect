@@ -35,6 +35,7 @@ const navLinks = [
   { name: "Our Purpose", href: "/purpose", icon: Users },
   { name: "Our Network", href: "/network", icon: Code },
   { name: "News", href: "/news", icon: Rss },
+  { name: "Notices", href: "/notices", icon: Rss },
   { name: "Blogs", href: "/blogs", icon: Rss },
   { name: "Projects", href: "/projects", icon: Layers },
 ];

@@ -112,6 +112,7 @@ export interface Notification {
     | "follow"
     | "friend_request"
     | "new_news"
+    | "new_notice"
     | "role_approved"
     | "premium_approved";
   link: string;

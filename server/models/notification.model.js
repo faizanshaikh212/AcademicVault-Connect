@@ -56,6 +56,7 @@ const notificationSchema = new mongoose.Schema(
         "premium_approved",
         "premium_rejected",
         "new_news",
+  "new_notice",
         "newsletter_status_change",
       ],
       required: true,

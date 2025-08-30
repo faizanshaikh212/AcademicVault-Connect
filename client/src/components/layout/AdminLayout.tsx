@@ -26,6 +26,7 @@ const adminNavLinks = [
   { name: "Content Management", href: "/admin/content", icon: FileText },
   { name: "Customer Care", href: "/admin/customer-care", icon: UserCheck },
   { name: "News Management", href: "/admin/news", icon: Mail },
+  { name: "Notice Management", href: "/admin/notices", icon: Mail },
 ];
 
 const AdminLayout: React.FC = () => {

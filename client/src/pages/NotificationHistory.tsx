@@ -44,6 +44,13 @@ const NotificationHistory = () => {
             {notification.message}" on the news page
           </>
         );
+      case "new_notice":
+        return (
+          <>
+            <Newspaper className="h-4 w-4 mr-2 text-blue-500" />{" "}
+            <strong>{notification.sender.username}</strong> posted a notice: "{notification.message}"
+          </>
+        );
       case "role_approved":
         return (
           <>

@@ -10,6 +10,7 @@ import { LayoutDashboard } from "lucide-react";
 const teacherNavLinks = [
   { name: "Dashboard", href: "/teacher", icon: LayoutDashboard },
   { name: "News Management", href: "/teacher/news", icon: Mail },
+  { name: "Notice Management", href: "/teacher/notices", icon: Mail },
   // Add more links here as needed
 ];
 
