@@ -1,0 +1,619 @@
+/**
+ * Timetable Controller
+ * Handles CRUD operations for timetables
+ */
+
+import Timetable from "../models/timetable.model.js";
+import fileStorageService from "../services/fileStorage.service.js";
+import multer from "multer";
+import { createNotification } from "./notification.controller.js";
+
+// Configure multer for file uploads
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+    ];
+
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(
+        new Error(
+          "Invalid file type. Only PDF, DOC, DOCX, XLS, XLSX, JPG, JPEG, and PNG files are allowed."
+        )
+      );
+    }
+  },
+});
+
+/**
+ * Get all timetables with search and filtering
+ */
+export const getAllTimetables = async (req, res) => {
+  try {
+    const {
+      search,
+      course,
+      semester,
+      academicYear,
+      degreeType,
+      timetableType,
+      isActive,
+      page = 1,
+      limit = 20,
+      sortBy = "effectiveFrom",
+      sortOrder = "desc",
+    } = req.query;
+
+    // Build query
+    let query = { isApproved: true };
+
+    // Text search
+    if (search) {
+      query.$text = { $search: search };
+    }
+
+    // Filters
+    if (course) query.course = new RegExp(course, "i");
+    if (semester) query.semester = semester;
+    if (academicYear) query.academicYear = academicYear;
+    if (degreeType) query.degreeType = degreeType;
+    if (timetableType) query.timetableType = timetableType;
+    if (isActive !== undefined) query.isActive = isActive === "true";
+
+    // Only show active timetables by default
+    if (isActive === undefined) {
+      const now = new Date();
+      query.isActive = true;
+      query.effectiveFrom = { $lte: now };
+      query.$or = [
+        { effectiveTo: { $exists: false } },
+        { effectiveTo: null },
+        { effectiveTo: { $gte: now } },
+      ];
+    }
+
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
+
+    // Execute query
+    const timetables = await Timetable.find(query)
+      .populate("uploader", "firstName lastName username avatar")
+      .populate("approvedBy", "firstName lastName username")
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Timetable.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: timetables,
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+        total,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching timetables:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching timetables",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Get active timetables for specific course and semester
+ */
+export const getActiveTimetables = async (req, res) => {
+  try {
+    const { course, semester, academicYear } = req.query;
+
+    if (!course || !semester || !academicYear) {
+      return res.status(400).json({
+        success: false,
+        message: "Course, semester, and academic year are required",
+      });
+    }
+
+    const timetables = await Timetable.getActiveTimetables(
+      course,
+      semester,
+      academicYear
+    ).populate("uploader", "firstName lastName username avatar");
+
+    res.status(200).json({
+      success: true,
+      data: timetables,
+    });
+  } catch (error) {
+    console.error("Error fetching active timetables:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching active timetables",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Get single timetable by ID
+ */
+export const getTimetableById = async (req, res) => {
+  try {
+    const timetable = await Timetable.findById(req.params.id)
+      .populate("uploader", "firstName lastName username avatar")
+      .populate("approvedBy", "firstName lastName username")
+      .populate("notificationsSent.recipients", "firstName lastName username");
+
+    if (!timetable) {
+      return res.status(404).json({
+        success: false,
+        message: "Timetable not found",
+      });
+    }
+
+    // Increment view count
+    await timetable.incrementViewCount();
+
+    res.status(200).json({
+      success: true,
+      data: timetable,
+    });
+  } catch (error) {
+    console.error("Error fetching timetable:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching timetable",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Upload new timetable
+ */
+export const uploadTimetable = async (req, res) => {
+  try {
+    const {
+      title,
+      course,
+      semester,
+      academicYear,
+      degreeType,
+      description,
+      timetableType,
+      effectiveFrom,
+      effectiveTo,
+      tags,
+    } = req.body;
+
+    // Allow either an uploaded file or an external fileUrl
+    if (!req.file && !req.body.fileUrl) {
+      return res.status(400).json({
+        success: false,
+        message: "No file uploaded or fileUrl provided",
+      });
+    }
+
+    // Parse tags if it's a string
+    let parsedTags = [];
+    if (tags) {
+      parsedTags = typeof tags === "string" ? JSON.parse(tags) : tags;
+    }
+
+    // Parse and validate dates first
+    const parsedEffectiveFrom = effectiveFrom
+      ? new Date(effectiveFrom)
+      : new Date();
+    const parsedEffectiveTo = effectiveTo ? new Date(effectiveTo) : null;
+
+    // Validate dates
+    if (isNaN(parsedEffectiveFrom.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid effectiveFrom date",
+      });
+    }
+
+    if (parsedEffectiveTo && isNaN(parsedEffectiveTo.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid effectiveTo date",
+      });
+    }
+
+    // If dates are valid, proceed with file upload or use external link
+    let uploadedFile;
+    let fileExtension = "";
+    let fileSize = 0;
+    let originalFileName = "";
+
+    if (req.file) {
+      uploadedFile = await fileStorageService.uploadFile(
+        req.file.buffer,
+        fileName,
+        req.file.mimetype,
+        "timetables",
+        { course, semester, academicYear }
+      );
+      fileExtension = req.file.originalname.split(".").pop().toLowerCase();
+      fileSize = req.file.size;
+      originalFileName = req.file.originalname;
+    } else if (req.body.fileUrl) {
+      const fileUrl = req.body.fileUrl;
+      uploadedFile = {
+        fileId: `external-${Date.now()}`,
+        publicUrl: fileUrl,
+        downloadUrl: fileUrl,
+      };
+      const maybeExt = fileUrl.split("?")[0].split(".").pop();
+      const extLower = maybeExt ? maybeExt.toLowerCase() : null;
+      const allowedExts = ["pdf", "doc", "docx", "jpg", "jpeg", "png", "xlsx"];
+      fileExtension = allowedExts.includes(extLower) ? extLower : "url";
+      originalFileName = fileUrl.split("/").pop() || fileUrl;
+      fileSize = 0;
+    }
+
+    // Create timetable record
+    const timetable = new Timetable({
+      title,
+      course,
+      semester,
+      academicYear,
+      degreeType,
+      description,
+      timetableType: timetableType || "Regular",
+      effectiveFrom: parsedEffectiveFrom,
+      effectiveTo: parsedEffectiveTo,
+      tags: parsedTags,
+      fileType: fileExtension,
+      fileSize: fileSize,
+      originalFileName: originalFileName,
+      fileId: uploadedFile.fileId,
+      publicUrl: uploadedFile.publicUrl,
+      downloadUrl: uploadedFile.downloadUrl,
+      uploader: req.user._id,
+      isAdminUploaded: req.user.role.includes("admin"),
+      isApproved: req.user.role.includes("admin"), // Auto-approve admin uploads
+    });
+
+    await timetable.save();
+
+    // Populate uploader info
+    await timetable.populate("uploader", "firstName lastName username avatar");
+
+    // Create notification for admin if user upload
+    if (!req.user.role.includes("admin")) {
+      const User = (await import("../models/user.model.js")).default;
+      const admins = await User.find({ role: "admin" });
+
+      for (const admin of admins) {
+        await createNotification({
+          recipient: admin._id,
+          sender: req.user._id,
+          type: "timetable_uploaded",
+          message: `New timetable "${title}" uploaded by ${req.user.firstName} ${req.user.lastName}`,
+          link: `/admin/academic/timetables/${timetable._id}`,
+        });
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Timetable uploaded successfully",
+      data: timetable,
+    });
+  } catch (error) {
+    console.error("Error uploading timetable:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error uploading timetable",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Update timetable
+ */
+export const updateTimetable = async (req, res) => {
+  try {
+    const timetable = await Timetable.findById(req.params.id);
+
+    if (!timetable) {
+      return res.status(404).json({
+        success: false,
+        message: "Timetable not found",
+      });
+    }
+
+    // Check permissions
+    if (
+      !req.user.role.includes("admin") &&
+      timetable.uploader.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to update this timetable",
+      });
+    }
+
+    const {
+      title,
+      course,
+      semester,
+      academicYear,
+      degreeType,
+      description,
+      timetableType,
+      effectiveFrom,
+      effectiveTo,
+      isActive,
+      tags,
+    } = req.body;
+
+    // Parse tags if it's a string
+    let parsedTags = timetable.tags;
+    if (tags) {
+      parsedTags = typeof tags === "string" ? JSON.parse(tags) : tags;
+    }
+
+    // Update timetable
+    const updatedTimetable = await Timetable.findByIdAndUpdate(
+      req.params.id,
+      {
+        title: title || timetable.title,
+        course: course || timetable.course,
+        semester: semester || timetable.semester,
+        academicYear: academicYear || timetable.academicYear,
+        degreeType: degreeType || timetable.degreeType,
+        description: description || timetable.description,
+        timetableType: timetableType || timetable.timetableType,
+        effectiveFrom: effectiveFrom
+          ? new Date(effectiveFrom)
+          : timetable.effectiveFrom,
+        effectiveTo: effectiveTo
+          ? new Date(effectiveTo)
+          : timetable.effectiveTo,
+        isActive: isActive !== undefined ? isActive : timetable.isActive,
+        tags: parsedTags,
+      },
+      { new: true, runValidators: true }
+    ).populate("uploader", "firstName lastName username avatar");
+
+    res.status(200).json({
+      success: true,
+      message: "Timetable updated successfully",
+      data: updatedTimetable,
+    });
+  } catch (error) {
+    console.error("Error updating timetable:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating timetable",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Delete timetable
+ */
+export const deleteTimetable = async (req, res) => {
+  try {
+    const timetable = await Timetable.findById(req.params.id);
+
+    if (!timetable) {
+      return res.status(404).json({
+        success: false,
+        message: "Timetable not found",
+      });
+    }
+
+    // Check permissions
+    if (
+      !req.user.role.includes("admin") &&
+      timetable.uploader.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to delete this timetable",
+      });
+    }
+
+    // Delete from local storage
+    try {
+      await fileStorageService.deleteFile(timetable.fileId, "timetables");
+    } catch (storageError) {
+      console.error("Error deleting file from local storage:", storageError);
+      // Continue with database deletion even if file deletion fails
+      // This prevents orphaned database records
+    }
+
+    // Delete from database
+    await Timetable.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: "Timetable deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting timetable:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error deleting timetable",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Approve timetable (Admin only)
+ */
+export const approveTimetable = async (req, res) => {
+  try {
+    const timetable = await Timetable.findById(req.params.id);
+
+    if (!timetable) {
+      return res.status(404).json({
+        success: false,
+        message: "Timetable not found",
+      });
+    }
+
+    timetable.isApproved = true;
+    timetable.approvedBy = req.user._id;
+    timetable.approvedAt = new Date();
+    await timetable.save();
+
+    // Notify uploader
+    await createNotification({
+      recipient: timetable.uploader,
+      sender: req.user._id,
+      type: "timetable_approved",
+      message: `Your timetable "${timetable.title}" has been approved`,
+      link: `/academic/timetables/${timetable._id}`,
+    });
+
+    // Send notifications to relevant users (same course/semester)
+    if (req.body.notifyUsers) {
+      const User = (await import("../models/user.model.js")).default;
+      const relevantUsers = await User.find({
+        // Add logic to find users interested in this course/semester
+        // This could be based on user preferences or enrollment data
+      });
+
+      const recipients = [];
+      for (const user of relevantUsers) {
+        await createNotification({
+          recipient: user._id,
+          sender: req.user._id,
+          type: "new_timetable",
+          message: `New timetable available for ${timetable.course} - ${timetable.semester}`,
+          link: `/academic/timetables/${timetable._id}`,
+        });
+        recipients.push(user._id);
+      }
+
+      // Record notification
+      await timetable.addNotificationRecord("created", recipients);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Timetable approved successfully",
+      data: timetable,
+    });
+  } catch (error) {
+    console.error("Error approving timetable:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error approving timetable",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Activate/Deactivate timetable (Admin only)
+ */
+export const toggleTimetableStatus = async (req, res) => {
+  try {
+    const timetable = await Timetable.findById(req.params.id);
+
+    if (!timetable) {
+      return res.status(404).json({
+        success: false,
+        message: "Timetable not found",
+      });
+    }
+
+    const newStatus = !timetable.isActive;
+
+    if (newStatus) {
+      await timetable.activate();
+    } else {
+      await timetable.deactivate();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Timetable ${
+        newStatus ? "activated" : "deactivated"
+      } successfully`,
+      data: timetable,
+    });
+  } catch (error) {
+    console.error("Error toggling timetable status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error toggling timetable status",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Track timetable download
+ */
+export const trackDownload = async (req, res) => {
+  try {
+    const timetable = await Timetable.findById(req.params.id);
+
+    if (!timetable) {
+      return res.status(404).json({
+        success: false,
+        message: "Timetable not found",
+      });
+    }
+
+    await timetable.incrementDownloadCount();
+
+    res.status(200).json({
+      success: true,
+      downloadUrl: timetable.downloadUrl,
+    });
+  } catch (error) {
+    console.error("Error tracking download:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error tracking download",
+      error: error.message,
+    });
+  }
+};
+
+// Export multer upload middleware
+export const uploadMiddleware = upload.single("file");
+
+export default {
+  getAllTimetables,
+  getActiveTimetables,
+  getTimetableById,
+  uploadTimetable,
+  updateTimetable,
+  deleteTimetable,
+  approveTimetable,
+  toggleTimetableStatus,
+  trackDownload,
+  uploadMiddleware,
+};

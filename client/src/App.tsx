@@ -40,6 +40,12 @@ import NoticeManagement from "./pages/admin/NoticeManagement";
 import SubscriberList from "./pages/admin/SubscriberList";
 import AboutUs from "./pages/AboutUs";
 
+// Academic Pages
+import AcademicNotes from "./pages/AcademicNotes";
+import QuestionPapers from "./pages/QuestionPapersTable";
+import Syllabus from "./pages/Syllabus";
+import Timetables from "./pages/Timetables";
+
 // Layout Imports
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
@@ -51,6 +57,10 @@ import TeacherLayout from "./components/layout/TeacherLayout";
 import TeacherNewsManagement from "./pages/teacher/NewsManagement";
 import TeacherNoticesManagement from "./pages/teacher/NoticesManagement";
 import TeacherDashboard from "./pages/teacher/Dashboard";
+import TeacherNotesManagement from "./pages/teacher/NotesManagement";
+import TeacherQuestionPapersManagement from "./pages/teacher/QuestionPapersManagement";
+import TeacherSyllabusManagement from "./pages/teacher/SyllabusManagement";
+import TeacherTimetablesManagement from "./pages/teacher/TimetablesManagement";
 
 /**
  * Main application layout with Navbar and Footer.
@@ -119,6 +129,10 @@ function App() {
             <Route index element={<TeacherDashboard />} />
             <Route path="news" element={<TeacherNewsManagement />} />
             <Route path="notices" element={<TeacherNoticesManagement />} />
+            <Route path="notes" element={<TeacherNotesManagement />} />
+            <Route path="question-papers" element={<TeacherQuestionPapersManagement />} />
+            <Route path="syllabus" element={<TeacherSyllabusManagement />} />
+            <Route path="timetables" element={<TeacherTimetablesManagement />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoute />}></Route>
@@ -134,6 +148,12 @@ function App() {
           <Route path="notices/:id" element={<NoticeDetail />} />
           <Route path="purpose" element={<OurPurpose />} />
           <Route path="network" element={<OurNetwork />} />
+
+          {/* Academic Resources Routes */}
+          <Route path="academic/notes" element={<AcademicNotes />} />
+          <Route path="academic/question-papers" element={<QuestionPapers />} />
+          <Route path="academic/syllabus" element={<Syllabus />} />
+          <Route path="academic/timetables" element={<Timetables />} />
           <Route path="profile/:username" element={<Profile />} />
           <Route element={<ProtectedRoute />}>
             <Route path="projects/new" element={<ProjectForm />} />

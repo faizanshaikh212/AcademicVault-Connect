@@ -87,14 +87,28 @@ const uploadFile = async (req, res) => {
     // For avatar uploads, Cloudinary will automatically handle the 1:1 aspect ratio
     // and GIF animation based on premium status in cloudinary.js config
 
-    // Send back the details of the uploaded file provided by Cloudinary
+    const fileStorageService = (
+      await import("../services/fileStorage.service.js")
+    ).default;
+
+    // Upload the file using local storage service
+    const uploadResult = await fileStorageService.uploadFile(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+      "uploads", // general category for regular uploads
+      {}
+    );
+
     res.status(200).json({
       message: "File uploaded successfully.",
-      filePath: req.file.path, // The URL of the uploaded file
+      filePath: uploadResult.publicUrl,
       fileType: req.file.mimetype,
       originalName: req.file.originalname,
       fileSize: req.file.size,
-      isAvatar: req.path.includes("avatar"), // Indicate if this was an avatar upload
+      isAvatar: req.path.includes("avatar"),
+      downloadUrl: uploadResult.downloadUrl,
+      embedUrl: uploadResult.embedUrl,
     });
   } catch (error) {
     logger.error("Upload error:", error);
