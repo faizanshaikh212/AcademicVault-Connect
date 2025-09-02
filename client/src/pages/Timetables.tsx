@@ -19,6 +19,7 @@ const TimetablesPage: React.FC = () => {
   // State management
   const [timetables, setTimetables] = useState<Timetable[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [searchParams, setSearchParams] = useState<TimetableSearchParams>({
     page: 1,
     limit: 12,
@@ -89,6 +90,8 @@ const TimetablesPage: React.FC = () => {
       toast.error("Failed to fetch timetables");
     } finally {
       setLoading(false);
+      // mark initial load complete so subsequent loads keep existing UI and show subtle indicator
+      setInitialLoad(false);
     }
   };
 
@@ -96,7 +99,8 @@ const TimetablesPage: React.FC = () => {
     const newParams: TimetableSearchParams = {
       ...searchParams,
       page: 1,
-      search: searchQuery || undefined,
+      // use `keyword` so server can handle partial/short queries
+      keyword: searchQuery || undefined,
       course: selectedCourse || undefined,
       semester: selectedSemester || undefined,
       academicYear: selectedYear || undefined,
@@ -105,6 +109,21 @@ const TimetablesPage: React.FC = () => {
     };
     setSearchParams(newParams);
   };
+
+  // Debounced live search to update server-driven results as user types
+  useEffect(() => {
+    const qRaw = searchQuery || "";
+    const id = setTimeout(() => {
+      setSearchParams((prev) => ({
+        ...prev,
+        page: 1,
+        keyword: qRaw || undefined,
+      }));
+    }, 250);
+
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
   const handleClearFilters = () => {
     setSearchQuery("");
@@ -311,9 +330,16 @@ const TimetablesPage: React.FC = () => {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <p className="text-gray-600 dark:text-gray-400">
-                {loading
-                  ? "Loading..."
-                  : `${pagination.total} timetables found`}
+                {initialLoad && loading ? (
+                  "Loading..."
+                ) : loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <span>Updating...</span>
+                  </span>
+                ) : (
+                  `${pagination.total} timetables found`
+                )}
               </p>
 
               <div className="flex items-center gap-2">
@@ -344,7 +370,7 @@ const TimetablesPage: React.FC = () => {
             </div>
 
             {/* Timetables Grid */}
-            {loading ? (
+            {initialLoad && loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, index) => (
                   <div
@@ -368,6 +394,12 @@ const TimetablesPage: React.FC = () => {
                   Try adjusting your search criteria or upload some timetables
                   to get started.
                 </p>
+                {loading && !initialLoad && (
+                  <div className="mt-2 flex items-center justify-center text-sm text-gray-500">
+                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2" />
+                    Searching...
+                  </div>
+                )}
                 {isTeacher && (
                   <button
                     onClick={() => setShowUploadModal(true)}
@@ -379,30 +411,44 @@ const TimetablesPage: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {timetables.map((timetable) => (
-                  <AcademicResourceCard
-                    key={timetable._id}
-                    resource={timetable}
-                    resourceType="timetables"
-                    onEdit={(r) => {
-                      setSelectedTimetable(r);
-                      setShowEditModal(true);
-                    }}
-                    onDelete={async (r) => {
-                      try {
-                        await timetablesService.deleteTimetable(r._id);
-                        setTimetables((prev) =>
-                          prev.filter((t) => t._id !== r._id)
-                        );
-                        toast.success("Timetable deleted");
-                      } catch (err) {
-                        console.error(err);
-                        toast.error("Failed to delete timetable");
-                      }
-                    }}
-                  />
-                ))}
+              <div className="relative">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {timetables.map((timetable) => (
+                    <AcademicResourceCard
+                      key={timetable._id}
+                      resource={timetable}
+                      resourceType="timetables"
+                      onEdit={(r) => {
+                        setSelectedTimetable(r);
+                        setShowEditModal(true);
+                      }}
+                      onDelete={async (r) => {
+                        try {
+                          await timetablesService.deleteTimetable(r._id);
+                          setTimetables((prev) =>
+                            prev.filter((t) => t._id !== r._id)
+                          );
+                          toast.success("Timetable deleted");
+                        } catch (err) {
+                          console.error(err);
+                          toast.error("Failed to delete timetable");
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* subtle overlay while refreshing after initial load */}
+                {loading && !initialLoad && (
+                  <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/60 flex items-center justify-center rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-block w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-gray-700 dark:text-gray-200">
+                        Updating...
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

@@ -61,9 +61,48 @@ export const getAllTimetables = async (req, res) => {
     // Build query
     let query = { isApproved: true };
 
-    // Text search
-    if (search) {
-      query.$text = { $search: search };
+    // Flexible keyword search (accept both `search` and `keyword`) and perform
+    // case-insensitive substring matching across title/course/description/tags
+    const qParam = search || req.query.keyword;
+    if (qParam) {
+      const escapeRegex = (s) =>
+        String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const raw = String(qParam).trim();
+      if (raw.length > 0) {
+        const orClauses = [];
+        const escapedFull = escapeRegex(raw);
+        orClauses.push({ title: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ course: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ description: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ tags: { $regex: escapedFull, $options: "i" } });
+
+        const tokens = raw.split(/\s+/).filter(Boolean);
+        tokens.forEach((t) => {
+          const esc = escapeRegex(t);
+          orClauses.push({ title: { $regex: esc, $options: "i" } });
+          orClauses.push({ course: { $regex: esc, $options: "i" } });
+          orClauses.push({ description: { $regex: esc, $options: "i" } });
+          orClauses.push({ tags: { $regex: esc, $options: "i" } });
+        });
+
+        if (!Number.isNaN(Number(raw))) {
+          orClauses.push({ academicYear: raw });
+        } else {
+          tokens.forEach((t) => {
+            if (!Number.isNaN(Number(t))) {
+              orClauses.push({ academicYear: t });
+            }
+          });
+        }
+
+        // If query already has an $or (e.g., active timetable constraints), merge them
+        if (query.$or) {
+          query.$and = [{ $or: query.$or }, { $or: orClauses }];
+          delete query.$or;
+        } else {
+          query.$or = orClauses;
+        }
+      }
     }
 
     // Filters
@@ -79,11 +118,20 @@ export const getAllTimetables = async (req, res) => {
       const now = new Date();
       query.isActive = true;
       query.effectiveFrom = { $lte: now };
-      query.$or = [
+
+      const activeOr = [
         { effectiveTo: { $exists: false } },
         { effectiveTo: null },
         { effectiveTo: { $gte: now } },
       ];
+
+      // If search already added a $or, combine them with $and so both conditions apply
+      if (query.$or) {
+        query.$and = [{ $or: query.$or }, { $or: activeOr }];
+        delete query.$or;
+      } else {
+        query.$or = activeOr;
+      }
     }
 
     // Pagination
@@ -92,6 +140,21 @@ export const getAllTimetables = async (req, res) => {
     sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
 
     // Execute query
+    try {
+      console.debug(
+        "getAllTimetables qParam=",
+        qParam,
+        "query=",
+        JSON.stringify(query)
+      );
+    } catch (e) {
+      console.debug(
+        "getAllTimetables qParam=",
+        qParam,
+        "query=(unserializable)"
+      );
+    }
+
     const timetables = await Timetable.find(query)
       .populate("uploader", "firstName lastName username avatar")
       .populate("approvedBy", "firstName lastName username")

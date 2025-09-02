@@ -55,9 +55,43 @@ export const getAllSyllabus = async (req, res) => {
     // Build query
     let query = { isApproved: true };
 
-    // Text search
-    if (search) {
-      query.$text = { $search: search };
+    // Flexible keyword search (accept both `search` and `keyword`) and perform
+    // case-insensitive substring matches across title/course/description/tags
+    const qParam = search || req.query.keyword;
+    if (qParam) {
+      const escapeRegex = (s) =>
+        String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const raw = String(qParam).trim();
+      if (raw.length > 0) {
+        const orClauses = [];
+        const escapedFull = escapeRegex(raw);
+        orClauses.push({ title: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ course: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ description: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ tags: { $regex: escapedFull, $options: "i" } });
+
+        const tokens = raw.split(/\s+/).filter(Boolean);
+        tokens.forEach((t) => {
+          const esc = escapeRegex(t);
+          orClauses.push({ title: { $regex: esc, $options: "i" } });
+          orClauses.push({ course: { $regex: esc, $options: "i" } });
+          orClauses.push({ description: { $regex: esc, $options: "i" } });
+          orClauses.push({ tags: { $regex: esc, $options: "i" } });
+        });
+
+        // numeric tokens may match academicYear
+        if (!Number.isNaN(Number(raw))) {
+          orClauses.push({ academicYear: raw });
+        } else {
+          tokens.forEach((t) => {
+            if (!Number.isNaN(Number(t))) {
+              orClauses.push({ academicYear: t });
+            }
+          });
+        }
+
+        query.$or = orClauses;
+      }
     }
 
     // Filters
@@ -76,6 +110,17 @@ export const getAllSyllabus = async (req, res) => {
     sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
 
     // Execute query
+    try {
+      console.debug(
+        "getAllSyllabus qParam=",
+        qParam,
+        "query=",
+        JSON.stringify(query)
+      );
+    } catch (e) {
+      console.debug("getAllSyllabus qParam=", qParam, "query=(unserializable)");
+    }
+
     const syllabusDocuments = await Syllabus.find(query)
       .populate("uploader", "firstName lastName username avatar")
       .populate("approvedBy", "firstName lastName username")

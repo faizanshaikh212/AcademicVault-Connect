@@ -18,6 +18,7 @@ const AcademicNotes: React.FC = () => {
   const { user } = useAuth();
   const [notes, setNotes] = useState<AcademicNote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [searchParams, setSearchParams] = useState<NotesSearchParams>({
     page: 1,
     limit: 12,
@@ -83,6 +84,7 @@ const AcademicNotes: React.FC = () => {
       toast.error("Failed to fetch notes");
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
@@ -90,7 +92,8 @@ const AcademicNotes: React.FC = () => {
     const newParams: NotesSearchParams = {
       ...searchParams,
       page: 1,
-      search: searchQuery || undefined,
+      // use `keyword` to align with server endpoints that accept partial/short queries
+      keyword: searchQuery || undefined,
       course: selectedCourse || undefined,
       subject: selectedSubject || undefined,
       semester: selectedSemester || undefined,
@@ -98,6 +101,21 @@ const AcademicNotes: React.FC = () => {
     };
     setSearchParams(newParams);
   };
+
+  // Debounce live search so typing triggers server queries (partial matches)
+  useEffect(() => {
+    const qRaw = searchQuery || "";
+    const id = setTimeout(() => {
+      setSearchParams((prev) => ({
+        ...prev,
+        page: 1,
+        keyword: qRaw || undefined,
+      }));
+    }, 250);
+
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
   const handleClearFilters = () => {
     setSearchQuery("");
@@ -291,7 +309,16 @@ const AcademicNotes: React.FC = () => {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <p className="text-gray-600 dark:text-gray-400">
-                {loading ? "Loading..." : `${pagination.total} notes found`}
+                {initialLoad && loading ? (
+                  "Loading..."
+                ) : loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <span>Updating...</span>
+                  </span>
+                ) : (
+                  `${pagination.total} notes found`
+                )}
               </p>
 
               <div className="flex items-center gap-2">
@@ -322,7 +349,7 @@ const AcademicNotes: React.FC = () => {
             </div>
 
             {/* Notes Grid */}
-            {loading ? (
+            {initialLoad && loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, index) => (
                   <div
@@ -355,30 +382,52 @@ const AcademicNotes: React.FC = () => {
                     Upload Notes
                   </button>
                 )}
+                {loading && !initialLoad && (
+                  <div className="mt-2 flex items-center justify-center text-sm text-gray-500">
+                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2" />
+                    Searching...
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {notes.map((note) => (
-                  <AcademicResourceCard
-                    key={note._id}
-                    resource={note}
-                    resourceType="notes"
-                    onEdit={(r) => {
-                      setSelectedNote(r);
-                      setShowEditModal(true);
-                    }}
-                    onDelete={async (r) => {
-                      try {
-                        await notesService.deleteNote(r._id);
-                        setNotes((prev) => prev.filter((n) => n._id !== r._id));
-                        toast.success("Note deleted");
-                      } catch (err) {
-                        console.error(err);
-                        toast.error("Failed to delete note");
-                      }
-                    }}
-                  />
-                ))}
+              <div className="relative">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {notes.map((note) => (
+                    <AcademicResourceCard
+                      key={note._id}
+                      resource={note}
+                      resourceType="notes"
+                      onEdit={(r) => {
+                        setSelectedNote(r);
+                        setShowEditModal(true);
+                      }}
+                      onDelete={async (r) => {
+                        try {
+                          await notesService.deleteNote(r._id);
+                          setNotes((prev) =>
+                            prev.filter((n) => n._id !== r._id)
+                          );
+                          toast.success("Note deleted");
+                        } catch (err) {
+                          console.error(err);
+                          toast.error("Failed to delete note");
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* subtle overlay while refreshing after initial load */}
+                {loading && !initialLoad && (
+                  <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/60 flex items-center justify-center rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-block w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-gray-700 dark:text-gray-200">
+                        Updating...
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

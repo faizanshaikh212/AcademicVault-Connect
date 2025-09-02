@@ -50,6 +50,7 @@ export const getAllQuestionPapers = async (req, res) => {
       examYear,
       examType,
       search,
+      keyword,
       page = 1,
       limit = 20,
       sortBy = "examYear",
@@ -59,9 +60,50 @@ export const getAllQuestionPapers = async (req, res) => {
     // Build query
     let query = { isApproved: true };
 
-    // Text search
-    if (search) {
-      query.$text = { $search: search };
+    // Flexible regex/OR search across common fields (supports short queries)
+    // Accept both `search` and `keyword` query params for compatibility with other endpoints
+    const qParam = search || keyword;
+    if (qParam) {
+      // Helper: escape regex special chars
+      const escapeRegex = (s) =>
+        String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+      const raw = String(qParam).trim();
+      if (raw.length > 0) {
+        const orClauses = [];
+
+        // Add full-phrase match first (case-insensitive substring)
+        const escapedFull = escapeRegex(raw);
+        orClauses.push({ title: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ course: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ subject: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ description: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ tags: { $regex: escapedFull, $options: "i" } });
+
+        // Tokenize query (split by whitespace) and match any token as substring
+        const tokens = raw.split(/\s+/).filter(Boolean);
+        tokens.forEach((t) => {
+          const esc = escapeRegex(t);
+          orClauses.push({ title: { $regex: esc, $options: "i" } });
+          orClauses.push({ course: { $regex: esc, $options: "i" } });
+          orClauses.push({ subject: { $regex: esc, $options: "i" } });
+          orClauses.push({ description: { $regex: esc, $options: "i" } });
+          orClauses.push({ tags: { $regex: esc, $options: "i" } });
+        });
+
+        // If any token or the full query is numeric, also match examYear
+        if (!Number.isNaN(Number(raw))) {
+          orClauses.push({ examYear: parseInt(raw) });
+        } else {
+          tokens.forEach((t) => {
+            if (!Number.isNaN(Number(t))) {
+              orClauses.push({ examYear: parseInt(t) });
+            }
+          });
+        }
+
+        query.$or = orClauses;
+      }
     }
 
     // Filters

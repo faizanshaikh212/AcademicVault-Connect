@@ -58,9 +58,45 @@ export const getAllNotes = async (req, res) => {
     // Build query
     let query = { isApproved: true };
 
-    // Text search
-    if (search) {
-      query.$text = { $search: search };
+    // Flexible search: accept `search` or `keyword` and perform case-insensitive
+    // substring matching across common fields (title, course, subject, description, tags)
+    const qParam = search || req.query.keyword;
+    if (qParam) {
+      const escapeRegex = (s) =>
+        String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const raw = String(qParam).trim();
+      if (raw.length > 0) {
+        const orClauses = [];
+        const escapedFull = escapeRegex(raw);
+        orClauses.push({ title: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ course: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ subject: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ description: { $regex: escapedFull, $options: "i" } });
+        orClauses.push({ tags: { $regex: escapedFull, $options: "i" } });
+
+        const tokens = raw.split(/\s+/).filter(Boolean);
+        tokens.forEach((t) => {
+          const esc = escapeRegex(t);
+          orClauses.push({ title: { $regex: esc, $options: "i" } });
+          orClauses.push({ course: { $regex: esc, $options: "i" } });
+          orClauses.push({ subject: { $regex: esc, $options: "i" } });
+          orClauses.push({ description: { $regex: esc, $options: "i" } });
+          orClauses.push({ tags: { $regex: esc, $options: "i" } });
+        });
+
+        // If numeric token present, match academicYear
+        if (!Number.isNaN(Number(raw))) {
+          orClauses.push({ academicYear: raw });
+        } else {
+          tokens.forEach((t) => {
+            if (!Number.isNaN(Number(t))) {
+              orClauses.push({ academicYear: t });
+            }
+          });
+        }
+
+        query.$or = orClauses;
+      }
     }
 
     // Filters
@@ -79,6 +115,18 @@ export const getAllNotes = async (req, res) => {
     sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
 
     // Execute query
+    // Diagnostic logging: show qParam and constructed query when debugging search
+    try {
+      console.debug(
+        "getAllNotes qParam=",
+        qParam,
+        "query=",
+        JSON.stringify(query)
+      );
+    } catch (e) {
+      console.debug("getAllNotes qParam=", qParam, "query=(unserializable)");
+    }
+
     const notes = await AcademicNote.find(query)
       .populate("uploader", "firstName lastName username avatar")
       .populate("approvedBy", "firstName lastName username")

@@ -131,6 +131,7 @@ export interface AcademicResourceListResponse<T> {
 // Search and filter interfaces
 export interface AcademicSearchParams {
   search?: string;
+  keyword?: string;
   course?: string;
   semester?: string;
   academicYear?: string;

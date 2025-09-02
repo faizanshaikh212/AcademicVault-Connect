@@ -19,6 +19,7 @@ const SyllabusPage: React.FC = () => {
   // State management
   const [syllabi, setSyllabi] = useState<Syllabus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [searchParams, setSearchParams] = useState<AcademicSearchParams>({
     page: 1,
     limit: 12,
@@ -86,6 +87,7 @@ const SyllabusPage: React.FC = () => {
       toast.error("Failed to fetch syllabi");
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
@@ -93,13 +95,29 @@ const SyllabusPage: React.FC = () => {
     const newParams: AcademicSearchParams = {
       ...searchParams,
       page: 1,
-      search: searchQuery || undefined,
+      // prefer `keyword` for partial/short queries handled by server
+      keyword: searchQuery || undefined,
       course: selectedCourse || undefined,
       academicYear: selectedYear || undefined,
       semester: selectedSemester || undefined,
     };
     setSearchParams(newParams);
   };
+
+  // Debounced live search to call server on typing (supports short fragments)
+  useEffect(() => {
+    const qRaw = searchQuery || "";
+    const id = setTimeout(() => {
+      setSearchParams((prev) => ({
+        ...prev,
+        page: 1,
+        keyword: qRaw || undefined,
+      }));
+    }, 250);
+
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
   const handleClearFilters = () => {
     setSearchQuery("");
@@ -319,7 +337,16 @@ const SyllabusPage: React.FC = () => {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <p className="text-gray-600 dark:text-gray-400">
-                {loading ? "Loading..." : `${pagination.total} syllabi found`}
+                {initialLoad && loading ? (
+                  "Loading..."
+                ) : loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <span>Updating...</span>
+                  </span>
+                ) : (
+                  `${pagination.total} syllabi found`
+                )}
               </p>
 
               <div className="flex items-center gap-2">
@@ -350,7 +377,7 @@ const SyllabusPage: React.FC = () => {
             </div>
 
             {/* Syllabi Grid */}
-            {loading ? (
+            {initialLoad && loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, index) => (
                   <div
@@ -383,20 +410,40 @@ const SyllabusPage: React.FC = () => {
                     Upload Syllabus
                   </button>
                 )}
+                {loading && !initialLoad && (
+                  <div className="mt-2 flex items-center justify-center text-sm text-gray-500">
+                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2" />
+                    Searching...
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {syllabi.map((syllabus) => (
-                  <AcademicResourceCard
-                    key={syllabus._id}
-                    resource={syllabus}
-                    resourceType="syllabus"
-                    onEdit={handleEditSyllabus}
-                    onDelete={handleDeleteSyllabus}
-                    isTeacher={isTeacher}
-                    isAdmin={isAdmin}
-                  />
-                ))}
+              <div className="relative">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {syllabi.map((syllabus) => (
+                    <AcademicResourceCard
+                      key={syllabus._id}
+                      resource={syllabus}
+                      resourceType="syllabus"
+                      onEdit={handleEditSyllabus}
+                      onDelete={handleDeleteSyllabus}
+                      isTeacher={isTeacher}
+                      isAdmin={isAdmin}
+                    />
+                  ))}
+                </div>
+
+                {/* subtle overlay while refreshing after initial load */}
+                {loading && !initialLoad && (
+                  <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/60 flex items-center justify-center rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-block w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-gray-700 dark:text-gray-200">
+                        Updating...
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
