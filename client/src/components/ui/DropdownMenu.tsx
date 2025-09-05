@@ -95,26 +95,12 @@ const DropdownMenuItem: React.FC<{
   children: React.ReactNode;
   onClick?: () => void;
   className?: string;
-  asChild?: boolean;
-}> = ({ children, onClick, className, asChild = false }) => {
+}> = ({ children, onClick, className }) => {
   const { setIsOpen } = useDropdown();
   const handleClick = () => {
     if (onClick) onClick();
     setIsOpen(false);
   };
-
-  if (asChild) {
-    // When asChild is true, we clone the child element and add our props
-    return React.cloneElement(children as React.ReactElement, {
-      onClick: handleClick,
-      className: cn(
-        "flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer",
-        className,
-        (children as React.ReactElement).props.className
-      ),
-    });
-  }
-
   return (
     <div
       onClick={handleClick}

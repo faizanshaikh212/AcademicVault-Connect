@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../../services/api";
+import api from "@/services/api";
 
 const TeacherDashboard: React.FC = () => {
   const [newsCount, setNewsCount] = useState<number | null>(null);

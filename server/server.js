@@ -27,7 +27,6 @@ import connectDB from "./config/db.js";
 
 // Import route files
 import authRoutes from "./routes/auth.routes.js";
-import googleAuthRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import projectRoutes from "./routes/project.routes.js";
 import blogRoutes from "./routes/blog.routes.js";
@@ -38,7 +37,6 @@ import premiumRoutes from "./routes/premium.routes.js";
 import newsRoutes from "./routes/news.routes.js";
 import noticeRoutes from "./routes/notice.routes.js";
 import pageRoutes from "./routes/page.routes.js";
-import academicRoutes from "./routes/academic.routes.js";
 
 // Load environment variables from .env file (for development only)
 dotenv.config();
@@ -48,6 +46,8 @@ const connection = await connectDB();
 
 // Initialize the Express application
 const app = express();
+
+// Removed unnecessary initialization code
 
 // --- Middleware ---
 app.use(
@@ -71,41 +71,6 @@ app.use("/api/premium", premiumRoutes);
 app.use("/api", newsRoutes); // This includes both /api/news and /api/newsletter routes
 app.use("/api", noticeRoutes); // This includes /api/notices routes
 app.use("/api", pageRoutes); // This includes /api/pages routes
-app.use("/api/academic", academicRoutes); // Academic resources routes
-
-// Import and use file routes
-import fileRoutes from "./routes/files.routes.js";
-app.use("/api/files", fileRoutes); // File serving routes
-
-// Serve uploaded files statically from LocalStorage directory
-// Custom file serving middleware for secure downloads
-app.use("/uploads", (req, res, next) => {
-  const filePath = path.join(__dirname, "..", "LocalStorage", req.path);
-  const fileName = path.basename(filePath);
-
-  // Set secure headers for file downloads
-  res.set({
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Content-Disposition": `inline; filename="${fileName}"`,
-    "Content-Type": "application/octet-stream",
-    "X-Content-Type-Options": "nosniff",
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-  });
-
-  // Stream the file directly
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      console.error("Error sending file:", err);
-      if (!res.headersSent) {
-        res.status(404).send("File not found");
-      }
-    }
-  });
-});
 
 // --- ADD THIS SECTION ---
 // Serve static files from the React build folder in production

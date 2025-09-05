@@ -1,20 +1,17 @@
 import React, { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { Menu, Mail } from "lucide-react";
-import { cn } from "../../lib/utils";
+import { cn } from "@/lib/utils";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 
-import { LayoutDashboard, BookOpen, FileText, Clock, GraduationCap } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 const teacherNavLinks = [
   { name: "Dashboard", href: "/teacher", icon: LayoutDashboard },
   { name: "News Management", href: "/teacher/news", icon: Mail },
   { name: "Notice Management", href: "/teacher/notices", icon: Mail },
-  { name: "Academic Notes", href: "/teacher/notes", icon: BookOpen },
-  { name: "Question Papers", href: "/teacher/question-papers", icon: FileText },
-  { name: "Syllabus", href: "/teacher/syllabus", icon: GraduationCap },
-  { name: "Timetables", href: "/teacher/timetables", icon: Clock },
+  // Add more links here as needed
 ];
 
 const TeacherLayout: React.FC = () => {

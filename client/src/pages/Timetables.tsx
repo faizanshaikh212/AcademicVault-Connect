@@ -3,28 +3,32 @@
  * Page for browsing and managing class timetables
  */
 
-import React, { useState, useEffect } from "react";
-import { Search, Filter, Clock, Plus } from "lucide-react";
-import { toast } from "react-hot-toast";
-import { Timetable, TimetableSearchParams } from "../types/academic";
-import Galaxy from "../components/background/Galaxy";
-import AcademicResourceCard from "../components/shared/AcademicResourceCard";
-import FileUploadModal from "../components/shared/FileUploadModal";
-import TimetableEditModal from "../components/shared/TimetableEditModal";
-import { timetablesService } from "../services/academicService";
-import { useAuth } from "../hooks/useAuth";
+import React, { useState, useEffect } from 'react';
+import {
+  Search,
+  Filter,
+  Clock,
+  Plus
+} from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { Timetable, TimetableSearchParams } from '../types/academic';
+import Galaxy from '../components/background/Galaxy';
+import AcademicResourceCard from '../components/shared/AcademicResourceCard';
+import DocumentViewer from '../components/shared/DocumentViewer';
+import FileUploadModal from '../components/shared/FileUploadModal';
+import { timetablesService } from '../services/academicService';
+import { useAuth } from '../hooks/useAuth';
 
 const TimetablesPage: React.FC = () => {
   const { user } = useAuth();
   // State management
   const [timetables, setTimetables] = useState<Timetable[]>([]);
   const [loading, setLoading] = useState(true);
-  const [initialLoad, setInitialLoad] = useState(true);
   const [searchParams, setSearchParams] = useState<TimetableSearchParams>({
     page: 1,
     limit: 12,
-    sortBy: "effectiveFrom",
-    sortOrder: "desc",
+    sortBy: 'effectiveFrom',
+    sortOrder: 'desc',
   });
   const [pagination, setPagination] = useState({
     current: 1,
@@ -32,18 +36,16 @@ const TimetablesPage: React.FC = () => {
     total: 0,
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedTimetable, setSelectedTimetable] = useState<Timetable | null>(null);
+  const [showViewer, setShowViewer] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedTimetable, setSelectedTimetable] = useState<Timetable | null>(
-    null
-  );
 
   // Filter states
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState("");
-  const [selectedSemester, setSelectedSemester] = useState("");
-  const [selectedYear, setSelectedYear] = useState("");
-  const [selectedType, setSelectedType] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState('');
+  const [selectedSemester, setSelectedSemester] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
+  const [selectedType, setSelectedType] = useState('');
   const [showActiveOnly, setShowActiveOnly] = useState(false);
 
   // Filter options
@@ -66,18 +68,10 @@ const TimetablesPage: React.FC = () => {
       setPagination(response.pagination);
 
       // Extract filter options from the data
-      const courses = [
-        ...new Set(response.data.map((timetable) => timetable.course)),
-      ];
-      const semesters = [
-        ...new Set(response.data.map((timetable) => timetable.semester)),
-      ];
-      const years = [
-        ...new Set(response.data.map((timetable) => timetable.academicYear)),
-      ];
-      const types = [
-        ...new Set(response.data.map((timetable) => timetable.timetableType)),
-      ];
+      const courses = [...new Set(response.data.map(timetable => timetable.course))];
+      const semesters = [...new Set(response.data.map(timetable => timetable.semester))];
+      const years = [...new Set(response.data.map(timetable => timetable.academicYear))];
+      const types = [...new Set(response.data.map(timetable => timetable.timetableType))];
 
       setFilterOptions({
         courses,
@@ -86,12 +80,10 @@ const TimetablesPage: React.FC = () => {
         types,
       });
     } catch (error) {
-      console.error("Error fetching timetables:", error);
-      toast.error("Failed to fetch timetables");
+      console.error('Error fetching timetables:', error);
+      toast.error('Failed to fetch timetables');
     } finally {
       setLoading(false);
-      // mark initial load complete so subsequent loads keep existing UI and show subtle indicator
-      setInitialLoad(false);
     }
   };
 
@@ -99,8 +91,7 @@ const TimetablesPage: React.FC = () => {
     const newParams: TimetableSearchParams = {
       ...searchParams,
       page: 1,
-      // use `keyword` so server can handle partial/short queries
-      keyword: searchQuery || undefined,
+      search: searchQuery || undefined,
       course: selectedCourse || undefined,
       semester: selectedSemester || undefined,
       academicYear: selectedYear || undefined,
@@ -110,33 +101,18 @@ const TimetablesPage: React.FC = () => {
     setSearchParams(newParams);
   };
 
-  // Debounced live search to update server-driven results as user types
-  useEffect(() => {
-    const qRaw = searchQuery || "";
-    const id = setTimeout(() => {
-      setSearchParams((prev) => ({
-        ...prev,
-        page: 1,
-        keyword: qRaw || undefined,
-      }));
-    }, 250);
-
-    return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery]);
-
   const handleClearFilters = () => {
-    setSearchQuery("");
-    setSelectedCourse("");
-    setSelectedSemester("");
-    setSelectedYear("");
-    setSelectedType("");
+    setSearchQuery('');
+    setSelectedCourse('');
+    setSelectedSemester('');
+    setSelectedYear('');
+    setSelectedType('');
     setShowActiveOnly(false);
     setSearchParams({
       page: 1,
       limit: 12,
-      sortBy: "effectiveFrom",
-      sortOrder: "desc",
+      sortBy: 'effectiveFrom',
+      sortOrder: 'desc',
     });
   };
 
@@ -144,22 +120,49 @@ const TimetablesPage: React.FC = () => {
     setSearchParams({ ...searchParams, page });
   };
 
+  const handleViewTimetable = (timetable: Timetable) => {
+    setSelectedTimetable(timetable);
+    setShowViewer(true);
+  };
+
+  const handleDownloadTimetable = async (timetable: Timetable) => {
+    try {
+      const response = await timetablesService.trackDownload(timetable._id);
+      window.open(response.downloadUrl, '_blank');
+      toast.success('Download started');
+
+      // Update download count in the local state
+      setTimetables(prevTimetables =>
+        prevTimetables.map(t =>
+          t._id === timetable._id ? { ...t, downloadCount: t.downloadCount + 1 } : t
+        )
+      );
+    } catch (error) {
+      console.error('Error downloading timetable:', error);
+      toast.error('Failed to download timetable');
+    }
+  };
+
+  const handleCloseViewer = () => {
+    setShowViewer(false);
+    setSelectedTimetable(null);
+  };
+
   const handleUpload = async (formData: FormData) => {
     try {
       await timetablesService.uploadTimetable(formData);
       fetchTimetables(); // Refresh the timetables list
-      toast.success("Timetable uploaded successfully!");
+      toast.success('Timetable uploaded successfully!');
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error('Upload error:', error);
       throw error; // Let the modal handle the error display
     }
   };
 
-  const isTeacher =
-    user && Array.isArray(user.role) && user.role.includes("teacher");
+  const isTeacher = user && Array.isArray(user.role) && user.role.includes('teacher');
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative  pt-25">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative">
       {/* Background Effect */}
       <Galaxy />
 
@@ -172,7 +175,7 @@ const TimetablesPage: React.FC = () => {
                 <Clock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Time Tables
+                    Class Timetables
                   </h1>
                   <p className="text-gray-600 dark:text-gray-400">
                     Browse and download class schedules and timetables
@@ -205,17 +208,16 @@ const TimetablesPage: React.FC = () => {
                   placeholder="Search timetables by course, description..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-                  showFilters
-                    ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300"
-                    : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${showFilters
+                  ? 'bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
               >
                 <Filter className="w-5 h-5" />
                 Filters
@@ -311,9 +313,7 @@ const TimetablesPage: React.FC = () => {
                       onChange={(e) => setShowActiveOnly(e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      Show active only
-                    </span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Show active only</span>
                   </label>
                   <button
                     onClick={handleClearFilters}
@@ -330,30 +330,19 @@ const TimetablesPage: React.FC = () => {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <p className="text-gray-600 dark:text-gray-400">
-                {initialLoad && loading ? (
-                  "Loading..."
-                ) : loading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                    <span>Updating...</span>
-                  </span>
-                ) : (
-                  `${pagination.total} timetables found`
-                )}
+                {loading ? 'Loading...' : `${pagination.total} timetables found`}
               </p>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600 dark:text-gray-400">
-                  Sort by:
-                </label>
+                <label className="text-sm text-gray-600 dark:text-gray-400">Sort by:</label>
                 <select
                   value={`${searchParams.sortBy}-${searchParams.sortOrder}`}
                   onChange={(e) => {
-                    const [sortBy, sortOrder] = e.target.value.split("-");
+                    const [sortBy, sortOrder] = e.target.value.split('-');
                     setSearchParams({
                       ...searchParams,
                       sortBy,
-                      sortOrder: sortOrder as "asc" | "desc",
+                      sortOrder: sortOrder as 'asc' | 'desc',
                       page: 1,
                     });
                   }}
@@ -370,13 +359,10 @@ const TimetablesPage: React.FC = () => {
             </div>
 
             {/* Timetables Grid */}
-            {initialLoad && loading ? (
+            {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, index) => (
-                  <div
-                    key={index}
-                    className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-pulse"
-                  >
+                  <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
                     <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
                     <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
                     <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
@@ -391,15 +377,8 @@ const TimetablesPage: React.FC = () => {
                   No timetables found
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Try adjusting your search criteria or upload some timetables
-                  to get started.
+                  Try adjusting your search criteria or upload some timetables to get started.
                 </p>
-                {loading && !initialLoad && (
-                  <div className="mt-2 flex items-center justify-center text-sm text-gray-500">
-                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2" />
-                    Searching...
-                  </div>
-                )}
                 {isTeacher && (
                   <button
                     onClick={() => setShowUploadModal(true)}
@@ -411,44 +390,16 @@ const TimetablesPage: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="relative">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {timetables.map((timetable) => (
-                    <AcademicResourceCard
-                      key={timetable._id}
-                      resource={timetable}
-                      resourceType="timetables"
-                      onEdit={(r) => {
-                        setSelectedTimetable(r);
-                        setShowEditModal(true);
-                      }}
-                      onDelete={async (r) => {
-                        try {
-                          await timetablesService.deleteTimetable(r._id);
-                          setTimetables((prev) =>
-                            prev.filter((t) => t._id !== r._id)
-                          );
-                          toast.success("Timetable deleted");
-                        } catch (err) {
-                          console.error(err);
-                          toast.error("Failed to delete timetable");
-                        }
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* subtle overlay while refreshing after initial load */}
-                {loading && !initialLoad && (
-                  <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/60 flex items-center justify-center rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <span className="inline-block w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                      <span className="text-gray-700 dark:text-gray-200">
-                        Updating...
-                      </span>
-                    </div>
-                  </div>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {timetables.map((timetable) => (
+                  <AcademicResourceCard
+                    key={timetable._id}
+                    resource={timetable}
+                    resourceType="timetables"
+                    onView={handleViewTimetable}
+                    onDownload={handleDownloadTimetable}
+                  />
+                ))}
               </div>
             )}
 
@@ -470,11 +421,10 @@ const TimetablesPage: React.FC = () => {
                       <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`px-3 py-2 rounded ${
-                          page === pagination.current
-                            ? "bg-blue-600 text-white"
-                            : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                        }`}
+                        className={`px-3 py-2 rounded ${page === pagination.current
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                          }`}
                       >
                         {page}
                       </button>
@@ -495,6 +445,20 @@ const TimetablesPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Document Viewer */}
+      {showViewer && selectedTimetable && (
+        <DocumentViewer
+          isOpen={showViewer}
+          onClose={handleCloseViewer}
+          fileUrl={selectedTimetable.publicUrl}
+          embedUrl={selectedTimetable.embedUrl || ''}
+          downloadUrl={selectedTimetable.downloadUrl}
+          title={selectedTimetable.title}
+          fileType={selectedTimetable.fileType}
+          onDownload={() => handleDownloadTimetable(selectedTimetable)}
+        />
+      )}
+
       {/* Upload Modal */}
       {showUploadModal && (
         <FileUploadModal
@@ -503,29 +467,6 @@ const TimetablesPage: React.FC = () => {
           onUpload={handleUpload}
           resourceType="timetables"
           title="Upload Class Timetable"
-        />
-      )}
-
-      {/* Edit Modal */}
-      {selectedTimetable && (
-        <TimetableEditModal
-          isOpen={showEditModal}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedTimetable(null);
-          }}
-          timetable={selectedTimetable}
-          onSubmit={async (values) => {
-            if (!selectedTimetable) return;
-            await timetablesService.updateTimetable(
-              selectedTimetable._id,
-              values
-            );
-            setShowEditModal(false);
-            setSelectedTimetable(null);
-            fetchTimetables();
-            toast.success("Updated successfully");
-          }}
         />
       )}
     </div>

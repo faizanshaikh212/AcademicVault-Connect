@@ -3,87 +3,78 @@
  * Page for browsing question papers organized by degree type, course, and semester
  */
 
-import React, { useState, useEffect } from "react";
-import {
-  ArrowLeft,
-  FileText,
-  GraduationCap,
-  Brain,
-  Award,
-  Building,
-} from "lucide-react";
-import { toast } from "react-hot-toast";
-import AcademicResourceCard from "../components/shared/AcademicResourceCard";
-import { QuestionPapersBySemester } from "../types/academic";
-import { questionPapersService } from "../services/academicService";
-import Galaxy from "../components/background/Galaxy";
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, FileText, GraduationCap, Brain, Award, Building } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import AcademicResourceCard from '../components/shared/AcademicResourceCard';
+import DocumentViewer from '../components/shared/DocumentViewer';
+import { QuestionPaper, QuestionPapersBySemester } from '../types/academic';
+import { questionPapersService } from '../services/academicService';
+import Galaxy from '../components/background/Galaxy';
 
 interface CategoryTile {
   id: string;
   title: string;
   description: string;
   icon: React.ReactNode;
-  degreeType: "BE" | "BSC" | "PG" | "Commerce";
+  degreeType: 'BE' | 'BSC' | 'PG' | 'Commerce';
 }
 
 const QuestionPapers: React.FC = () => {
   // State management
-  const [currentView, setCurrentView] = useState<
-    "categories" | "courses" | "papers"
-  >("categories");
-  const [selectedCategory, setSelectedCategory] = useState<CategoryTile | null>(
-    null
-  );
-  const [selectedCourse, setSelectedCourse] = useState<string>("");
+  const [currentView, setCurrentView] = useState<'categories' | 'courses' | 'papers'>('categories');
+  const [selectedCategory, setSelectedCategory] = useState<CategoryTile | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<string>('');
 
   const [availableCourses, setAvailableCourses] = useState<string[]>([]);
-  const [papersBySemester, setPapersBySemester] =
-    useState<QuestionPapersBySemester>({});
+  const [papersBySemester, setPapersBySemester] = useState<QuestionPapersBySemester>({});
   const [loading, setLoading] = useState(false);
+
+  const [selectedPaper, setSelectedPaper] = useState<QuestionPaper | null>(null);
+  const [showViewer, setShowViewer] = useState(false);
 
   // Category definitions (converted from old HTML structure)
   const categories: CategoryTile[] = [
     {
-      id: "be",
-      title: "Bachelor in Engineering (BE)",
-      description:
-        "Engineering question papers across all branches and semesters",
+      id: 'be',
+      title: 'Bachelor in Engineering (BE)',
+      description: 'Engineering question papers across all branches and semesters',
       icon: <GraduationCap className="w-8 h-8" />,
-      degreeType: "BE",
+      degreeType: 'BE'
     },
     {
-      id: "bsc",
-      title: "Bachelor in Science (BSC)",
-      description: "Science question papers for various specializations",
+      id: 'bsc',
+      title: 'Bachelor in Science (BSC)',
+      description: 'Science question papers for various specializations',
       icon: <Brain className="w-8 h-8" />,
-      degreeType: "BSC",
+      degreeType: 'BSC'
     },
     {
-      id: "pg",
-      title: "Post Graduate (PG)",
-      description: "Masters and postgraduate program question papers",
+      id: 'pg',
+      title: 'Post Graduate (PG)',
+      description: 'Masters and postgraduate program question papers',
       icon: <Award className="w-8 h-8" />,
-      degreeType: "PG",
+      degreeType: 'PG'
     },
     {
-      id: "commerce",
-      title: "Commerce (COM)",
-      description: "Commerce and business studies question papers",
+      id: 'commerce',
+      title: 'Commerce (COM)',
+      description: 'Commerce and business studies question papers',
       icon: <Building className="w-8 h-8" />,
-      degreeType: "Commerce",
-    },
+      degreeType: 'Commerce'
+    }
   ];
 
   // Fetch courses when category is selected
   useEffect(() => {
-    if (selectedCategory && currentView === "courses") {
+    if (selectedCategory && currentView === 'courses') {
       fetchCourses(selectedCategory.degreeType);
     }
   }, [selectedCategory, currentView]);
 
   // Fetch papers when course is selected
   useEffect(() => {
-    if (selectedCategory && selectedCourse && currentView === "papers") {
+    if (selectedCategory && selectedCourse && currentView === 'papers') {
       fetchPapers(selectedCategory.degreeType, selectedCourse);
     }
   }, [selectedCategory, selectedCourse, currentView]);
@@ -91,13 +82,11 @@ const QuestionPapers: React.FC = () => {
   const fetchCourses = async (degreeType: string) => {
     try {
       setLoading(true);
-      const response = await questionPapersService.getQuestionPapersByCategory(
-        degreeType
-      );
+      const response = await questionPapersService.getQuestionPapersByCategory(degreeType);
       setAvailableCourses(response.data as string[]);
     } catch (error) {
-      console.error("Error fetching courses:", error);
-      toast.error("Failed to fetch courses");
+      console.error('Error fetching courses:', error);
+      toast.error('Failed to fetch courses');
     } finally {
       setLoading(false);
     }
@@ -106,14 +95,11 @@ const QuestionPapers: React.FC = () => {
   const fetchPapers = async (degreeType: string, course: string) => {
     try {
       setLoading(true);
-      const response = await questionPapersService.getQuestionPapersByCategory(
-        degreeType,
-        course
-      );
+      const response = await questionPapersService.getQuestionPapersByCategory(degreeType, course);
       setPapersBySemester(response.data as QuestionPapersBySemester);
     } catch (error) {
-      console.error("Error fetching papers:", error);
-      toast.error("Failed to fetch question papers");
+      console.error('Error fetching papers:', error);
+      toast.error('Failed to fetch question papers');
     } finally {
       setLoading(false);
     }
@@ -121,31 +107,52 @@ const QuestionPapers: React.FC = () => {
 
   const handleCategorySelect = (category: CategoryTile) => {
     setSelectedCategory(category);
-    setCurrentView("courses");
-    setSelectedCourse("");
+    setCurrentView('courses');
+    setSelectedCourse('');
     setPapersBySemester({});
   };
 
   const handleCourseSelect = (course: string) => {
     setSelectedCourse(course);
-    setCurrentView("papers");
+    setCurrentView('papers');
   };
 
   const handleBackToCategories = () => {
-    setCurrentView("categories");
+    setCurrentView('categories');
     setSelectedCategory(null);
-    setSelectedCourse("");
+    setSelectedCourse('');
     setPapersBySemester({});
   };
 
   const handleBackToCourses = () => {
-    setCurrentView("courses");
-    setSelectedCourse("");
+    setCurrentView('courses');
+    setSelectedCourse('');
     setPapersBySemester({});
   };
 
+  const handleViewPaper = (paper: QuestionPaper) => {
+    setSelectedPaper(paper);
+    setShowViewer(true);
+  };
+
+  const handleDownloadPaper = async (paper: QuestionPaper) => {
+    try {
+      const response = await questionPapersService.trackDownload(paper._id);
+      window.open(response.downloadUrl, '_blank');
+      toast.success('Download started');
+    } catch (error) {
+      console.error('Error downloading paper:', error);
+      toast.error('Failed to download paper');
+    }
+  };
+
+  const handleCloseViewer = () => {
+    setShowViewer(false);
+    setSelectedPaper(null);
+  };
+
   const renderBreadcrumb = () => {
-    const items = ["Question Papers"];
+    const items = ['Question Papers'];
     if (selectedCategory) items.push(selectedCategory.title);
     if (selectedCourse) items.push(selectedCourse);
 
@@ -154,13 +161,7 @@ const QuestionPapers: React.FC = () => {
         {items.map((item, index) => (
           <React.Fragment key={item}>
             {index > 0 && <span>/</span>}
-            <span
-              className={
-                index === items.length - 1
-                  ? "font-medium text-gray-900 dark:text-white"
-                  : ""
-              }
-            >
+            <span className={index === items.length - 1 ? 'font-medium text-gray-900 dark:text-white' : ''}>
               {item}
             </span>
           </React.Fragment>
@@ -180,13 +181,9 @@ const QuestionPapers: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {currentView !== "categories" && (
+                {currentView !== 'categories' && (
                   <button
-                    onClick={
-                      currentView === "courses"
-                        ? handleBackToCategories
-                        : handleBackToCourses
-                    }
+                    onClick={currentView === 'courses' ? handleBackToCategories : handleBackToCourses}
                     className="p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
                     <ArrowLeft className="w-5 h-5" />
@@ -206,12 +203,12 @@ const QuestionPapers: React.FC = () => {
           </div>
         </div>
 
-        {/* Content: add top padding to prevent header overlap with fixed navbar */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 md:pt-28 pb-6">
+        {/* Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {renderBreadcrumb()}
 
           {/* Categories View */}
-          {currentView === "categories" && (
+          {currentView === 'categories' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {categories.map((category) => (
                 <div
@@ -236,7 +233,7 @@ const QuestionPapers: React.FC = () => {
           )}
 
           {/* Courses View */}
-          {currentView === "courses" && (
+          {currentView === 'courses' && (
             <div>
               {loading ? (
                 <div className="flex justify-center py-12">
@@ -264,7 +261,7 @@ const QuestionPapers: React.FC = () => {
           )}
 
           {/* Papers View */}
-          {currentView === "papers" && (
+          {currentView === 'papers' && (
             <div>
               {loading ? (
                 <div className="flex justify-center py-12">
@@ -272,24 +269,24 @@ const QuestionPapers: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-8">
-                  {Object.entries(papersBySemester).map(
-                    ([semester, papers]) => (
-                      <div key={semester}>
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                          {semester}
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {papers.map((paper) => (
-                            <AcademicResourceCard
-                              key={paper._id}
-                              resource={paper}
-                              resourceType="questionPapers"
-                            />
-                          ))}
-                        </div>
+                  {Object.entries(papersBySemester).map(([semester, papers]) => (
+                    <div key={semester}>
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                        {semester}
+                      </h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {papers.map((paper) => (
+                          <AcademicResourceCard
+                            key={paper._id}
+                            resource={paper}
+                            resourceType="questionPapers"
+                            onView={handleViewPaper}
+                            onDownload={handleDownloadPaper}
+                          />
+                        ))}
                       </div>
-                    )
-                  )}
+                    </div>
+                  ))}
 
                   {Object.keys(papersBySemester).length === 0 && (
                     <div className="text-center py-12">
@@ -308,6 +305,20 @@ const QuestionPapers: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Document Viewer */}
+      {showViewer && selectedPaper && (
+        <DocumentViewer
+          isOpen={showViewer}
+          onClose={handleCloseViewer}
+          fileUrl={selectedPaper.publicUrl}
+          embedUrl={selectedPaper.embedUrl || ''}
+          downloadUrl={selectedPaper.downloadUrl}
+          title={selectedPaper.title}
+          fileType={selectedPaper.fileType}
+          onDownload={() => handleDownloadPaper(selectedPaper)}
+        />
+      )}
     </div>
   );
 };

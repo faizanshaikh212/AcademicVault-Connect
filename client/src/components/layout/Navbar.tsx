@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 
-import { Button } from "../ui/Button";
+import { Button } from "@/components/ui/Button";
 import {
   Menu,
   X,
@@ -17,19 +17,20 @@ import {
   RotateCw,
   RefreshCcw,
   Bell,
+  FileText,
 } from "lucide-react";
-import { cn } from "../../lib/utils";
-import { getAvatarUrl } from "../../lib/avatar";
+import { cn } from "@/lib/utils";
+import { getAvatarUrl } from "@/lib/avatar";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from "../ui/DropdownMenu";
+} from "@/components/ui/DropdownMenu";
 import NotificationBell from "./NotificationBell";
-import { useScrollDirection } from "../../hooks/useScrollDirection";
-import CopyTooltip from "../ui/CopyTooltip";
+import { useScrollDirection } from "@/hooks/useScrollDirection";
+import CopyTooltip from "@/components/ui/CopyTooltip";
 
 const navLinks = [
   { name: "Our Purpose", href: "/purpose", icon: Users },
@@ -38,13 +39,6 @@ const navLinks = [
   { name: "Notices", href: "/notices", icon: Rss },
   { name: "Blogs", href: "/blogs", icon: Rss },
   { name: "Projects", href: "/projects", icon: Layers },
-];
-
-const academicLinks = [
-  { name: "Academic Notes", href: "/academic/notes", description: "Study materials and notes" },
-  { name: "Question Papers", href: "/academic/question-papers", description: "Previous year question papers" },
-  { name: "Syllabus", href: "/academic/syllabus", description: "Course syllabi and curriculum" },
-  { name: "Timetables", href: "/academic/timetables", description: "Class schedules and timetables" },
 ];
 
 const Navbar: React.FC = () => {
@@ -66,7 +60,7 @@ const Navbar: React.FC = () => {
         return;
       }
 
-      import("../../services/api")
+      import("@/services/api")
         .then(async ({ default: api }) => {
           // Get fresh user data
           const { data } = await api.get(`/users/${currentUser.username}`);
@@ -143,29 +137,6 @@ const Navbar: React.FC = () => {
               {link.name}
             </NavLink>
           ))}
-
-          {/* Academic Resources Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="text-sm font-medium text-gray-600 transition-colors hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 flex items-center gap-1">
-                Academic Resources
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              {academicLinks.map((link) => (
-                <DropdownMenuItem key={link.name} asChild>
-                  <Link to={link.href} className="flex flex-col items-start gap-1 p-3">
-                    <span className="font-medium">{link.name}</span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{link.description}</span>
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           {/* Conditionally render Admin Panel link */}
           {user && user.role.includes("admin") && (
             <NavLink
@@ -287,23 +258,27 @@ const Navbar: React.FC = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={isRefreshing ? undefined : handleRefresh}
-                    className={`${isRefreshing ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
+                    className={`${
+                      isRefreshing ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                   >
                     <RotateCw
-                      className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""
-                        }`}
+                      className={`mr-2 h-4 w-4 ${
+                        isRefreshing ? "animate-spin" : ""
+                      }`}
                     />
                     <span>Refresh Page</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={isRelogging ? undefined : handleRelogin}
-                    className={`${isRelogging ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
+                    className={`${
+                      isRelogging ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                   >
                     <RefreshCcw
-                      className={`mr-2 h-4 w-4 ${isRelogging ? "animate-spin" : ""
-                        }`}
+                      className={`mr-2 h-4 w-4 ${
+                        isRelogging ? "animate-spin" : ""
+                      }`}
                     />
                     <span>Refresh Profile</span>
                   </DropdownMenuItem>
@@ -371,28 +346,6 @@ const Navbar: React.FC = () => {
                 {link.name}
               </NavLink>
             ))}
-
-            {/* Academic Resources Section */}
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-              <p className="px-2 py-1 text-sm font-semibold text-gray-500 dark:text-gray-400">Academic Resources</p>
-              {academicLinks.map((link) => (
-                <NavLink
-                  key={link.name}
-                  to={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex flex-col gap-1 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800",
-                      { "bg-gray-100 dark:bg-gray-800": isActive }
-                    )
-                  }
-                >
-                  <span>{link.name}</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">{link.description}</span>
-                </NavLink>
-              ))}
-            </div>
-
             {/* Conditionally render Admin Panel link in mobile menu */}
             {user && user.role.includes("admin") && (
               <NavLink

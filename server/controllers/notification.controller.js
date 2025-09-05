@@ -77,26 +77,9 @@ const clearNotifications = async (req, res) => {
   }
 };
 
-/**
- * @desc    Create a new notification
- * @param   {Object} notificationData - Notification data
- * @access  Internal function
- */
-const createNotification = async (notificationData) => {
-  try {
-    const notification = new Notification(notificationData);
-    await notification.save();
-    return notification;
-  } catch (error) {
-    console.error("Error creating notification:", error);
-    throw error;
-  }
-};
-
 export {
   getNotifications,
   markNotificationsAsRead,
   getNotificationHistory,
   clearNotifications,
-  createNotification,
 };
