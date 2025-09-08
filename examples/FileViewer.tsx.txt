@@ -1,0 +1,127 @@
+/**
+ * File Viewer Component
+ * A simplified and secure document viewer that avoids direct embedding
+ */
+
+import React from "react";
+import {
+  X,
+  Download,
+  ExternalLink,
+  FileText,
+  Image as ImageIcon,
+  FileIcon,
+} from "lucide-react";
+
+interface FileViewerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  fileUrl: string;
+  downloadUrl: string;
+  title: string;
+  fileType: string;
+  onDownload?: () => void;
+}
+
+const FileViewer: React.FC<FileViewerProps> = ({
+  isOpen,
+  onClose,
+  fileUrl,
+  downloadUrl,
+  title,
+  fileType,
+  onDownload,
+}) => {
+  if (!isOpen) return null;
+
+  const handleDownload = () => {
+    if (onDownload) {
+      onDownload();
+    } else {
+      // Use simple anchor tag download
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.setAttribute("download", "");
+      link.setAttribute("target", "_blank");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const getFileIcon = () => {
+    const ext = fileType.toLowerCase();
+    if (ext === "pdf") return <FileText className="w-16 h-16 text-red-500" />;
+    if (["jpg", "jpeg", "png", "gif"].includes(ext))
+      return <ImageIcon className="w-16 h-16 text-blue-500" />;
+    return <FileIcon className="w-16 h-16 text-gray-500" />;
+  };
+
+  const getFileType = () => {
+    const ext = fileType.toLowerCase();
+    if (ext === "pdf") return "PDF Document";
+    if (["jpg", "jpeg", "png", "gif"].includes(ext)) return "Image";
+    if (ext === "txt") return "Text Document";
+    return "Document";
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate pr-4">
+            {title}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            title="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-8">
+          <div className="flex flex-col items-center text-center space-y-4">
+            {getFileIcon()}
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+              {getFileType()}
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Choose how you'd like to access this file:
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+              <a
+                href={fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors gap-2"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.open(fileUrl, "_blank", "noopener,noreferrer");
+                }}
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open in New Tab
+              </a>
+              <button
+                onClick={handleDownload}
+                className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Download
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default FileViewer;

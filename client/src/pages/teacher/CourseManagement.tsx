@@ -11,9 +11,11 @@ const CourseManagement: React.FC = () => {
   const [semesterCount, setSemesterCount] = useState<number | "">("");
   // semester count is managed at course level; we no longer collect it at creation time
   const [loading, setLoading] = useState(false);
+  const [category, setCategory] = useState<string>("");
   const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
   const [editingCourse, setEditingCourse] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [editingCategory, setEditingCategory] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [sortValue, setSortValue] = useState("createdAt-desc");
@@ -21,12 +23,26 @@ const CourseManagement: React.FC = () => {
   const startEditCourse = (c: any) => {
     setEditingCourse(c._id);
     setEditingTitle(c.title);
+    setEditingCategory(c.type || c.degreeType || "");
   };
 
   const saveCourseEdit = async (id: string) => {
     try {
-      await coursesService.updateCourse(id, { title: editingTitle });
+      await coursesService.updateCourse(id, {
+        title: editingTitle,
+        type: editingCategory || undefined,
+      });
+      // optimistic local update so category shows immediately
+      setCourses((prev) =>
+        prev.map((c) =>
+          c._id === id
+            ? { ...c, title: editingTitle, type: editingCategory || c.type }
+            : c
+        )
+      );
       setEditingCourse(null);
+      setEditingCategory("");
+      // still refresh from server to sync
       fetchCourses();
     } catch (err) {
       console.error(err);
@@ -36,6 +52,7 @@ const CourseManagement: React.FC = () => {
   const cancelCourseEdit = () => {
     setEditingCourse(null);
     setEditingTitle("");
+    setEditingCategory("");
   };
 
   const fetchCourses = async () => {
@@ -57,22 +74,6 @@ const CourseManagement: React.FC = () => {
   useEffect(() => {
     fetchCourses();
   }, []);
-
-  const handleCreate = async () => {
-    try {
-      if (!title) return;
-      const payload: any = { title };
-      if (semesterCount !== "" && semesterCount !== null)
-        payload.semesterCount = Number(semesterCount);
-      const { data } = await coursesService.createCourse(payload);
-      const created = data && data.course ? data.course : data;
-      setCourses((s) => [created, ...s]);
-      setTitle("");
-      setSemesterCount("");
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const handleDelete = async (id: string) => {
     if (
@@ -103,49 +104,6 @@ const CourseManagement: React.FC = () => {
           </div>
 
           <div className="p-6">
-            <AdvancedSearch
-              title="Courses"
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onSearch={() => {
-                /* trigger server search if desired */
-              }}
-              showFilters={showFilters}
-              setShowFilters={setShowFilters}
-              filtersNode={
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Example filters - extend as needed */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Semester Count
-                    </label>
-                    <select className="w-full px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                      <option value="">All</option>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
-                      <option value="5">5</option>
-                      <option value="6">6</option>
-                    </select>
-                  </div>
-                </div>
-              }
-            />
-
-            <div className="mt-4 flex items-center justify-end">
-              <Sort
-                options={[
-                  { value: "createdAt-desc", label: "Newest First" },
-                  { value: "createdAt-asc", label: "Oldest First" },
-                  { value: "title-asc", label: "Title A-Z" },
-                  { value: "title-desc", label: "Title Z-A" },
-                ]}
-                value={sortValue}
-                onChange={(v) => setSortValue(v)}
-              />
-            </div>
-
             {loading && (
               <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
                 Loading courses...
@@ -154,8 +112,8 @@ const CourseManagement: React.FC = () => {
 
             <div className="mt-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
               <h2 className="text-2xl font-semibold mb-4">Create Course</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                <div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Title
                   </label>
@@ -165,6 +123,22 @@ const CourseManagement: React.FC = () => {
                     placeholder="New course title"
                     className="mt-1"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Category
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white mt-1"
+                  >
+                    <option value="">Select Category</option>
+                    <option value="BE">BE</option>
+                    <option value="BSC">BSC</option>
+                    <option value="Commerce">Commerce</option>
+                    <option value="PG">PG</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -183,13 +157,75 @@ const CourseManagement: React.FC = () => {
                     className="mt-1"
                   />
                 </div>
-                <div className="flex">
-                  <Button onClick={handleCreate} className="ml-auto">
+                <div className="col-span-4 flex justify-end">
+                  <Button
+                    onClick={async () => {
+                      try {
+                        if (!title) return;
+                        const payload: any = { title };
+                        if (category) payload.type = category;
+                        if (semesterCount !== "" && semesterCount !== null)
+                          payload.semesterCount = Number(semesterCount);
+                        const { data } = await coursesService.createCourse(
+                          payload
+                        );
+                        const created =
+                          data && data.course ? data.course : data;
+                        // ensure category is present immediately for UX even if backend omits it
+                        if (category && !created.type) created.type = category;
+                        setCourses((s) => [created, ...s]);
+                        setTitle("");
+                        setSemesterCount("");
+                        setCategory("");
+                      } catch (err) {
+                        console.error(err);
+                      }
+                    }}
+                  >
                     Create Course
                   </Button>
                 </div>
               </div>
             </div>
+
+            <AdvancedSearch
+              title="Courses"
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onSearch={() => {}}
+              showFilters={showFilters}
+              setShowFilters={setShowFilters}
+              filtersNode={
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Semester Count
+                    </label>
+                    <select className="w-full px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                      <option value="">All</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                    </select>
+                  </div>
+                </div>
+              }
+              rightNode={
+                <Sort
+                  options={[
+                    { value: "createdAt-desc", label: "Newest First" },
+                    { value: "createdAt-asc", label: "Oldest First" },
+                    { value: "title-asc", label: "Title A-Z" },
+                    { value: "title-desc", label: "Title Z-A" },
+                  ]}
+                  value={sortValue}
+                  onChange={(v) => setSortValue(v)}
+                />
+              }
+            />
 
             <div className="mt-6">
               <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
@@ -198,9 +234,11 @@ const CourseManagement: React.FC = () => {
                   <table className="min-w-full divide-y table-auto">
                     <thead>
                       <tr>
-                        <th className="px-4 py-2 text-left">Title</th>
+                        <th className="px-4 py-2 text-left">Course Name</th>
+                        <th className="px-4 py-2 text-left">Category</th>
                         <th className="px-4 py-2 text-left">Semesters</th>
-                        <th className="px-4 py-2 text-left">Created</th>
+                        <th className="px-4 py-2 text-left">Created At</th>
+                        <th className="px-4 py-2 text-left">Last Edited</th>
                         <th className="px-4 py-2 text-left">Actions</th>
                       </tr>
                     </thead>
@@ -241,12 +279,41 @@ const CourseManagement: React.FC = () => {
                                   </div>
                                 )}
                               </td>
+
+                              <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                                {editingCourse === c._id ? (
+                                  <select
+                                    value={editingCategory}
+                                    onChange={(e) =>
+                                      setEditingCategory(e.target.value)
+                                    }
+                                    className="px-2 py-1 border rounded"
+                                  >
+                                    <option value="">(none)</option>
+                                    <option value="BE">BE</option>
+                                    <option value="BSC">BSC</option>
+                                    <option value="Commerce">Commerce</option>
+                                    <option value="PG">PG</option>
+                                  </select>
+                                ) : (
+                                  c.type || c.degreeType || "-"
+                                )}
+                              </td>
+
                               <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                                 {c.semesterCount ?? "-"}
                               </td>
+
                               <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                                 {new Date(c.createdAt).toLocaleString()}
                               </td>
+
+                              <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                                {c.updatedAt
+                                  ? new Date(c.updatedAt).toLocaleString()
+                                  : "-"}
+                              </td>
+
                               <td className="px-4 py-3 text-sm">
                                 <div className="flex items-center gap-2">
                                   <Button
@@ -258,6 +325,7 @@ const CourseManagement: React.FC = () => {
                                       ? "Hide"
                                       : "Semesters"}
                                   </Button>
+
                                   {editingCourse === c._id ? (
                                     <>
                                       <Button
@@ -284,6 +352,7 @@ const CourseManagement: React.FC = () => {
                                       Edit
                                     </Button>
                                   )}
+
                                   <Button
                                     variant="destructive"
                                     size="sm"
@@ -297,7 +366,7 @@ const CourseManagement: React.FC = () => {
 
                             {expandedCourse === c._id && (
                               <tr className="bg-gray-50 dark:bg-gray-900">
-                                <td colSpan={4} className="p-4">
+                                <td colSpan={6} className="p-4">
                                   <CourseSemesters
                                     course={c}
                                     onUpdate={fetchCourses}

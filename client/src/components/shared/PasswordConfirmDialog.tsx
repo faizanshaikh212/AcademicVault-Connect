@@ -84,12 +84,14 @@ const PasswordConfirmDialog: React.FC<PasswordConfirmDialogProps> = ({
             <div className="relative">
               <Input
                 id="confirm-password"
+                name="confirmPassword"
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
                 className="w-full pr-10"
+                autoComplete="current-password"
               />
               <button
                 type="button"

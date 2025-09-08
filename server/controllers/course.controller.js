@@ -7,9 +7,22 @@ const isOwner = (doc, userId) =>
   doc && doc.creator && doc.creator.toString() === userId.toString();
 
 // Courses
+const normalizeType = (t) => {
+  if (!t) return undefined;
+  const s = String(t).trim();
+  if (s === "COM" || s.toLowerCase() === "com") return "Commerce";
+  if (s.toUpperCase() === "BE") return "BE";
+  if (s.toUpperCase() === "BSC") return "BSC";
+  if (s.toUpperCase() === "PG") return "PG";
+  return s;
+};
+
 const createCourse = async (req, res) => {
   try {
     const { title, description, metadata, semesterCount } = req.body;
+    // accept legacy fields 'type' or 'degreeType'
+    const rawType = req.body.type || req.body.degreeType || req.body.category;
+    const type = normalizeType(rawType);
     if (!title) return res.status(400).json({ message: "Title is required" });
 
     let semCount = 0;
@@ -28,6 +41,7 @@ const createCourse = async (req, res) => {
       metadata,
       semesterCount: semCount,
       creator: req.user._id,
+      ...(type ? { type } : {}),
     });
 
     // if semesterCount provided, auto-create Semester documents
@@ -71,6 +85,10 @@ const updateCourse = async (req, res) => {
     if (!course) return res.status(404).json({ message: "Not found" });
     if (!isOwner(course, req.user._id))
       return res.status(403).json({ message: "Not authorized" });
+    // normalize incoming type/degreeType
+    const rawType = req.body.type || req.body.degreeType || req.body.category;
+    const type = normalizeType(rawType);
+    if (type !== undefined) req.body.type = type;
     Object.assign(course, req.body);
     await course.save();
     res.json(course);

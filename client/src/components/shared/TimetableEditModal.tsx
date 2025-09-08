@@ -1,8 +1,7 @@
 import React from "react";
 import { Timetable } from "../../types/academic";
 import { toast } from "react-hot-toast";
-import BaseEditModal from "./BaseEditModal";
-import AcademicResourceForm from "./AcademicResourceForm";
+import ResourceEditModal from "./ResourceEditModal";
 
 interface TimetableEditModalProps {
   isOpen: boolean;
@@ -32,20 +31,14 @@ const TimetableEditModal: React.FC<TimetableEditModalProps> = ({
   };
 
   return (
-    <BaseEditModal
+    <ResourceEditModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Edit Timetable Details"
-    >
-      <AcademicResourceForm
-        initialValues={timetable as any}
-        resourceType="timetables"
-        createMode={false}
-        onCancel={onClose}
-        onSubmit={handleSubmit}
-        submitLabel="Save Changes"
-      />
-    </BaseEditModal>
+      resourceType="timetables"
+      resource={timetable as any}
+      initialValues={timetable}
+      onSubmit={handleSubmit}
+    />
   );
 };
 

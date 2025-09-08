@@ -8,6 +8,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import path from "path";
 import http from "http";
 import { Server } from "socket.io";
@@ -52,13 +53,17 @@ const connection = await connectDB();
 const app = express();
 
 // --- Middleware ---
+// Configure CORS: when credentials are enabled, don't use wildcard origin.
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 app.use(
   cors({
-    origin: "*",
+    origin: CLIENT_ORIGIN,
     credentials: true,
   })
 );
 app.use(express.json());
+// Parse cookies for refresh token handling
+app.use(cookieParser());
 
 // --- API Routes ---
 app.use("/api/auth", authRoutes);
@@ -87,9 +92,9 @@ app.use("/uploads", (req, res, next) => {
   const filePath = path.join(__dirname, "..", "LocalStorage", req.path);
   const fileName = path.basename(filePath);
 
-  // Set secure headers for file downloads
+  // Set secure headers for file downloads. Use the configured client origin when credentials are in use.
   res.set({
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": CLIENT_ORIGIN,
     "Access-Control-Allow-Methods": "GET",
     "Access-Control-Allow-Headers": "Content-Type",
     "Content-Disposition": `inline; filename="${fileName}"`,
@@ -139,7 +144,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   pingTimeout: 60000,
   cors: {
-    origin: "*",
+    origin: CLIENT_ORIGIN,
   },
 });
 app.use((req, res, next) => {

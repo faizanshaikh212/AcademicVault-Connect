@@ -1,8 +1,7 @@
 import React from "react";
 import { AcademicNote } from "../../types/academic";
 import { toast } from "react-hot-toast";
-import BaseEditModal from "./BaseEditModal";
-import AcademicResourceForm from "./AcademicResourceForm";
+import ResourceEditModal from "./ResourceEditModal";
 
 interface NotesEditModalProps {
   isOpen: boolean;
@@ -32,16 +31,14 @@ const NotesEditModal: React.FC<NotesEditModalProps> = ({
   };
 
   return (
-    <BaseEditModal isOpen={isOpen} onClose={onClose} title="Edit Note Details">
-      <AcademicResourceForm
-        initialValues={note as any}
-        resourceType="notes"
-        createMode={false}
-        onCancel={onClose}
-        onSubmit={handleSubmit}
-        submitLabel="Save Changes"
-      />
-    </BaseEditModal>
+    <ResourceEditModal
+      isOpen={isOpen}
+      onClose={onClose}
+      resourceType="notes"
+      resource={note as any}
+      initialValues={note}
+      onSubmit={handleSubmit}
+    />
   );
 };
 

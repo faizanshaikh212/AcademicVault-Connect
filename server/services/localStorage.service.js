@@ -185,10 +185,32 @@ class LocalStorageService {
    * Sanitize filename for safe storage
    */
   sanitizeFileName(fileName) {
-    return fileName
-      .replace(/[^a-zA-Z0-9.-]/g, "_")
-      .replace(/_{2,}/g, "_")
-      .replace(/^_|_$/g, "");
+    try {
+      // Ensure we always operate on a string
+      if (fileName === null || fileName === undefined) {
+        fileName = "file";
+      }
+      if (typeof fileName !== "string") {
+        // Attempt to stringify objects/numbers safely
+        if (typeof fileName === "object") {
+          try {
+            fileName = JSON.stringify(fileName);
+          } catch (e) {
+            fileName = String(fileName);
+          }
+        } else {
+          fileName = String(fileName);
+        }
+      }
+
+      return fileName
+        .replace(/[^a-zA-Z0-9.-]/g, "_")
+        .replace(/_{2,}/g, "_")
+        .replace(/^_|_$/g, "");
+    } catch (err) {
+      // Fallback to a safe filename in case of unexpected errors
+      return "file";
+    }
   }
 
   /**

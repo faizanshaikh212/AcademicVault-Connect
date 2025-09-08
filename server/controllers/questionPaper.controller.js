@@ -58,7 +58,14 @@ export const getAllQuestionPapers = async (req, res) => {
     } = req.query;
 
     // Build query
-    let query = { isApproved: true };
+    // By default show approved papers. If a user is authenticated, include
+    // their own uploads (so teachers see their unapproved uploads).
+    let query = {};
+    if (req.user && req.user._id) {
+      query.$or = [{ isApproved: true }, { uploader: req.user._id }];
+    } else {
+      query.isApproved = true;
+    }
 
     // Flexible regex/OR search across common fields (supports short queries)
     // Accept both `search` and `keyword` query params for compatibility with other endpoints
@@ -91,6 +98,8 @@ export const getAllQuestionPapers = async (req, res) => {
           orClauses.push({ tags: { $regex: esc, $options: "i" } });
         });
 
+
+
         // If any token or the full query is numeric, also match examYear
         if (!Number.isNaN(Number(raw))) {
           orClauses.push({ examYear: parseInt(raw) });
@@ -110,7 +119,11 @@ export const getAllQuestionPapers = async (req, res) => {
     if (degreeType) query.degreeType = degreeType;
     if (course) query.course = new RegExp(course, "i");
     if (semester) query.semester = semester;
-    if (subject) query.subject = new RegExp(subject, "i");
+    if (subject) {
+      // Make subject search more flexible - handle partial matches and variations
+      const subjectPattern = subject.replace(/\s+/g, '\\s*').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.subject = new RegExp(subjectPattern, "i");
+    }
     if (examYear) query.examYear = parseInt(examYear);
     if (examType) query.examType = examType;
 
@@ -149,6 +162,34 @@ export const getAllQuestionPapers = async (req, res) => {
 };
 
 /**
+ * Debug endpoint to check available subjects
+ */
+export const getAvailableSubjects = async (req, res) => {
+  try {
+    const { degreeType, course } = req.query;
+
+    let query = { isApproved: true };
+    if (degreeType) query.degreeType = degreeType;
+    if (course) query.course = new RegExp(course, "i");
+
+    const subjects = await QuestionPaper.distinct("subject", query);
+
+    res.status(200).json({
+      success: true,
+      data: subjects.sort(),
+      query: query
+    });
+  } catch (error) {
+    console.error("Error fetching available subjects:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching available subjects",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * Get question papers by category structure
  */
 export const getQuestionPapersByCategory = async (req, res) => {
@@ -179,13 +220,51 @@ export const getQuestionPapersByCategory = async (req, res) => {
     }
 
     // Return semesters and papers for the course
-    const papers = await QuestionPaper.find({
-      degreeType,
-      course: new RegExp(course, "i"),
-      isApproved: true,
-    })
+    // Include approved papers and also include the requesting user's own uploads (so teachers see theirs)
+    // Some legacy records may not have degreeType set. Try degreeType+course first; if no results, fall back to course-only.
+    const buildFinalQuery = (baseQuery) => {
+      if (req.user && req.user._id) {
+        return {
+          $or: [
+            { ...baseQuery, isApproved: true },
+            { ...baseQuery, uploader: req.user._id },
+          ],
+        };
+      }
+      return { ...baseQuery, isApproved: true };
+    };
+
+    const baseWithDegree = { degreeType, course: new RegExp(course, "i") };
+    let papers = await QuestionPaper.find(buildFinalQuery(baseWithDegree))
       .populate("uploader", "firstName lastName username avatar")
       .sort({ semester: 1, examYear: -1, subject: 1 });
+
+    // If no papers found and degreeType was provided, try a fallback search by course only (handles legacy docs without degreeType)
+    if ((!papers || papers.length === 0) && degreeType) {
+      const baseCourseOnly = { course: new RegExp(course, "i") };
+      papers = await QuestionPaper.find(buildFinalQuery(baseCourseOnly))
+        .populate("uploader", "firstName lastName username avatar")
+        .sort({ semester: 1, examYear: -1, subject: 1 });
+    }
+
+    // Debug logging to help troubleshoot
+    console.log(`Found ${papers.length} papers for degreeType: ${degreeType}, course: ${course}`);
+    if (papers.length > 0) {
+      console.log('Sample subjects:', papers.slice(0, 3).map(p => p.subject));
+    }
+
+    // Additional fallback: if still no papers, try a more flexible search
+    if ((!papers || papers.length === 0)) {
+      console.log(`No papers found for degreeType: ${degreeType}, course: ${course}. Trying flexible search...`);
+
+      // Try searching without degreeType constraint
+      const flexibleQuery = { course: new RegExp(course, "i") };
+      papers = await QuestionPaper.find(buildFinalQuery(flexibleQuery))
+        .populate("uploader", "firstName lastName username avatar")
+        .sort({ semester: 1, examYear: -1, subject: 1 });
+
+      console.log(`Flexible search found ${papers.length} papers`);
+    }
 
     // Group by semester
     const groupedBySemester = papers.reduce((acc, paper) => {
@@ -256,6 +335,8 @@ export const uploadQuestionPaper = async (req, res) => {
       semester,
       subject,
       examYear,
+      month,
+      year,
       examType,
       description,
       tags,
@@ -317,6 +398,8 @@ export const uploadQuestionPaper = async (req, res) => {
       semester,
       subject,
       examYear: parseInt(examYear),
+      month: month || undefined,
+      year: year ? parseInt(year) : examYear ? parseInt(examYear) : undefined,
       examType,
       description,
       tags: parsedTags,
@@ -402,6 +485,8 @@ export const updateQuestionPaper = async (req, res) => {
       semester,
       subject,
       examYear,
+      month,
+      year,
       examType,
       description,
       tags,
@@ -423,6 +508,10 @@ export const updateQuestionPaper = async (req, res) => {
         semester: semester || questionPaper.semester,
         subject: subject || questionPaper.subject,
         examYear: examYear ? parseInt(examYear) : questionPaper.examYear,
+        month: month || questionPaper.month,
+        year: year
+          ? parseInt(year)
+          : questionPaper.year || questionPaper.examYear,
         examType: examType || questionPaper.examType,
         description: description || questionPaper.description,
         tags: parsedTags,
@@ -582,5 +671,6 @@ export default {
   deleteQuestionPaper,
   approveQuestionPaper,
   trackDownload,
+  getAvailableSubjects,
   uploadMiddleware,
 };

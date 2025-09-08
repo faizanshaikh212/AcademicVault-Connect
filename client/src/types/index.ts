@@ -49,6 +49,26 @@ export interface AuthContextType extends AuthState {
   updateProfile: (profile: Partial<User["profile"]>) => void;
   updateUser: (userData: Partial<User>) => void;
   verifyPassword: (password: string) => Promise<boolean>;
+  // Cookie settings: null = undecided. Necessary always true.
+  cookieSettings: {
+    necessary: true;
+    preferences: boolean;
+    analytics: boolean;
+    marketing: boolean;
+  } | null;
+  setCookieSettings: (
+    settings: {
+      preferences: boolean;
+      analytics: boolean;
+      marketing: boolean;
+    } | null
+  ) => void;
+  // Modal control for managing cookies
+  cookieModalOpen: boolean;
+  setCookieModalOpen: (v: boolean) => void;
+  // Legacy simple consent (null = undecided)
+  cookieConsent: boolean | null;
+  setCookieConsent: (v: boolean) => void;
 }
 
 // Defines the structure for a single project

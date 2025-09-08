@@ -67,42 +67,52 @@ const Register: React.FC = () => {
       />
       <div className="absolute inset-0 flex items-center justify-center">
         <AuthLayout title="Create an Account">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
             <div className="flex gap-4">
               <Input
+                id="register-firstname"
                 name="firstName"
                 placeholder="First Name"
                 onChange={handleChange}
                 required
+                autoComplete="given-name"
               />
               <Input
+                id="register-lastname"
                 name="lastName"
                 placeholder="Last Name"
                 onChange={handleChange}
                 required
+                autoComplete="family-name"
               />
             </div>
             <Input
+              id="register-username"
               name="username"
               placeholder="Username"
               onChange={handleChange}
               required
+              autoComplete="username"
             />
             <Input
+              id="register-email"
               name="email"
               type="email"
               placeholder="Email"
               onChange={handleChange}
               required
+              autoComplete="email"
             />
             <div className="relative">
               <Input
+                id="register-password"
                 name="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 onChange={handleChange}
                 required
                 className="pr-10"
+                autoComplete="new-password"
               />
               <button
                 type="button"

@@ -6,6 +6,7 @@
 
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
+import Session from "../models/session.model.js";
 import logger from "../utils/logger.js";
 
 /**
@@ -37,19 +38,42 @@ const protect = async (req, res, next) => {
       // Verify the token using the secret key
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Find the user by the ID from the token payload
-      // Exclude the password field from the result
-      req.user = await User.findById(decoded.id).select("-password");
+      // decoded.sub is user id, decoded.sid is session id
+      const userId = decoded.sub;
+      const sessionId = decoded.sid;
 
+      // Attach user
+      req.user = await User.findById(userId).select("-password");
       if (!req.user) {
         return res
           .status(401)
           .json({ message: "Not authorized, user not found" });
       }
 
-      // Proceed to the next middleware or route handler
+      // If session id present, verify session is valid
+      if (sessionId) {
+        const session = await Session.findById(sessionId);
+        if (!session || session.revoked || session.expiresAt < new Date()) {
+          return res
+            .status(401)
+            .json({ message: "Not authorized, session invalid" });
+        }
+        // update lastUsedAt
+        session.lastUsedAt = new Date();
+        await session.save();
+      }
+
+      // Proceed
       next();
     } catch (error) {
+      // Distinguish expired tokens from other verification errors so the
+      // client can react appropriately (e.g. prompt for re-login or refresh)
+      if (error.name === "TokenExpiredError") {
+        // Log at debug level to avoid noisy error logs for expected expirations
+        logger.debug("Token verification failed: token expired");
+        return res.status(401).json({ message: "Token expired" });
+      }
+
       logger.error("Token verification failed:", error.message);
       res.status(401).json({ message: "Not authorized, token failed" });
     }
@@ -87,9 +111,27 @@ const optionalAuth = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id).select("-password");
+      const userId = decoded.sub;
+      const sessionId = decoded.sid;
+      req.user = await User.findById(userId).select("-password");
+      if (sessionId) {
+        const session = await Session.findById(sessionId);
+        if (session && !session.revoked && session.expiresAt >= new Date()) {
+          session.lastUsedAt = new Date();
+          await session.save();
+        } else {
+          // If session invalid, just don't attach user
+          req.user = undefined;
+        }
+      }
     } catch (error) {
-      logger.debug("Optional auth token invalid:", error.message);
+      // Optional auth should not interrupt the request; be explicit when token
+      // expired so callers can know why `req.user` is undefined if needed.
+      if (error.name === "TokenExpiredError") {
+        logger.debug("Optional auth token expired");
+      } else {
+        logger.debug("Optional auth token invalid:", error.message);
+      }
     }
   }
 

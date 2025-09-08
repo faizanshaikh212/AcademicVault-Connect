@@ -83,6 +83,22 @@ const StaticPageEditor: React.FC<StaticPageEditorProps> = ({
             <label className="block text-sm font-medium mb-1 text-white">
               Content
             </label>
+            {/* Helper note for editors: do not change styling */}
+            {/* only show the detailed tip when editing the Privacy Policy page */}
+            {editingPage?.slug === "privacy-policy" ? (
+              <div className="mb-2 text-xs text-gray-300">
+                Tip: To make the Cookie Policy link jump to a specific spot,
+                insert the token{" "}
+                <code className="bg-gray-800 px-1 rounded">
+                  [cookie-section]
+                </code>
+                in the markdown where you want the anchor to appear.
+              </div>
+            ) : (
+              <div className="mb-2 text-xs text-gray-500">
+                Place page-specific notes here.
+              </div>
+            )}
             <div className="w-full h-[calc(100vh-350px)] min-h-[400px] border rounded-md dark:border-gray-700">
               <div className="relative h-full">
                 <Button
@@ -110,14 +126,14 @@ const StaticPageEditor: React.FC<StaticPageEditorProps> = ({
                   preview="live"
                   height="100%"
                   visibleDragbar={false}
-                  className="h-full [&_.w-md-editor]:!h-full [&_.w-md-editor]:!rounded-md [&_.w-md-editor-toolbar]:!rounded-t-md [&_.w-md-editor-content]:!h-[calc(100%-40px)] [&_.w-md-editor-input]:!h-full [&_.w-md-editor-text]:!h-full [&_.w-md-editor-text-pre]:!h-full [&_.w-md-editor-text-input]:!h-full [&_.w-md-editor-preview]:!h-full [&_.w-md-editor-preview]:markdown-content [&_.w-md-editor-text-input]:!text-white [&_.w-md-editor-text-input]:!font-inherit [&_.w-md-editor]:!bg-gray-900 [&_.w-md-editor-preview]:!text-white [&_.w-md-editor-preview_h1]:!text-white [&_.w-md-editor-preview_h2]:!text-white [&_.w-md-editor-preview_h3]:!text-white [&_.w-md-editor-preview_p]:!text-white [&_.w-md-editor-toolbar]:!bg-gray-800 [&_.w-md-editor-toolbar_button]:!text-white [&_.w-md-editor-toolbar_button:hover]:!bg-gray-700"
+                  // Keep className minimal so the editor's own layout isn't overridden
+                  className="h-full"
+                  // Use minimal textarea props — avoid forcing transparent backgrounds or absolute sizing
                   textareaProps={{
                     style: {
                       resize: "none",
                       outline: "none",
                       padding: "1rem",
-                      background: "transparent",
-                      color: "#e6edf3",
                       fontSize: "16px",
                       width: "100%",
                       height: "100%",

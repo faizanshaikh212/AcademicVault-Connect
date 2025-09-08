@@ -181,6 +181,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
                 value={formData.firstName || ""}
                 onChange={handleChange}
                 className="w-full"
+                id="admin-firstname"
+                autoComplete="given-name"
               />
             </div>
             <div className="col-span-2">
@@ -192,6 +194,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
                 value={formData.lastName || ""}
                 onChange={handleChange}
                 className="w-full"
+                id="admin-lastname"
+                autoComplete="family-name"
               />
             </div>
             <div className="col-span-2">
@@ -203,6 +207,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
                 value={formData.username || ""}
                 onChange={handleChange}
                 className="w-full"
+                id="admin-username"
+                autoComplete="username"
               />
             </div>
             <div className="col-span-2">
@@ -215,6 +221,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
                 value={formData.email || ""}
                 onChange={handleChange}
                 className="w-full"
+                id="admin-email"
+                autoComplete="email"
               />
             </div>
             {!user && (
@@ -230,6 +238,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pr-10"
                     required={!user}
+                    id="admin-password"
+                    autoComplete={!user ? "new-password" : "current-password"}
                   />
                   <button
                     type="button"

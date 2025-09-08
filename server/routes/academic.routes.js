@@ -23,9 +23,9 @@ router.get('/notes/:id', academicNoteController.getNoteById);
 router.post('/notes/:id/download', academicNoteController.trackDownload);
 
 // Protected routes (authenticated users)
-router.post('/notes', 
-  protect, 
-  academicNoteController.uploadMiddleware, 
+router.post('/notes',
+  protect,
+  academicNoteController.uploadMiddleware,
   academicNoteController.uploadNote
 );
 router.put('/notes/:id', protect, academicNoteController.updateNote);
@@ -46,9 +46,9 @@ router.get('/question-papers/:id', questionPaperController.getQuestionPaperById)
 router.post('/question-papers/:id/download', questionPaperController.trackDownload);
 
 // Protected routes (authenticated users)
-router.post('/question-papers', 
-  protect, 
-  questionPaperController.uploadMiddleware, 
+router.post('/question-papers',
+  protect,
+  questionPaperController.uploadMiddleware,
   questionPaperController.uploadQuestionPaper
 );
 router.put('/question-papers/:id', protect, questionPaperController.updateQuestionPaper);
@@ -56,6 +56,8 @@ router.delete('/question-papers/:id', protect, questionPaperController.deleteQue
 
 // Admin only routes
 router.post('/question-papers/:id/approve', protect, admin, questionPaperController.approveQuestionPaper);
+
+
 
 // ===== SYLLABUS ROUTES =====
 
@@ -65,15 +67,15 @@ router.get('/syllabus/:id', syllabusController.getSyllabusById);
 router.post('/syllabus/:id/download', syllabusController.trackDownload);
 
 // Protected routes (authenticated users)
-router.post('/syllabus', 
-  protect, 
-  syllabusController.uploadMiddleware, 
+router.post('/syllabus',
+  protect,
+  syllabusController.uploadMiddleware,
   syllabusController.uploadSyllabus
 );
 router.put('/syllabus/:id', protect, syllabusController.updateSyllabus);
-router.put('/syllabus/:id/file', 
-  protect, 
-  syllabusController.uploadMiddleware, 
+router.put('/syllabus/:id/file',
+  protect,
+  syllabusController.uploadMiddleware,
   syllabusController.updateSyllabusFile
 );
 router.delete('/syllabus/:id', protect, syllabusController.deleteSyllabus);
@@ -90,9 +92,9 @@ router.get('/timetables/:id', timetableController.getTimetableById);
 router.post('/timetables/:id/download', timetableController.trackDownload);
 
 // Protected routes (authenticated users)
-router.post('/timetables', 
-  protect, 
-  timetableController.uploadMiddleware, 
+router.post('/timetables',
+  protect,
+  timetableController.uploadMiddleware,
   timetableController.uploadTimetable
 );
 router.put('/timetables/:id', protect, timetableController.updateTimetable);
@@ -255,9 +257,9 @@ router.get('/search', async (req, res) => {
       });
     }
 
-    const searchQuery = { 
-      $text: { $search: q }, 
-      isApproved: true 
+    const searchQuery = {
+      $text: { $search: q },
+      isApproved: true
     };
 
     let results = {};

@@ -81,6 +81,8 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
               onChange={(e) => setEmail(e.target.value)}
               placeholder={userEmail}
               type="email"
+              name="email"
+              autoComplete="email"
             />
           </div>
 
@@ -92,6 +94,8 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
               onChange={(e) => setPassword(e.target.value)}
               type="password"
               placeholder="Your current password"
+              name="password"
+              autoComplete="current-password"
             />
           </div>
 

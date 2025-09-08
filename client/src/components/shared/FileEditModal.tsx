@@ -1,6 +1,5 @@
 import React from "react";
-import BaseEditModal from "./BaseEditModal";
-import AcademicResourceForm from "./AcademicResourceForm";
+import ResourceEditModal from "./ResourceEditModal";
 import { QuestionPaper } from "../../types/academic";
 import { questionPapersService } from "../../services/academicService";
 
@@ -30,16 +29,14 @@ const FileEditModal: React.FC<FileEditModalProps> = ({
   };
 
   return (
-    <BaseEditModal isOpen={isOpen} onClose={onClose} title="Edit Paper Details">
-      <AcademicResourceForm
-        initialValues={paper as any}
-        resourceType="questionPapers"
-        createMode={false}
-        onCancel={onClose}
-        onSubmit={handleSubmit}
-        submitLabel="Save Changes"
-      />
-    </BaseEditModal>
+    <ResourceEditModal
+      isOpen={isOpen}
+      onClose={onClose}
+      resourceType="questionPapers"
+      resource={paper as any}
+      initialValues={paper}
+      onSubmit={handleSubmit}
+    />
   );
 };
 

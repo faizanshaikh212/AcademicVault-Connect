@@ -53,24 +53,29 @@ const Login: React.FC = () => {
         distortion={0.05}
         className="absolute inset-0 pointer-events-none z-[-1]"
       />
+
       <div className="absolute inset-0 flex items-center justify-center">
         <AuthLayout title="Welcome Back">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
             <Input
+              id="login-email"
               name="email"
               type="email"
               placeholder="Email"
               onChange={handleChange}
               required
+              autoComplete="username"
             />
             <div className="relative">
               <Input
+                id="login-password"
                 name="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 onChange={handleChange}
                 required
                 className="pr-10"
+                autoComplete="current-password"
               />
               <button
                 type="button"

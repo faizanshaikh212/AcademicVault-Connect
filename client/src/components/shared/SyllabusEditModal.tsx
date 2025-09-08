@@ -1,8 +1,7 @@
 import React from "react";
 import { Syllabus } from "../../types/academic";
 import { toast } from "react-hot-toast";
-import BaseEditModal from "./BaseEditModal";
-import AcademicResourceForm from "./AcademicResourceForm";
+import ResourceEditModal from "./ResourceEditModal";
 
 interface SyllabusEditModalProps {
   isOpen: boolean;
@@ -33,20 +32,14 @@ const SyllabusEditModal: React.FC<SyllabusEditModalProps> = ({
   };
 
   return (
-    <BaseEditModal
+    <ResourceEditModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Edit Syllabus Details"
-    >
-      <AcademicResourceForm
-        initialValues={syllabus as any}
-        resourceType="syllabus"
-        createMode={false}
-        onCancel={onClose}
-        onSubmit={handleSubmit}
-        submitLabel="Save Changes"
-      />
-    </BaseEditModal>
+      resourceType="syllabus"
+      resource={syllabus as any}
+      initialValues={syllabus}
+      onSubmit={handleSubmit}
+    />
   );
 };
 

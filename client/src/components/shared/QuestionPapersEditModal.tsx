@@ -1,8 +1,7 @@
 import React from "react";
 import { QuestionPaper } from "../../types/academic";
 import { toast } from "react-hot-toast";
-import BaseEditModal from "./BaseEditModal";
-import AcademicResourceForm from "./AcademicResourceForm";
+import ResourceEditModal from "./ResourceEditModal";
 
 interface QuestionPapersEditModalProps {
   isOpen: boolean;
@@ -31,22 +30,26 @@ const QuestionPapersEditModal: React.FC<QuestionPapersEditModalProps> = ({
     }
   };
 
+  const transformedInitial = {
+    ...(paper as any),
+    courseId: (paper as any).courseId || (paper as any).course || undefined,
+    semesterId:
+      (paper as any).semesterId || (paper as any).semester || undefined,
+    subjectId: (paper as any).subjectId || (paper as any).subject || undefined,
+    year: (paper as any).examYear
+      ? String((paper as any).examYear)
+      : (paper as any).year,
+  };
+
   return (
-    <BaseEditModal
+    <ResourceEditModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Edit Question Paper"
-      description="Update the question paper information below."
-    >
-      <AcademicResourceForm
-        initialValues={paper as any}
-        resourceType="questionPapers"
-        createMode={false}
-        onCancel={onClose}
-        onSubmit={handleSubmit}
-        submitLabel="Save Changes"
-      />
-    </BaseEditModal>
+      resourceType="questionPapers"
+      resource={paper as any}
+      initialValues={transformedInitial}
+      onSubmit={handleSubmit}
+    />
   );
 };
 

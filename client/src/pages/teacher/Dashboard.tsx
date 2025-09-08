@@ -4,6 +4,7 @@ import api from "../../services/api";
 const TeacherDashboard: React.FC = () => {
   const [newsCount, setNewsCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -14,6 +15,7 @@ const TeacherDashboard: React.FC = () => {
         setNewsCount(null);
       } finally {
         setLoading(false);
+        setInitialLoad(false);
       }
     };
     fetchNews();
@@ -25,8 +27,10 @@ const TeacherDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center justify-center">
           <h2 className="text-xl font-semibold mb-2">Total News</h2>
-          {loading ? (
-            <span>Loading...</span>
+          {loading && initialLoad ? (
+            <div className="flex justify-center py-6">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
           ) : (
             <span className="text-4xl font-bold text-green-600 dark:text-green-400">
               {newsCount ?? "-"}

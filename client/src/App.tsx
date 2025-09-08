@@ -16,6 +16,9 @@ import OurPurpose from "./pages/OurPurpose";
 import OurNetwork from "./pages/OurNetwork";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import SessionsPage from "./pages/Settings/Sessions";
+import CookieBanner from "./components/layout/CookieBanner";
+import CookieSettingsModal from "./components/layout/CookieSettingsModal";
 import RoleRequest from "./pages/RoleRequest";
 import RequestPremium from "./pages/RequestPremium";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -45,6 +48,7 @@ import AcademicNotes from "./pages/AcademicNotes";
 import QuestionPapers from "./pages/QuestionPapersTable";
 import Syllabus from "./pages/Syllabus";
 import Timetables from "./pages/Timetables";
+
 
 // Layout Imports
 import Navbar from "./components/layout/Navbar";
@@ -106,6 +110,8 @@ function App() {
 
   return (
     <div className="text-gray-800 dark:text-gray-200">
+      <CookieBanner />
+      <CookieSettingsModal />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -164,6 +170,8 @@ function App() {
           <Route path="academic/question-papers" element={<QuestionPapers />} />
           <Route path="academic/syllabus" element={<Syllabus />} />
           <Route path="academic/timetables" element={<Timetables />} />
+
+
           <Route path="profile/:username" element={<Profile />} />
           <Route element={<ProtectedRoute />}>
             <Route path="projects/new" element={<ProjectForm />} />
@@ -171,6 +179,7 @@ function App() {
             <Route path="blogs/new" element={<BlogForm />} />
             <Route path="blogs/edit/:id" element={<BlogForm />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="settings/sessions" element={<SessionsPage />} />
             <Route path="request-teacher-role" element={<RoleRequest />} />
             <Route path="request-premium" element={<RequestPremium />} />
             <Route

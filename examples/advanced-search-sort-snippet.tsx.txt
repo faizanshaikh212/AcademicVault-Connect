@@ -1,0 +1,42 @@
+// Example snippet: how to wire AdvancedSearch + Sort
+// Place this in a page or component and adapt the handlers/state to your needs.
+
+import React, { useState } from "react";
+import AdvancedSearch from "@/components/shared/AdvancedSearch";
+import Sort from "@/components/shared/Sort";
+
+export default function ExampleSearchSort() {
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("created-desc");
+
+  const handleSearch = () => {
+    // perform server search or client-side filter
+    console.log("search now with:", query, sort);
+  };
+
+  return (
+    <div>
+      <AdvancedSearch
+        title="Items"
+        searchQuery={query}
+        onSearchChange={setQuery}
+        onSearch={handleSearch}
+        showFilters={false}
+        setShowFilters={() => {}}
+        debounceMs={250}
+      />
+
+      <div className="mt-4 flex items-center justify-end">
+        <Sort
+          options={[
+            { value: "created-desc", label: "Newest" },
+            { value: "created-asc", label: "Oldest" },
+            { value: "title-asc", label: "Title A-Z" },
+          ]}
+          value={sort}
+          onChange={setSort}
+        />
+      </div>
+    </div>
+  );
+}

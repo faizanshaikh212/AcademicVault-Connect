@@ -101,6 +101,11 @@ const userSchema = new mongoose.Schema(
       lastRenewal: { type: Date, default: null },
       expiryNotified: { type: Boolean, default: false }, // Track if we've sent expiry notification
     },
+    // Refresh token for session rotation (stored server-side for revocation)
+    refreshToken: {
+      type: String,
+      default: null,
+    },
     // Student assignment fields (optional)
     studentInfo: {
       assignedCourse: {

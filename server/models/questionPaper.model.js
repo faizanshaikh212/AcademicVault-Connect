@@ -14,7 +14,6 @@ const questionPaperSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, "Question paper title is required"],
       trim: true,
       index: true,
     },
@@ -22,7 +21,6 @@ const questionPaperSchema = new mongoose.Schema(
     // Academic categorization
     degreeType: {
       type: String,
-      required: [true, "Degree type is required"],
       enum: ["BE", "BSC", "PG", "Commerce"],
       index: true,
     },
@@ -42,6 +40,18 @@ const questionPaperSchema = new mongoose.Schema(
       type: String,
       required: [true, "Subject is required"],
       trim: true,
+      index: true,
+    },
+    // Optional month and year fields (month is human-readable, year duplicates examYear for compatibility)
+    month: {
+      type: String,
+      trim: true,
+      index: true,
+    },
+    year: {
+      type: Number,
+      min: 1900,
+      max: new Date().getFullYear() + 1,
       index: true,
     },
     examYear: {

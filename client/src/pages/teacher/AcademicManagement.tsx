@@ -1,9 +1,4 @@
-/**
- * Academic Management Component for Teachers
- * Generic component for managing academic resources
- */
-
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Search,
   Filter,
@@ -15,61 +10,56 @@ import {
   Edit,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
-import FileUploadModal from "../../components/shared/FileUploadModal";
+import AcademicResourceForm from "../../components/shared/AcademicResourceForm";
+import ResourceEditModal from "../../components/shared/ResourceEditModal";
 import { academicUtils } from "../../services/academicService";
-import QuestionPapersEditModal from "../../components/shared/QuestionPapersEditModal";
-import NotesEditModal from "../../components/shared/NotesEditModal";
-import SyllabusEditModal from "../../components/shared/SyllabusEditModal";
-import TimetableEditModal from "../../components/shared/TimetableEditModal";
+import coursesService from "../../services/courses.service";
 
 interface AcademicResource {
   _id: string;
   title: string;
   description?: string;
-  course: string;
+  course?: string;
   subject?: string;
   semester?: string;
   academicYear?: string;
-  tags?: string[];
-  fileType: string;
-  fileSize: number;
-  publicUrl: string;
-  embedUrl?: string;
-  downloadUrl: string;
-  uploader: {
-    _id: string;
-    firstName: string;
-    lastName: string;
-    username: string;
-  };
-  isApproved: boolean;
-  viewCount: number;
-  downloadCount: number;
-  createdAt: string;
-  updatedAt: string;
+  examYear?: string;
+  year?: string;
+  month?: string;
+  type?: string; // timetable type
+  fileUrl?: string;
+  isApproved?: boolean;
+  viewCount?: number;
+  downloadCount?: number;
+  publicUrl?: string;
+}
+
+interface ServiceShape {
+  getAll: (
+    params?: any
+  ) => Promise<{ data: AcademicResource[]; pagination?: any }>;
+  upload: (formData: FormData) => Promise<any>;
+  update: (id: string, data: any) => Promise<any>;
+  delete: (id: string) => Promise<any>;
+  trackDownload?: (id: string) => Promise<{ downloadUrl: string }>;
 }
 
 interface AcademicManagementProps {
   resourceType: "notes" | "questionPapers" | "syllabus" | "timetables";
   title: string;
-  service: {
-    getAll: (
-      params?: any
-    ) => Promise<{ data: AcademicResource[]; pagination: any }>;
-    upload: (formData: FormData) => Promise<any>;
-    update: (id: string, data: any) => Promise<any>;
-    delete: (id: string) => Promise<any>;
-    trackDownload: (id: string) => Promise<{ downloadUrl: string }>;
-  };
+  service: ServiceShape;
 }
 
-const AcademicManagement: React.FC<AcademicManagementProps> = ({
+// Using shared ResourceEditModal (see components/shared/ResourceEditModal.tsx)
+
+const AcademicManagementNew: React.FC<AcademicManagementProps> = ({
   resourceType,
   title,
   service,
 }) => {
   const [resources, setResources] = useState<AcademicResource[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedResource, setSelectedResource] =
@@ -77,29 +67,43 @@ const AcademicManagement: React.FC<AcademicManagementProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Filter states
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedSemester, setSelectedSemester] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const [approvalFilter, setApprovalFilter] = useState<
     "all" | "approved" | "pending"
   >("all");
-
-  // Filter options
   const [filterOptions, setFilterOptions] = useState({
     courses: [] as string[],
     semesters: [] as string[],
     academicYears: [] as string[],
   });
+  const [courses, setCourses] = useState<any[]>([]);
+  const [semestersByCourse, setSemestersByCourse] = useState<
+    Record<string, any[]>
+  >({});
+  const [subjectsBySemester, setSubjectsBySemester] = useState<
+    Record<string, any[]>
+  >({});
+  const [sortValue, setSortValue] = useState<string>("newest");
 
   useEffect(() => {
-    fetchResources();
-  }, []);
+    const id = setTimeout(() => fetchResources(), 200);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    searchQuery,
+    selectedCourse,
+    selectedSemester,
+    selectedYear,
+    approvalFilter,
+    sortValue,
+  ]);
 
   const fetchResources = async () => {
     try {
       setLoading(true);
-      const params = {
+      const params: any = {
         search: searchQuery || undefined,
         course: selectedCourse || undefined,
         semester: selectedSemester || undefined,
@@ -108,228 +112,389 @@ const AcademicManagement: React.FC<AcademicManagementProps> = ({
           approvalFilter === "all" ? undefined : approvalFilter === "approved",
       };
 
-      const response = await service.getAll(params);
-      setResources(response.data);
+      switch (sortValue) {
+        case "newest":
+          params.sortBy = "createdAt";
+          params.sortOrder = "desc";
+          break;
+        case "oldest":
+          params.sortBy = "createdAt";
+          params.sortOrder = "asc";
+          break;
+        case "mostViewed":
+          params.sortBy = "viewCount";
+          params.sortOrder = "desc";
+          break;
+        case "mostDownloaded":
+          params.sortBy = "downloadCount";
+          params.sortOrder = "desc";
+          break;
+        default:
+          break;
+      }
 
-      // Extract filter options
-      const courses = [...new Set(response.data.map((r) => r.course))];
+      const res = await service.getAll(params);
+      setResources(res.data || []);
+
+      // build filter options
+      const courses = [
+        ...new Set((res.data || []).map((r: any) => r.course).filter(Boolean)),
+      ];
       const semesters = [
         ...new Set(
-          response.data.map((r) => r.semester).filter(Boolean) as string[]
+          (res.data || []).map((r: any) => r.semester).filter(Boolean)
         ),
       ];
       const years = [
         ...new Set(
-          response.data.map((r) => r.academicYear).filter(Boolean) as string[]
+          (res.data || [])
+            .map((r: any) => r.year || r.examYear || r.academicYear)
+            .filter(
+              (y: any) =>
+                y !== undefined && y !== null && y !== "" && y !== "N/A"
+            )
         ),
       ];
-
       setFilterOptions({ courses, semesters, academicYears: years });
-    } catch (error) {
-      console.error("Error fetching resources:", error);
+    } catch (err) {
+      console.error(err);
       toast.error(`Failed to fetch ${resourceType}`);
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
-  const handleSearch = () => {
-    fetchResources();
+  // Load master course list (used to resolve ids -> labels in tables)
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await coursesService.listCourses();
+        if (!mounted) return;
+        setCourses((res as any).data || []);
+      } catch (err) {
+        console.error("Failed to load courses", err);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // When resources change, prefetch semesters and subjects for any ids present
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const courseIds = [
+          ...new Set(
+            resources
+              .map((r: any) => r.courseId)
+              .filter((x: any) => x !== undefined && x !== null && x !== "")
+          ),
+        ];
+
+        for (const cid of courseIds) {
+          if (!mounted) return;
+          if (!semestersByCourse[cid]) {
+            try {
+              const s = await coursesService.listSemestersForCourse(cid);
+              if (!mounted) return;
+              setSemestersByCourse((prev) => ({
+                ...prev,
+                [cid]: (s as any).data || [],
+              }));
+            } catch (err) {
+              // ignore individual failures
+            }
+          }
+        }
+
+        const semesterIds = [
+          ...new Set(
+            resources
+              .map((r: any) => r.semesterId)
+              .filter((x: any) => x !== undefined && x !== null && x !== "")
+          ),
+        ];
+
+        for (const sid of semesterIds) {
+          if (!mounted) return;
+          if (!subjectsBySemester[sid]) {
+            try {
+              const sub = await coursesService.listSubjectsForSemester(sid);
+              if (!mounted) return;
+              setSubjectsBySemester((prev) => ({
+                ...prev,
+                [sid]: (sub as any).data || [],
+              }));
+            } catch (err) {
+              // ignore
+            }
+          }
+        }
+      } catch (err) {
+        // ignore
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [resources]);
+
+  // Helpers to resolve labels for display (accepts multiple data shapes)
+  const getCourseLabel = (r: any) => {
+    if (!r) return "-";
+    if (r.course) {
+      if (typeof r.course === "string") {
+        // try to find in loaded courses
+        const f = courses.find((c) => c._id === r.course);
+        if (f) return f.title || f.name || r.course;
+        return r.course;
+      }
+      if (typeof r.course === "object") {
+        return r.course.title || r.course.name || "-";
+      }
+    }
+    if (r.courseId) {
+      const f = courses.find((c) => c._id === r.courseId);
+      if (f) return f.title || f.name || r.courseId;
+      return r.courseId;
+    }
+    return "-";
   };
 
-  const handleClearFilters = () => {
-    setSearchQuery("");
-    setSelectedCourse("");
-    setSelectedSemester("");
-    setSelectedYear("");
-    setApprovalFilter("all");
-    fetchResources();
+  const resolveSemester = (sem: any) => {
+    if (!sem) return "-";
+    if (typeof sem === "string") {
+      // look up in semestersByCourse
+      for (const arr of Object.values(semestersByCourse)) {
+        const f = arr.find((s: any) => s._id === sem);
+        if (f) return f.title || f.name || f.number || sem;
+      }
+      return sem;
+    }
+    if (typeof sem === "object")
+      return sem.title || sem.name || sem.number || "-";
+    return String(sem);
+  };
+
+  const getSemesterLabel = (r: any) => {
+    if (!r) return "-";
+    if (Array.isArray(r.semester)) {
+      return r.semester.map((s: any) => resolveSemester(s)).join(", ");
+    }
+    if (r.semester) return resolveSemester(r.semester);
+    if (r.semesterId) return resolveSemester(r.semesterId);
+    return "All Semesters";
+  };
+
+  const resolveSubject = (sub: any) => {
+    if (!sub) return "-";
+    if (typeof sub === "string") {
+      for (const arr of Object.values(subjectsBySemester)) {
+        const f = arr.find((s: any) => s._id === sub);
+        if (f) return f.title || f.name || sub;
+      }
+      return sub;
+    }
+    if (typeof sub === "object") return sub.title || sub.name || "-";
+    return String(sub);
+  };
+
+  const getSubjectLabel = (r: any) => {
+    if (!r) return "-";
+    if (r.subject) return resolveSubject(r.subject);
+    if (r.subjectId) return resolveSubject(r.subjectId);
+    return "-";
   };
 
   const handleUpload = async (formData: FormData) => {
     try {
       await service.upload(formData);
-      fetchResources();
-      toast.success(`${title} uploaded successfully!`);
-    } catch (error) {
-      console.error("Upload error:", error);
-      throw error;
+      await fetchResources();
+      toast.success(`${title} uploaded successfully`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || "Upload failed");
+      throw err;
     }
   };
 
   const handleDelete = async (resource: AcademicResource) => {
-    if (!confirm(`Are you sure you want to delete "${resource.title}"?`)) {
-      return;
-    }
-
+    if (!confirm(`Delete "${resource.title}"?`)) return;
     try {
       await service.delete(resource._id);
-      setResources((prev) => prev.filter((r) => r._id !== resource._id));
-      toast.success(`${title} deleted successfully!`);
-    } catch (error) {
-      console.error("Delete error:", error);
-      toast.error(`Failed to delete ${resourceType}`);
+      setResources((p) => p.filter((r) => r._id !== resource._id));
+      toast.success("Deleted");
+    } catch (err) {
+      console.error(err);
+      toast.error("Delete failed");
     }
   };
 
   const handleView = async (resource: AcademicResource) => {
     try {
-      // Call GET endpoint to increment view count on the server
       await academicUtils.trackResourceView(resource._id, resourceType as any);
-    } catch (err) {
-      // ignore tracking errors
+    } catch (e) {
+      /* ignore */
     }
-    window.open(resource.publicUrl, "_blank", "noopener,noreferrer");
+    if (resource.publicUrl)
+      window.open(resource.publicUrl, "_blank", "noopener,noreferrer");
   };
 
-  // Note: direct download button replaced by Edit action for teacher management.
-
-  const getStatusIcon = (resource: AcademicResource) => {
-    if (resource.isApproved) {
-      return <CheckCircle className="w-5 h-5 text-green-500" />;
-    } else {
-      return <Clock className="w-5 h-5 text-yellow-500" />;
-    }
-  };
-
-  const getStatusText = (resource: AcademicResource) => {
-    return resource.isApproved ? "Approved" : "Pending Approval";
+  const handleEditSubmit = async (values: any) => {
+    if (!selectedResource) return;
+    await service.update(selectedResource._id, values);
+    setShowEditModal(false);
+    setSelectedResource(null);
+    await fetchResources();
+    toast.success("Updated successfully");
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Manage {title}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Upload, edit, and manage {resourceType} for students
+            Upload, edit and manage {resourceType}
           </p>
         </div>
         <button
           onClick={() => setShowUploadModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
         >
-          <Plus className="w-5 h-5" />
-          Upload {title}
+          <Plus className="w-5 h-5" /> Upload {title}
         </button>
       </div>
 
-      {/* Search and Filters */}
+      {/* Search & controls (kept compact and similar to previous) */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex gap-4 mb-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
-              type="text"
-              placeholder={`Search ${resourceType}...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              onKeyDown={(e) => e.key === "Enter" && fetchResources()}
+              placeholder={`Search ${resourceType}...`}
+              className="w-full pl-10 pr-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-              showFilters
-                ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300"
-                : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            className={`flex items-center gap-2 px-4 py-2 border rounded-lg ${
+              showFilters ? "bg-blue-50 text-blue-700" : ""
             }`}
           >
-            <Filter className="w-5 h-5" />
-            Filters
+            <Filter className="w-5 h-5" /> Filters
           </button>
+          <div className="ml-2">
+            <label className="text-sm text-gray-600 dark:text-gray-400 mr-2">
+              Sort
+            </label>
+            <select
+              value={sortValue}
+              onChange={(e) => setSortValue(e.target.value)}
+              className="px-3 py-1 border rounded bg-white dark:bg-gray-700 text-sm"
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="mostViewed">Most Viewed</option>
+              <option value="mostDownloaded">Most Downloaded</option>
+            </select>
+          </div>
           <button
-            onClick={handleSearch}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            onClick={fetchResources}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg"
           >
             Search
           </button>
         </div>
 
-        {/* Filters */}
         {showFilters && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
                 Course
               </label>
               <select
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border rounded bg-white dark:bg-gray-700"
               >
                 <option value="">All Courses</option>
-                {filterOptions.courses.map((course) => (
-                  <option key={course} value={course}>
-                    {course}
+                {filterOptions.courses.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
                   </option>
                 ))}
               </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
                 Semester
               </label>
               <select
                 value={selectedSemester}
                 onChange={(e) => setSelectedSemester(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border rounded bg-white dark:bg-gray-700"
               >
-                <option value="">All Semesters</option>
-                {filterOptions.semesters.map((semester) => (
-                  <option key={semester} value={semester}>
-                    Semester {semester}
+                <option value="">All</option>
+                {filterOptions.semesters.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
                   </option>
                 ))}
               </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
                 Academic Year
               </label>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border rounded bg-white dark:bg-gray-700"
               >
-                <option value="">All Years</option>
-                {filterOptions.academicYears.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
+                <option value="">All</option>
+                {filterOptions.academicYears.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
                   </option>
                 ))}
               </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
                 Status
               </label>
               <select
                 value={approvalFilter}
-                onChange={(e) =>
-                  setApprovalFilter(
-                    e.target.value as "all" | "approved" | "pending"
-                  )
-                }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                onChange={(e) => setApprovalFilter(e.target.value as any)}
+                className="w-full px-3 py-2 border rounded bg-white dark:bg-gray-700"
               >
-                <option value="all">All Status</option>
+                <option value="all">All</option>
                 <option value="approved">Approved</option>
                 <option value="pending">Pending</option>
               </select>
             </div>
-
             <div className="lg:col-span-4 flex justify-end">
               <button
-                onClick={handleClearFilters}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedCourse("");
+                  setSelectedSemester("");
+                  setSelectedYear("");
+                  setApprovalFilter("all");
+                  fetchResources();
+                }}
+                className="px-4 py-2 text-gray-600"
               >
                 Clear Filters
               </button>
@@ -338,138 +503,341 @@ const AcademicManagement: React.FC<AcademicManagementProps> = ({
         )}
       </div>
 
-      {/* Resources Table */}
+      {/* Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {loading ? (
+        {loading && initialLoad ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         ) : resources.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-gray-400 mb-4">
-              <Plus className="w-16 h-16 mx-auto" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No {resourceType} found
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Upload your first {resourceType} to get started.
-            </p>
+            {" "}
+            <Plus className="w-16 h-16 mx-auto text-gray-300" />{" "}
+            <h3 className="text-lg font-medium">No {resourceType} found</h3>{" "}
+            <p className="text-gray-500">Upload your first {resourceType}</p>{" "}
             <button
               onClick={() => setShowUploadModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
             >
-              <Plus className="w-5 h-5" />
               Upload {title}
             </button>
           </div>
         ) : (
           <div className="p-4">
-            <div className="mb-4 flex justify-end">
+            <div className="mb-4 flex justify-end items-center gap-4">
+              {loading && !initialLoad && (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600" />
+              )}
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg"
               >
-                <Plus className="w-5 h-5" />
-                Upload {title}
+                <Plus className="w-5 h-5" /> Upload {title}
               </button>
             </div>
+
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <table className="min-w-full border-collapse border border-gray-200 dark:border-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Title
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Course
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Stats
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    {/* render dynamic headers based on resourceType */}
+                    {resourceType === "questionPapers" && (
+                      <>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Course
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Subject
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Year
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Month
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Actions
+                        </th>
+                      </>
+                    )}
+
+                    {resourceType === "syllabus" && (
+                      <>
+                        <th>Title</th>
+                        <th>Course</th>
+                        <th>Semester(s)</th>
+                        <th>Year</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </>
+                    )}
+
+                    {resourceType === "timetables" && (
+                      <>
+                        <th>Title</th>
+                        <th>Course</th>
+                        <th>Type</th>
+                        <th>File URL</th>
+                        <th>Semester</th>
+                        <th>Year</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </>
+                    )}
+
+                    {resourceType === "notes" && (
+                      <>
+                        <th>Title</th>
+                        <th>Course</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Stats</th>
+                        <th>Actions</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
+
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {resources.map((resource) => (
-                    <tr
-                      key={resource._id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {resource.title}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {resource.description?.substring(0, 60)}...
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 dark:text-white">
-                          {resource.course}
-                        </div>
-                        {resource.semester && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            Semester {resource.semester}
-                          </div>
+                  {resources.map((r) => {
+                    // Try canonical fields first, then try to infer from title when missing
+                    const clean = (v: any) =>
+                      v === undefined ||
+                      v === null ||
+                      v === "" ||
+                      v === "N/A" ||
+                      v === "-"
+                        ? null
+                        : v;
+
+                    const inferredYear =
+                      (clean(r.examYear) ? String(r.examYear) : null) ||
+                      clean(r.year) ||
+                      clean(r.academicYear) ||
+                      (() => {
+                        const m = (r.title || "").match(/(19|20)\d{2}/);
+                        return m ? m[0] : null;
+                      })() ||
+                      "-";
+
+                    const inferredMonth =
+                      clean(r.month) ||
+                      (() => {
+                        const months = [
+                          "January",
+                          "February",
+                          "March",
+                          "April",
+                          "May",
+                          "June",
+                          "July",
+                          "August",
+                          "September",
+                          "October",
+                          "November",
+                          "December",
+                        ];
+                        const t = (r.title || "").toLowerCase();
+                        for (const mon of months) {
+                          if (t.includes(mon.toLowerCase())) return mon;
+                        }
+                        return null;
+                      })() ||
+                      "-";
+
+                    const rType = r.type || "-";
+                    return (
+                      <tr
+                        key={r._id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        {resourceType === "questionPapers" && (
+                          <>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {getCourseLabel(r)}
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {getSubjectLabel(r)}
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {inferredYear}
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {inferredMonth}
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              <div className="flex items-center justify-center gap-2">
+                                {r.isApproved ? (
+                                  <CheckCircle className="w-5 h-5 text-green-500" />
+                                ) : (
+                                  <Clock className="w-5 h-5 text-yellow-500" />
+                                )}
+                                <span
+                                  className={`text-sm ${
+                                    r.isApproved
+                                      ? "text-green-600"
+                                      : "text-yellow-600"
+                                  }`}
+                                >
+                                  {r.isApproved ? "Approved" : "Pending"}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              <div className="flex items-center justify-center">
+                                <ActionButtons
+                                  resource={r}
+                                  onView={() => handleView(r)}
+                                  onEdit={() => {
+                                    setSelectedResource(r);
+                                    setShowEditModal(true);
+                                  }}
+                                  onDelete={() => handleDelete(r)}
+                                />
+                              </div>
+                            </td>
+                          </>
                         )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(resource)}
-                          <span
-                            className={`text-sm ${
-                              resource.isApproved
-                                ? "text-green-600 dark:text-green-400"
-                                : "text-yellow-600 dark:text-yellow-400"
-                            }`}
-                          >
-                            {getStatusText(resource)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {/* Teachers should see view count */}
-                        <div>Views: {resource.viewCount}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleView(resource)}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                            title="View"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </button>
-                          {/* Replace direct download button with Edit for teacher management so teachers edit resources instead of triggering downloads here */}
-                          <button
-                            onClick={() => {
-                              setSelectedResource(resource);
-                              setShowEditModal(true);
-                            }}
-                            className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
-                            title="Edit"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(resource)}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+
+                        {resourceType === "syllabus" && (
+                          <>
+                            <td className="px-6 py-4">{r.title}</td>
+                            <td className="px-6 py-4">{getCourseLabel(r)}</td>
+                            <td className="px-6 py-4">{getSemesterLabel(r)}</td>
+                            <td className="px-6 py-4">{inferredYear}</td>
+                            <td className="px-6 py-4">
+                              {r.isApproved ? (
+                                <CheckCircle className="w-5 h-5 text-green-500" />
+                              ) : (
+                                <Clock className="w-5 h-5 text-yellow-500" />
+                              )}{" "}
+                              <span
+                                className={`text-sm ${
+                                  r.isApproved
+                                    ? "text-green-600"
+                                    : "text-yellow-600"
+                                }`}
+                              >
+                                {r.isApproved ? "Approved" : "Pending"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <ActionButtons
+                                resource={r}
+                                onView={() => handleView(r)}
+                                onEdit={() => {
+                                  setSelectedResource(r);
+                                  setShowEditModal(true);
+                                }}
+                                onDelete={() => handleDelete(r)}
+                              />
+                            </td>
+                          </>
+                        )}
+
+                        {resourceType === "timetables" && (
+                          <>
+                            <td className="px-6 py-4">{r.title}</td>
+                            <td className="px-6 py-4">{getCourseLabel(r)}</td>
+                            <td className="px-6 py-4">{rType}</td>
+                            <td className="px-6 py-4">
+                              <a
+                                href={r.fileUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-600"
+                              >
+                                {r.fileUrl ? "Open" : "-"}
+                              </a>
+                            </td>
+                            <td className="px-6 py-4">{getSemesterLabel(r)}</td>
+                            <td className="px-6 py-4">{inferredYear}</td>
+                            <td className="px-6 py-4">
+                              {r.isApproved ? (
+                                <CheckCircle className="w-5 h-5 text-green-500" />
+                              ) : (
+                                <Clock className="w-5 h-5 text-yellow-500" />
+                              )}{" "}
+                              <span
+                                className={`text-sm ${
+                                  r.isApproved
+                                    ? "text-green-600"
+                                    : "text-yellow-600"
+                                }`}
+                              >
+                                {r.isApproved ? "Approved" : "Pending"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <ActionButtons
+                                resource={r}
+                                onView={() => handleView(r)}
+                                onEdit={() => {
+                                  setSelectedResource(r);
+                                  setShowEditModal(true);
+                                }}
+                                onDelete={() => handleDelete(r)}
+                              />
+                            </td>
+                          </>
+                        )}
+
+                        {resourceType === "notes" && (
+                          <>
+                            <td className="px-6 py-4">
+                              <div>
+                                <div className="font-medium text-gray-900 dark:text-white">
+                                  {r.title}
+                                </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                  {r.description
+                                    ? r.description.length > 60
+                                      ? `${r.description.substring(0, 60)}...`
+                                      : r.description
+                                    : ""}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">{getCourseLabel(r)}</td>
+                            <td className="px-6 py-4">{getSubjectLabel(r)}</td>
+                            <td className="px-6 py-4">
+                              {r.isApproved ? (
+                                <CheckCircle className="w-5 h-5 text-green-500" />
+                              ) : (
+                                <Clock className="w-5 h-5 text-yellow-500" />
+                              )}{" "}
+                              <span
+                                className={`text-sm ${
+                                  r.isApproved
+                                    ? "text-green-600"
+                                    : "text-yellow-600"
+                                }`}
+                              >
+                                {r.isApproved ? "Approved" : "Pending"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              Views: {r.viewCount || 0}
+                            </td>
+                            <td className="px-6 py-4">
+                              <ActionButtons
+                                resource={r}
+                                onView={() => handleView(r)}
+                                onEdit={() => {
+                                  setSelectedResource(r);
+                                  setShowEditModal(true);
+                                }}
+                                onDelete={() => handleDelete(r)}
+                              />
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -477,95 +845,75 @@ const AcademicManagement: React.FC<AcademicManagementProps> = ({
         )}
       </div>
 
-      {/* Upload Modal */}
+      {/* Upload modal */}
       {showUploadModal && (
-        <FileUploadModal
-          isOpen={showUploadModal}
-          onClose={() => setShowUploadModal(false)}
-          onUpload={handleUpload}
-          resourceType={resourceType}
-          title={`Upload ${title}`}
-        />
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={(e) =>
+            e.target === e.currentTarget && setShowUploadModal(false)
+          }
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold">Upload {title}</h2>
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="text-gray-400"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6">
+              <AcademicResourceForm
+                resourceType={resourceType as any}
+                createMode={true}
+                onCancel={() => setShowUploadModal(false)}
+                onSubmit={async (formData) => {
+                  await handleUpload(formData as FormData);
+                  setShowUploadModal(false);
+                }}
+                submitLabel={`Upload ${title}`}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Edit modals for different resource types */}
-      {selectedResource && resourceType === "questionPapers" && (
-        <QuestionPapersEditModal
-          isOpen={!!selectedResource && showEditModal}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedResource(null);
-          }}
-          paper={selectedResource as any}
-          onSubmit={async (values) => {
-            if (!selectedResource) return;
-            await service.update(selectedResource._id, values);
-            setShowEditModal(false);
-            setSelectedResource(null);
-            fetchResources();
-            toast.success("Updated successfully");
-          }}
-        />
-      )}
-
-      {selectedResource && resourceType === "notes" && (
-        <NotesEditModal
-          isOpen={!!selectedResource && showEditModal}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedResource(null);
-          }}
-          note={selectedResource as any}
-          onSubmit={async (values) => {
-            if (!selectedResource) return;
-            await service.update(selectedResource._id, values);
-            setShowEditModal(false);
-            setSelectedResource(null);
-            fetchResources();
-            toast.success("Updated successfully");
-          }}
-        />
-      )}
-
-      {selectedResource && resourceType === "syllabus" && (
-        <SyllabusEditModal
-          isOpen={!!selectedResource && showEditModal}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedResource(null);
-          }}
-          syllabus={selectedResource as any}
-          onSubmit={async (values) => {
-            if (!selectedResource) return;
-            await service.update(selectedResource._id, values);
-            setShowEditModal(false);
-            setSelectedResource(null);
-            fetchResources();
-            toast.success("Updated successfully");
-          }}
-        />
-      )}
-
-      {selectedResource && resourceType === "timetables" && (
-        <TimetableEditModal
-          isOpen={!!selectedResource && showEditModal}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedResource(null);
-          }}
-          timetable={selectedResource as any}
-          onSubmit={async (values) => {
-            if (!selectedResource) return;
-            await service.update(selectedResource._id, values);
-            setShowEditModal(false);
-            setSelectedResource(null);
-            fetchResources();
-            toast.success("Updated successfully");
-          }}
-        />
-      )}
+      {/* Generic Edit Modal */}
+      <ResourceEditModal
+        isOpen={showEditModal}
+        resourceType={resourceType}
+        resource={selectedResource}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedResource(null);
+        }}
+        onSubmit={handleEditSubmit}
+      />
     </div>
   );
 };
 
-export default AcademicManagement;
+const ActionButtons: React.FC<{
+  resource?: AcademicResource;
+  onView: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}> = (props) => {
+  const { onView, onEdit, onDelete } = props;
+  return (
+    <div className="flex items-center gap-2">
+      <button onClick={onView} className="text-blue-600" title="View">
+        <ExternalLink className="w-4 h-4" />
+      </button>
+      <button onClick={onEdit} className="text-yellow-600" title="Edit">
+        <Edit className="w-4 h-4" />
+      </button>
+      <button onClick={onDelete} className="text-red-600" title="Delete">
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
+
+export default AcademicManagementNew;

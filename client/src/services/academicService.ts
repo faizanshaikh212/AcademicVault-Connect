@@ -112,11 +112,20 @@ export const questionPapersService = {
     degreeType?: string,
     course?: string
   ): Promise<AcademicResourceResponse<string[] | QuestionPapersBySemester>> {
+    // Encode path segments to ensure spaces and special characters are safe in URLs
     let url = "/academic/question-papers/categories";
-    if (degreeType) url += `/${degreeType}`;
-    if (course) url += `/${course}`;
+    if (degreeType) url += `/${encodeURIComponent(degreeType)}`;
+    if (course) url += `/${encodeURIComponent(course)}`;
 
     const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get question papers with more flexible filtering
+  async getQuestionPapersWithFilters(
+    params: QuestionPaperSearchParams = {}
+  ): Promise<AcademicResourceListResponse<QuestionPaper>> {
+    const response = await api.get("/academic/question-papers", { params });
     return response.data;
   },
 

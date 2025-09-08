@@ -24,11 +24,14 @@ dotenv.config();
  * - Issue date (iat)
  * - Expiration date (exp) - 30 days from issue
  */
-const generateToken = (id) => {
-  // Sign the token with the user's ID and the JWT secret from environment variables.
-  // The token is set to expire in 30 days.
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "30d",
+const generateToken = (userId, sessionId = null) => {
+  // Payload includes subject (userId) and session id for revocation checks
+  const payload = { sub: userId };
+  if (sessionId) payload.sid = String(sessionId);
+
+  return jwt.sign(payload, process.env.JWT_SECRET, {
+    // Access tokens: 75 minutes
+    expiresIn: "75m",
   });
 };
 

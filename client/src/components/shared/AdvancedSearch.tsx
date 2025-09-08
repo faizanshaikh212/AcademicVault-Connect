@@ -11,6 +11,7 @@ type AdvancedSearchProps = {
   filtersNode?: React.ReactNode;
   debounceMs?: number;
   showFilterButton?: boolean;
+  rightNode?: React.ReactNode;
 };
 
 const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
@@ -23,6 +24,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   filtersNode,
   debounceMs,
   showFilterButton = true,
+  rightNode,
 }) => {
   // debounced live search: call onSearch after user stops typing
   React.useEffect(() => {
@@ -58,6 +60,8 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
+
+        {rightNode && <div className="flex items-center">{rightNode}</div>}
 
         {showFilterButton !== false && (
           <button
