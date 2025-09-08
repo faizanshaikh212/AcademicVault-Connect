@@ -3,26 +3,27 @@
  * Page for browsing, searching, and managing academic notes
  */
 
-import React, { useState, useEffect } from 'react';
-import { Search, Filter, Plus, BookOpen } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import AcademicResourceCard from '../components/shared/AcademicResourceCard';
-import DocumentViewer from '../components/shared/DocumentViewer';
-import FileUploadModal from '../components/shared/FileUploadModal';
-import { AcademicNote, NotesSearchParams } from '../types/academic';
-import { notesService } from '../services/academicService';
-import { useAuth } from '../hooks/useAuth';
-import Galaxy from '../components/background/Galaxy';
+import React, { useState, useEffect } from "react";
+import { Search, Filter, Plus, BookOpen } from "lucide-react";
+import { toast } from "react-hot-toast";
+import AcademicResourceCard from "../components/shared/AcademicResourceCard";
+import FileUploadModal from "../components/shared/FileUploadModal";
+import NotesEditModal from "../components/shared/NotesEditModal";
+import { AcademicNote, NotesSearchParams } from "../types/academic";
+import { notesService } from "../services/academicService";
+import { useAuth } from "../hooks/useAuth";
+import Galaxy from "../components/background/Galaxy";
 
 const AcademicNotes: React.FC = () => {
   const { user } = useAuth();
   const [notes, setNotes] = useState<AcademicNote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [searchParams, setSearchParams] = useState<NotesSearchParams>({
     page: 1,
     limit: 12,
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
+    sortBy: "createdAt",
+    sortOrder: "desc",
   });
   const [pagination, setPagination] = useState({
     current: 1,
@@ -30,17 +31,16 @@ const AcademicNotes: React.FC = () => {
     total: 0,
   });
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedNote, setSelectedNote] = useState<AcademicNote | null>(null);
-  const [showViewer, setShowViewer] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<AcademicNote | null>(null);
 
   // Filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState('');
-  const [selectedSemester, setSelectedSemester] = useState('');
-  const [selectedYear, setSelectedYear] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedSemester, setSelectedSemester] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
 
   // Available filter options (these would typically come from an API)
   const [filterOptions, setFilterOptions] = useState({
@@ -62,10 +62,16 @@ const AcademicNotes: React.FC = () => {
       setPagination(response.pagination);
 
       // Extract filter options from the data
-      const courses = [...new Set(response.data.map(note => note.course))];
-      const subjects = [...new Set(response.data.map(note => note.subject))];
-      const semesters = [...new Set(response.data.map(note => note.semester).filter(Boolean) as string[])];
-      const years = [...new Set(response.data.map(note => note.academicYear))];
+      const courses = [...new Set(response.data.map((note) => note.course))];
+      const subjects = [...new Set(response.data.map((note) => note.subject))];
+      const semesters = [
+        ...new Set(
+          response.data.map((note) => note.semester).filter(Boolean) as string[]
+        ),
+      ];
+      const years = [
+        ...new Set(response.data.map((note) => note.academicYear)),
+      ];
 
       setFilterOptions({
         courses,
@@ -74,10 +80,11 @@ const AcademicNotes: React.FC = () => {
         academicYears: years,
       });
     } catch (error) {
-      console.error('Error fetching notes:', error);
-      toast.error('Failed to fetch notes');
+      console.error("Error fetching notes:", error);
+      toast.error("Failed to fetch notes");
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
@@ -85,7 +92,8 @@ const AcademicNotes: React.FC = () => {
     const newParams: NotesSearchParams = {
       ...searchParams,
       page: 1,
-      search: searchQuery || undefined,
+      // use `keyword` to align with server endpoints that accept partial/short queries
+      keyword: searchQuery || undefined,
       course: selectedCourse || undefined,
       subject: selectedSubject || undefined,
       semester: selectedSemester || undefined,
@@ -94,17 +102,32 @@ const AcademicNotes: React.FC = () => {
     setSearchParams(newParams);
   };
 
+  // Debounce live search so typing triggers server queries (partial matches)
+  useEffect(() => {
+    const qRaw = searchQuery || "";
+    const id = setTimeout(() => {
+      setSearchParams((prev) => ({
+        ...prev,
+        page: 1,
+        keyword: qRaw || undefined,
+      }));
+    }, 250);
+
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
   const handleClearFilters = () => {
-    setSearchQuery('');
-    setSelectedCourse('');
-    setSelectedSubject('');
-    setSelectedSemester('');
-    setSelectedYear('');
+    setSearchQuery("");
+    setSelectedCourse("");
+    setSelectedSubject("");
+    setSelectedSemester("");
+    setSelectedYear("");
     setSearchParams({
       page: 1,
       limit: 12,
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
+      sortBy: "createdAt",
+      sortOrder: "desc",
     });
   };
 
@@ -112,47 +135,21 @@ const AcademicNotes: React.FC = () => {
     setSearchParams({ ...searchParams, page });
   };
 
-  const handleViewNote = (note: AcademicNote) => {
-    setSelectedNote(note);
-    setShowViewer(true);
-  };
-
-  const handleDownloadNote = async (note: AcademicNote) => {
-    try {
-      const response = await notesService.trackDownload(note._id);
-      window.open(response.downloadUrl, '_blank');
-      toast.success('Download started');
-
-      // Update download count in the local state
-      setNotes(prevNotes =>
-        prevNotes.map(n =>
-          n._id === note._id ? { ...n, downloadCount: n.downloadCount + 1 } : n
-        )
-      );
-    } catch (error) {
-      console.error('Error downloading note:', error);
-      toast.error('Failed to download note');
-    }
-  };
-
-  const handleCloseViewer = () => {
-    setShowViewer(false);
-    setSelectedNote(null);
-  };
+  // Note: File viewing is now handled by AcademicResourceCard
 
   const handleUpload = async (formData: FormData) => {
     try {
       await notesService.uploadNote(formData);
       fetchNotes(); // Refresh the notes list
-      toast.success('Note uploaded successfully!');
+      toast.success("Note uploaded successfully!");
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error("Upload error:", error);
       throw error; // Let the modal handle the error display
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative pt-25">
       {/* Background Effect */}
       <Galaxy />
 
@@ -198,16 +195,17 @@ const AcademicNotes: React.FC = () => {
                   placeholder="Search notes by title, description, or tags..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${showFilters
-                  ? 'bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300'
-                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
+                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
+                  showFilters
+                    ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300"
+                    : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}
               >
                 <Filter className="w-5 h-5" />
                 Filters
@@ -311,19 +309,30 @@ const AcademicNotes: React.FC = () => {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <p className="text-gray-600 dark:text-gray-400">
-                {loading ? 'Loading...' : `${pagination.total} notes found`}
+                {initialLoad && loading ? (
+                  "Loading..."
+                ) : loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <span>Updating...</span>
+                  </span>
+                ) : (
+                  `${pagination.total} notes found`
+                )}
               </p>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600 dark:text-gray-400">Sort by:</label>
+                <label className="text-sm text-gray-600 dark:text-gray-400">
+                  Sort by:
+                </label>
                 <select
                   value={`${searchParams.sortBy}-${searchParams.sortOrder}`}
                   onChange={(e) => {
-                    const [sortBy, sortOrder] = e.target.value.split('-');
+                    const [sortBy, sortOrder] = e.target.value.split("-");
                     setSearchParams({
                       ...searchParams,
                       sortBy,
-                      sortOrder: sortOrder as 'asc' | 'desc',
+                      sortOrder: sortOrder as "asc" | "desc",
                       page: 1,
                     });
                   }}
@@ -340,10 +349,13 @@ const AcademicNotes: React.FC = () => {
             </div>
 
             {/* Notes Grid */}
-            {loading ? (
+            {initialLoad && loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, index) => (
-                  <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+                  <div
+                    key={index}
+                    className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-pulse"
+                  >
                     <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
                     <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
                     <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
@@ -358,7 +370,8 @@ const AcademicNotes: React.FC = () => {
                   No notes found
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Try adjusting your search criteria or upload some notes to get started.
+                  Try adjusting your search criteria or upload some notes to get
+                  started.
                 </p>
                 {user && (
                   <button
@@ -369,18 +382,52 @@ const AcademicNotes: React.FC = () => {
                     Upload Notes
                   </button>
                 )}
+                {loading && !initialLoad && (
+                  <div className="mt-2 flex items-center justify-center text-sm text-gray-500">
+                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2" />
+                    Searching...
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {notes.map((note) => (
-                  <AcademicResourceCard
-                    key={note._id}
-                    resource={note}
-                    resourceType="notes"
-                    onView={handleViewNote}
-                    onDownload={handleDownloadNote}
-                  />
-                ))}
+              <div className="relative">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {notes.map((note) => (
+                    <AcademicResourceCard
+                      key={note._id}
+                      resource={note}
+                      resourceType="notes"
+                      onEdit={(r) => {
+                        setSelectedNote(r);
+                        setShowEditModal(true);
+                      }}
+                      onDelete={async (r) => {
+                        try {
+                          await notesService.deleteNote(r._id);
+                          setNotes((prev) =>
+                            prev.filter((n) => n._id !== r._id)
+                          );
+                          toast.success("Note deleted");
+                        } catch (err) {
+                          console.error(err);
+                          toast.error("Failed to delete note");
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* subtle overlay while refreshing after initial load */}
+                {loading && !initialLoad && (
+                  <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/60 flex items-center justify-center rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-block w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-gray-700 dark:text-gray-200">
+                        Updating...
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -402,10 +449,11 @@ const AcademicNotes: React.FC = () => {
                       <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`px-3 py-2 rounded ${page === pagination.current
-                          ? 'bg-blue-600 text-white'
-                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-                          }`}
+                        className={`px-3 py-2 rounded ${
+                          page === pagination.current
+                            ? "bg-blue-600 text-white"
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                        }`}
                       >
                         {page}
                       </button>
@@ -426,19 +474,7 @@ const AcademicNotes: React.FC = () => {
         </div>
       </div>
 
-      {/* Document Viewer */}
-      {showViewer && selectedNote && (
-        <DocumentViewer
-          isOpen={showViewer}
-          onClose={handleCloseViewer}
-          fileUrl={selectedNote.publicUrl}
-          embedUrl={selectedNote.embedUrl || ''}
-          downloadUrl={selectedNote.downloadUrl}
-          title={selectedNote.title}
-          fileType={selectedNote.fileType}
-          onDownload={() => handleDownloadNote(selectedNote)}
-        />
-      )}
+      {/* Document viewing is handled by AcademicResourceCard */}
 
       {/* Upload Modal */}
       {showUploadModal && (
@@ -448,6 +484,26 @@ const AcademicNotes: React.FC = () => {
           onUpload={handleUpload}
           resourceType="notes"
           title="Upload Academic Notes"
+        />
+      )}
+
+      {/* Edit Modal */}
+      {selectedNote && (
+        <NotesEditModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedNote(null);
+          }}
+          note={selectedNote}
+          onSubmit={async (values) => {
+            if (!selectedNote) return;
+            await notesService.updateNote(selectedNote._id, values);
+            setShowEditModal(false);
+            setSelectedNote(null);
+            fetchNotes();
+            toast.success("Updated successfully");
+          }}
         />
       )}
     </div>

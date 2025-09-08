@@ -4,7 +4,8 @@ import { useToast } from "@/hooks/useToast";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Link } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import AdvancedSearch from "@/components/shared/AdvancedSearch";
+import Sort from "@/components/shared/Sort";
 
 interface Attachment {
   title: string;
@@ -15,43 +16,31 @@ interface NewsItem {
   _id: string;
   title: string;
   content: string;
-  author: {
-    _id: string;
-    username: string;
-  } | null;
+  author: { _id: string; username: string } | null;
   createdAt: string;
   isPublished: boolean;
   attachments: Attachment[];
-}
-
-interface Subscriber {
-  _id: string;
-  email: string;
-  isActive: boolean;
-  createdAt: string;
-  user?: {
-    _id: string;
-    username: string;
-    email: string;
-  };
-  displayEmail?: string;
+  coverImage?: string;
 }
 
 const NewsManagement: React.FC = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
-  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchNewsQuery, setSearchNewsQuery] = useState("");
   const [searchSubscriberQuery, setSearchSubscriberQuery] = useState("");
-  const { toast } = useToast();
-  const { login } = useAuth();
+  const [sortOption, setSortOption] = useState("created-desc");
 
-  // Form state
+  // Create form state
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+
+  // Subscribers
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchNews();
@@ -61,29 +50,24 @@ const NewsManagement: React.FC = () => {
   const fetchNews = async () => {
     try {
       const response = await api.get("/news/all");
-      setNews(response.data);
+      setNews(response.data || []);
     } catch (error: any) {
       toast({
         title: "Error",
         description: "Failed to fetch news",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchSubscribers = async () => {
     try {
       const response = await api.get("/news/subscribers");
-      setSubscribers(response.data);
-      setLoading(false);
+      setSubscribers(response.data || []);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description:
-          error.response?.data?.message || "Failed to fetch subscribers",
-        variant: "destructive",
-      });
-      setLoading(false);
+      // non-fatal
     }
   };
 
@@ -92,9 +76,7 @@ const NewsManagement: React.FC = () => {
     if (file) {
       setImage(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
+      reader.onloadend = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -107,13 +89,9 @@ const NewsManagement: React.FC = () => {
       if (image) {
         const formData = new FormData();
         formData.append("file", image);
-
         const uploadRes = await api.post("/upload", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { "Content-Type": "multipart/form-data" },
         });
-
         coverImageUrl = uploadRes.data.filePath;
       }
 
@@ -129,10 +107,7 @@ const NewsManagement: React.FC = () => {
         isPublished: true,
       });
 
-      toast({
-        title: "Success",
-        description: "News created successfully",
-      });
+      toast({ title: "Success", description: "News created successfully" });
 
       setTitle("");
       setContent("");
@@ -152,10 +127,7 @@ const NewsManagement: React.FC = () => {
   const handleDeleteNews = async (id: string) => {
     try {
       await api.delete(`/news/${id}`);
-      toast({
-        title: "Success",
-        description: "News deleted successfully",
-      });
+      toast({ title: "Success", description: "News deleted successfully" });
       fetchNews();
     } catch (error: any) {
       toast({
@@ -168,30 +140,14 @@ const NewsManagement: React.FC = () => {
 
   const handleUpdateSubscriber = async (id: string, isActive: boolean) => {
     try {
-      const response = await api.put(`/news/subscribers/${id}`, { isActive });
+      await api.put(`/news/subscribers/${id}`, { isActive });
       toast({
         title: "Success",
         description: `Subscriber ${
           isActive ? "activated" : "deactivated"
         } successfully`,
       });
-
-      // Update subscribers list
       fetchSubscribers();
-
-      // If this was a user subscription, refresh user data
-      if (response.data.userId) {
-        try {
-          const { data: updatedUser } = await api.get("/users/me");
-          // Update the user context
-          login({
-            user: updatedUser,
-            token: localStorage.getItem("token"),
-          });
-        } catch (error) {
-          console.error("Failed to refresh user data:", error);
-        }
-      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -203,28 +159,12 @@ const NewsManagement: React.FC = () => {
 
   const handleDeleteSubscriber = async (id: string) => {
     try {
-      const response = await api.delete(`/news/subscribers/${id}`);
+      await api.delete(`/news/subscribers/${id}`);
       toast({
         title: "Success",
         description: "Subscriber deleted successfully",
       });
-
-      // Update subscribers list
       fetchSubscribers();
-
-      // If this was a user subscription, trigger a user data refresh
-      if (response.data.userId) {
-        try {
-          const { data: updatedUser } = await api.get("/users/me");
-          // Update the user context
-          login({
-            user: updatedUser,
-            token: localStorage.getItem("token"),
-          });
-        } catch (error) {
-          console.error("Failed to refresh user data:", error);
-        }
-      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -234,9 +174,7 @@ const NewsManagement: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -261,6 +199,7 @@ const NewsManagement: React.FC = () => {
               className="mt-1"
             />
           </div>
+
           <div>
             <label
               htmlFor="content"
@@ -277,6 +216,7 @@ const NewsManagement: React.FC = () => {
               rows={4}
             />
           </div>
+
           <div>
             <label
               htmlFor="image"
@@ -381,19 +321,58 @@ const NewsManagement: React.FC = () => {
       {/* News List */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
         <h2 className="text-2xl font-semibold mb-4">News List</h2>
-        <div className="mb-4">
-          <Input
-            placeholder="Search news..."
-            value={searchNewsQuery}
-            onChange={(e) => setSearchNewsQuery(e.target.value)}
-            className="max-w-md"
+
+        <AdvancedSearch
+          title="News"
+          searchQuery={searchNewsQuery}
+          onSearchChange={setSearchNewsQuery}
+          onSearch={() => {
+            /* server search */
+          }}
+          showFilters={false}
+          setShowFilters={() => {}}
+          debounceMs={250}
+          showFilterButton={false}
+        />
+
+        <div className="mt-4 flex items-center justify-end">
+          <Sort
+            options={[
+              { value: "created-desc", label: "Newest" },
+              { value: "created-asc", label: "Oldest" },
+              { value: "title-asc", label: "Title A-Z" },
+              { value: "title-desc", label: "Title Z-A" },
+            ]}
+            value={sortOption}
+            onChange={(v) => setSortOption(v)}
           />
         </div>
-        <div className="space-y-4">
+
+        <div className="space-y-4 mt-4">
           {news
             .filter((item) =>
               item.title.toLowerCase().includes(searchNewsQuery.toLowerCase())
             )
+            .sort((a, b) => {
+              switch (sortOption) {
+                case "created-asc":
+                  return (
+                    new Date(a.createdAt).getTime() -
+                    new Date(b.createdAt).getTime()
+                  );
+                case "created-desc":
+                  return (
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime()
+                  );
+                case "title-asc":
+                  return a.title.localeCompare(b.title);
+                case "title-desc":
+                  return b.title.localeCompare(a.title);
+                default:
+                  return 0;
+              }
+            })
             .map((item) => (
               <div
                 key={item._id}

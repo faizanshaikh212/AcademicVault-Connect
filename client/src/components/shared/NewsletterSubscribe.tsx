@@ -86,7 +86,7 @@ const NewsletterSubscribe: React.FC = () => {
   }
 
   return (
-    <section className="bg-white dark:bg-gray-900 py-16">
+    <section className="py-16">
       <div className="relative isolate overflow-hidden bg-gradient-to-b from-blue-400 to-blue-500 dark:from-gray-900 dark:to-gray-800 py-16 sm:py-24 rounded-3xl mx-4">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
@@ -114,8 +114,8 @@ const NewsletterSubscribe: React.FC = () => {
                     focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm sm:leading-6
                     ${
                       user?.email
-                        ? "bg-blue-700/50 dark:bg-gray-700 cursor-not-allowed"
-                        : "bg-white/20 dark:bg-white/5"
+                        ? "bg-blue-900/50 dark:bg-gray-900 cursor-not-allowed"
+                        : "bg-white/5 dark:bg-white/5"
                     }
                     ${isLoading ? "opacity-50" : ""}`}
                 />

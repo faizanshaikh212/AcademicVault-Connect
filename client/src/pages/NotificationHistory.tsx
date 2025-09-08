@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/Input";
 import { Notification as NotificationType } from "@/types";
 import api from "@/services/api";
 import { UserPlus, Newspaper, UserCheck, Crown } from "lucide-react";
+import { getAvatarUrl } from "@/lib/avatar";
+import { formatDistance } from "date-fns";
 
 const NotificationHistory = () => {
   const [notifications, setNotifications] = useState<NotificationType[]>([]);
@@ -48,7 +50,8 @@ const NotificationHistory = () => {
         return (
           <>
             <Newspaper className="h-4 w-4 mr-2 text-blue-500" />{" "}
-            <strong>{notification.sender.username}</strong> posted a notice: "{notification.message}"
+            <strong>{notification.sender.username}</strong> posted a notice: "
+            {notification.message}"
           </>
         );
       case "role_approved":
@@ -66,7 +69,14 @@ const NotificationHistory = () => {
           </>
         );
       default:
-        return "New notification";
+        return (
+          <>
+            <strong>{notification.sender?.username || "Someone"}</strong>{" "}
+            {notification.message
+              ? notification.message
+              : "sent you a notification"}
+          </>
+        );
     }
   };
 
@@ -115,14 +125,30 @@ const NotificationHistory = () => {
                 : "bg-blue-50 dark:bg-gray-700"
             }`}
           >
-            <Link to={notification.link} className="flex items-center">
+            <Link to={notification.link} className="flex items-start">
+              <img
+                src={getAvatarUrl(notification.sender?.profile?.avatar)}
+                alt={notification.sender?.username || "avatar"}
+                className="h-10 w-10 rounded-full object-cover mr-3 flex-shrink-0"
+              />
               <div className="flex-1">
-                <div className="flex items-center text-sm">
-                  {getNotificationMessage(notification)}
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-900 dark:text-white">
+                    {getNotificationMessage(notification)}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 ml-4">
+                    {formatDistance(
+                      new Date(notification.createdAt),
+                      new Date(),
+                      { addSuffix: true }
+                    )}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {new Date(notification.createdAt).toLocaleString()}
-                </div>
+                {notification.message && (
+                  <div className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">
+                    {notification.message}
+                  </div>
+                )}
               </div>
             </Link>
           </div>

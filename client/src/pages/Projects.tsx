@@ -3,10 +3,11 @@ import { Link } from "react-router-dom";
 import api from "@/services/api";
 import { Project } from "@/types";
 import ProjectCard from "@/components/shared/ProjectCard";
-import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Search, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import NewsletterSubscribe from "@/components/shared/NewsletterSubscribe";
+import AdvancedSearch from "@/components/shared/AdvancedSearch";
+import Sort from "@/components/shared/Sort";
 
 const Projects: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -14,6 +15,9 @@ const Projects: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortOption, setSortOption] = useState<string>("newest");
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -67,15 +71,31 @@ const Projects: React.FC = () => {
 
         {/* Search and Filters Bar */}
         <div className="mt-8">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Search by title, tag, or keyword..."
-              className="w-full pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+          <div>
+            <AdvancedSearch
+              title={"Search projects"}
+              searchQuery={searchQuery}
+              onSearchChange={(v) => setSearchQuery(v)}
+              onSearch={() => setSearchTerm(searchQuery)}
+              showFilters={showFilters}
+              setShowFilters={setShowFilters}
+              showFilterButton={false}
             />
+
+            <div className="flex items-center justify-between mt-2 mb-6">
+              <div />
+              <Sort
+                options={[
+                  { value: "newest", label: "Newest" },
+                  { value: "oldest", label: "Oldest" },
+                  { value: "title_asc", label: "Title A-Z" },
+                  { value: "title_desc", label: "Title Z-A" },
+                ]}
+                value={sortOption}
+                onChange={(v) => setSortOption(v)}
+                className="mt-0"
+              />
+            </div>
           </div>
         </div>
 

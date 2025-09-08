@@ -101,6 +101,17 @@ const userSchema = new mongoose.Schema(
       lastRenewal: { type: Date, default: null },
       expiryNotified: { type: Boolean, default: false }, // Track if we've sent expiry notification
     },
+    // Student assignment fields (optional)
+    studentInfo: {
+      assignedCourse: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Course",
+        default: null,
+      },
+      assignedSemester: { type: Number, default: null },
+      academicYearStart: { type: Number, default: null }, // e.g., 2023
+      academicYearEnd: { type: Number, default: null }, // e.g., 2026
+    },
   },
   {
     // Add timestamps for createdAt and updatedAt fields

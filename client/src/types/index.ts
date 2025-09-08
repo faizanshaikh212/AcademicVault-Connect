@@ -111,6 +111,7 @@ export interface Notification {
   type:
     | "follow"
     | "friend_request"
+    | "friend_request_accepted"
     | "new_news"
     | "new_notice"
     | "role_approved"

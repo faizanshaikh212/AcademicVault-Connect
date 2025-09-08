@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "@/services/api";
 import { Notification as NotificationType } from "../../types";
+import { getAvatarUrl } from "@/lib/avatar";
+import { formatDistance } from "date-fns";
 import {
   Bell,
   UserPlus,
@@ -81,6 +83,16 @@ const NotificationBell: React.FC = () => {
             </span>
           </div>
         );
+      case "new_notice":
+        return (
+          <div className="flex items-center">
+            <Newspaper className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" />
+            <span className="line-clamp-2">
+              <strong>{notification.sender.username}</strong> posted a notice: "
+              {notification.message}"
+            </span>
+          </div>
+        );
       case "role_approved":
         return (
           <>
@@ -89,6 +101,22 @@ const NotificationBell: React.FC = () => {
           </>
         );
       case "premium_approved":
+      case "friend_request":
+        return (
+          <>
+            <UserPlus className="h-4 w-4 mr-2 text-blue-500" />{" "}
+            <strong>{notification.sender.username}</strong> sent you a friend
+            request.
+          </>
+        );
+      case "friend_request_accepted":
+        return (
+          <>
+            <UserCheck className="h-4 w-4 mr-2 text-green-500" />{" "}
+            <strong>{notification.sender.username}</strong> accepted your friend
+            request.
+          </>
+        );
         return (
           <>
             <Crown className="h-4 w-4 mr-2 text-yellow-500" /> Your premium
@@ -96,7 +124,14 @@ const NotificationBell: React.FC = () => {
           </>
         );
       default:
-        return "New notification";
+        return (
+          <>
+            <strong>{notification.sender?.username || "Someone"}</strong>{" "}
+            {notification.message
+              ? notification.message
+              : "sent you a notification"}
+          </>
+        );
     }
   };
 
@@ -154,9 +189,23 @@ const NotificationBell: React.FC = () => {
             <DropdownMenuItem key={notif._id}>
               <Link
                 to={notif.link}
-                className="flex items-center w-full text-sm py-2 px-1 hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="flex items-start w-full text-sm py-2 px-1 hover:bg-gray-50 dark:hover:bg-gray-800"
               >
-                {getNotificationMessage(notif)}
+                <img
+                  src={getAvatarUrl(notif.sender?.profile?.avatar)}
+                  alt={notif.sender?.username || "avatar"}
+                  className="h-8 w-8 rounded-full object-cover mr-3 flex-shrink-0"
+                />
+                <div className="flex-1">
+                  <div className="text-sm text-gray-900 dark:text-white">
+                    {getNotificationMessage(notif)}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {formatDistance(new Date(notif.createdAt), new Date(), {
+                      addSuffix: true,
+                    })}
+                  </div>
+                </div>
               </Link>
             </DropdownMenuItem>
           ))

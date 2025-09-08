@@ -3,32 +3,28 @@
  * Page for browsing and managing course syllabi
  */
 
-import React, { useState, useEffect } from 'react';
-import {
-  Search,
-  Filter,
-  BookOpen,
-  Plus
-} from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import { Syllabus, AcademicSearchParams } from '../types/academic';
-import Galaxy from '../components/background/Galaxy';
-import AcademicResourceCard from '../components/shared/AcademicResourceCard';
-import DocumentViewer from '../components/shared/DocumentViewer';
-import FileUploadModal from '../components/shared/FileUploadModal';
-import { syllabusService } from '../services/academicService';
-import { useAuth } from '../hooks/useAuth';
+import React, { useState, useEffect } from "react";
+import { Search, Filter, BookOpen, Plus } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { Syllabus, AcademicSearchParams } from "../types/academic";
+import Galaxy from "../components/background/Galaxy";
+import AcademicResourceCard from "../components/shared/AcademicResourceCard";
+import FileUploadModal from "../components/shared/FileUploadModal";
+import { syllabusService } from "../services/academicService";
+import { useAuth } from "../hooks/useAuth";
+import SyllabusEditModal from "../components/shared/SyllabusEditModal";
 
 const SyllabusPage: React.FC = () => {
   const { user } = useAuth();
   // State management
   const [syllabi, setSyllabi] = useState<Syllabus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [searchParams, setSearchParams] = useState<AcademicSearchParams>({
     page: 1,
     limit: 12,
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
+    sortBy: "createdAt",
+    sortOrder: "desc",
   });
   const [pagination, setPagination] = useState({
     current: 1,
@@ -36,15 +32,17 @@ const SyllabusPage: React.FC = () => {
     total: 0,
   });
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedSyllabus, setSelectedSyllabus] = useState<Syllabus | null>(null);
-  const [showViewer, setShowViewer] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedSyllabus, setSelectedSyllabus] = useState<Syllabus | null>(
+    null
+  );
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState('');
-  const [selectedYear, setSelectedYear] = useState('');
-  const [selectedSemester, setSelectedSemester] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
+  const [selectedSemester, setSelectedSemester] = useState("");
 
   // Filter options
   const [filterOptions, setFilterOptions] = useState({
@@ -65,9 +63,19 @@ const SyllabusPage: React.FC = () => {
       setPagination(response.pagination);
 
       // Extract filter options from the data
-      const courses = [...new Set(response.data.map(syllabus => syllabus.course))];
-      const years = [...new Set(response.data.map(syllabus => syllabus.academicYear))];
-      const semesters = [...new Set(response.data.map(syllabus => syllabus.semester).filter(Boolean) as string[])];
+      const courses = [
+        ...new Set(response.data.map((syllabus) => syllabus.course)),
+      ];
+      const years = [
+        ...new Set(response.data.map((syllabus) => syllabus.academicYear)),
+      ];
+      const semesters = [
+        ...new Set(
+          response.data
+            .map((syllabus) => syllabus.semester)
+            .filter(Boolean) as string[]
+        ),
+      ];
 
       setFilterOptions({
         courses,
@@ -75,10 +83,11 @@ const SyllabusPage: React.FC = () => {
         semesters,
       });
     } catch (error) {
-      console.error('Error fetching syllabi:', error);
-      toast.error('Failed to fetch syllabi');
+      console.error("Error fetching syllabi:", error);
+      toast.error("Failed to fetch syllabi");
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
@@ -86,7 +95,8 @@ const SyllabusPage: React.FC = () => {
     const newParams: AcademicSearchParams = {
       ...searchParams,
       page: 1,
-      search: searchQuery || undefined,
+      // prefer `keyword` for partial/short queries handled by server
+      keyword: searchQuery || undefined,
       course: selectedCourse || undefined,
       academicYear: selectedYear || undefined,
       semester: selectedSemester || undefined,
@@ -94,16 +104,31 @@ const SyllabusPage: React.FC = () => {
     setSearchParams(newParams);
   };
 
+  // Debounced live search to call server on typing (supports short fragments)
+  useEffect(() => {
+    const qRaw = searchQuery || "";
+    const id = setTimeout(() => {
+      setSearchParams((prev) => ({
+        ...prev,
+        page: 1,
+        keyword: qRaw || undefined,
+      }));
+    }, 250);
+
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
   const handleClearFilters = () => {
-    setSearchQuery('');
-    setSelectedCourse('');
-    setSelectedYear('');
-    setSelectedSemester('');
+    setSearchQuery("");
+    setSelectedCourse("");
+    setSelectedYear("");
+    setSelectedSemester("");
     setSearchParams({
       page: 1,
       limit: 12,
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
+      sortBy: "createdAt",
+      sortOrder: "desc",
     });
   };
 
@@ -111,46 +136,63 @@ const SyllabusPage: React.FC = () => {
     setSearchParams({ ...searchParams, page });
   };
 
-  const handleViewSyllabus = (syllabus: Syllabus) => {
-    setSelectedSyllabus(syllabus);
-    setShowViewer(true);
-  };
-
-  const handleDownloadSyllabus = async (syllabus: Syllabus) => {
-    try {
-      const response = await syllabusService.trackDownload(syllabus._id);
-      window.open(response.downloadUrl, '_blank');
-      toast.success('Download started');
-
-      // Update download count in the local state
-      setSyllabi(prevSyllabi =>
-        prevSyllabi.map(s =>
-          s._id === syllabus._id ? { ...s, downloadCount: s.downloadCount + 1 } : s
-        )
-      );
-    } catch (error) {
-      console.error('Error downloading syllabus:', error);
-      toast.error('Failed to download syllabus');
-    }
-  };
-
-  const handleCloseViewer = () => {
-    setShowViewer(false);
-    setSelectedSyllabus(null);
-  };
-
   const handleUpload = async (formData: FormData) => {
     try {
       await syllabusService.uploadSyllabus(formData);
       fetchSyllabi(); // Refresh the syllabi list
-      toast.success('Syllabus uploaded successfully!');
+      toast.success("Syllabus uploaded successfully!");
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error("Upload error:", error);
       throw error; // Let the modal handle the error display
     }
   };
 
-  const isTeacher = user && Array.isArray(user.role) && user.role.includes('teacher');
+  const handleEditSyllabus = (syllabus: Syllabus) => {
+    setSelectedSyllabus(syllabus);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateSyllabus = async (updatedData: Partial<Syllabus>) => {
+    if (!selectedSyllabus) return;
+
+    try {
+      await syllabusService.updateSyllabus(selectedSyllabus._id, updatedData);
+      fetchSyllabi(); // Refresh the syllabi list
+      toast.success("Syllabus updated successfully!");
+      setShowEditModal(false);
+      setSelectedSyllabus(null);
+    } catch (error) {
+      console.error("Update error:", error);
+      toast.error("Failed to update syllabus");
+    }
+  };
+
+  const handleDeleteSyllabus = async (syllabus: Syllabus) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this syllabus? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await syllabusService.deleteSyllabus(syllabus._id);
+      toast.success("Syllabus deleted successfully!");
+      fetchSyllabi(); // Refresh the list
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Failed to delete syllabus");
+    }
+  };
+
+  const isTeacher = Boolean(
+    user && Array.isArray(user.role) && user.role.includes("teacher")
+  );
+
+  const isAdmin = Boolean(
+    user && Array.isArray(user.role) && user.role.includes("admin")
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative">
@@ -160,7 +202,7 @@ const SyllabusPage: React.FC = () => {
       <div className="relative z-10">
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <BookOpen className="w-8 h-8 text-blue-600 dark:text-blue-400" />
@@ -199,16 +241,17 @@ const SyllabusPage: React.FC = () => {
                   placeholder="Search syllabi by course, description, or tags..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${showFilters
-                  ? 'bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300'
-                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
+                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
+                  showFilters
+                    ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300"
+                    : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}
               >
                 <Filter className="w-5 h-5" />
                 Filters
@@ -294,19 +337,30 @@ const SyllabusPage: React.FC = () => {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <p className="text-gray-600 dark:text-gray-400">
-                {loading ? 'Loading...' : `${pagination.total} syllabi found`}
+                {initialLoad && loading ? (
+                  "Loading..."
+                ) : loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <span>Updating...</span>
+                  </span>
+                ) : (
+                  `${pagination.total} syllabi found`
+                )}
               </p>
 
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600 dark:text-gray-400">Sort by:</label>
+                <label className="text-sm text-gray-600 dark:text-gray-400">
+                  Sort by:
+                </label>
                 <select
                   value={`${searchParams.sortBy}-${searchParams.sortOrder}`}
                   onChange={(e) => {
-                    const [sortBy, sortOrder] = e.target.value.split('-');
+                    const [sortBy, sortOrder] = e.target.value.split("-");
                     setSearchParams({
                       ...searchParams,
                       sortBy,
-                      sortOrder: sortOrder as 'asc' | 'desc',
+                      sortOrder: sortOrder as "asc" | "desc",
                       page: 1,
                     });
                   }}
@@ -323,10 +377,13 @@ const SyllabusPage: React.FC = () => {
             </div>
 
             {/* Syllabi Grid */}
-            {loading ? (
+            {initialLoad && loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, index) => (
-                  <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+                  <div
+                    key={index}
+                    className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-pulse"
+                  >
                     <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
                     <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
                     <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
@@ -341,7 +398,8 @@ const SyllabusPage: React.FC = () => {
                   No syllabi found
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Try adjusting your search criteria or upload some syllabi to get started.
+                  Try adjusting your search criteria or upload some syllabi to
+                  get started.
                 </p>
                 {isTeacher && (
                   <button
@@ -352,18 +410,40 @@ const SyllabusPage: React.FC = () => {
                     Upload Syllabus
                   </button>
                 )}
+                {loading && !initialLoad && (
+                  <div className="mt-2 flex items-center justify-center text-sm text-gray-500">
+                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2" />
+                    Searching...
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {syllabi.map((syllabus) => (
-                  <AcademicResourceCard
-                    key={syllabus._id}
-                    resource={syllabus}
-                    resourceType="syllabus"
-                    onView={handleViewSyllabus}
-                    onDownload={handleDownloadSyllabus}
-                  />
-                ))}
+              <div className="relative">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {syllabi.map((syllabus) => (
+                    <AcademicResourceCard
+                      key={syllabus._id}
+                      resource={syllabus}
+                      resourceType="syllabus"
+                      onEdit={handleEditSyllabus}
+                      onDelete={handleDeleteSyllabus}
+                      isTeacher={isTeacher}
+                      isAdmin={isAdmin}
+                    />
+                  ))}
+                </div>
+
+                {/* subtle overlay while refreshing after initial load */}
+                {loading && !initialLoad && (
+                  <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/60 flex items-center justify-center rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-block w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-gray-700 dark:text-gray-200">
+                        Updating...
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -385,10 +465,11 @@ const SyllabusPage: React.FC = () => {
                       <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`px-3 py-2 rounded ${page === pagination.current
-                          ? 'bg-blue-600 text-white'
-                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-                          }`}
+                        className={`px-3 py-2 rounded ${
+                          page === pagination.current
+                            ? "bg-blue-600 text-white"
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                        }`}
                       >
                         {page}
                       </button>
@@ -409,20 +490,6 @@ const SyllabusPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Document Viewer */}
-      {showViewer && selectedSyllabus && (
-        <DocumentViewer
-          isOpen={showViewer}
-          onClose={handleCloseViewer}
-          fileUrl={selectedSyllabus.publicUrl}
-          embedUrl={selectedSyllabus.embedUrl || ''}
-          downloadUrl={selectedSyllabus.downloadUrl}
-          title={selectedSyllabus.title}
-          fileType={selectedSyllabus.fileType}
-          onDownload={() => handleDownloadSyllabus(selectedSyllabus)}
-        />
-      )}
-
       {/* Upload Modal */}
       {showUploadModal && (
         <FileUploadModal
@@ -431,6 +498,19 @@ const SyllabusPage: React.FC = () => {
           onUpload={handleUpload}
           resourceType="syllabus"
           title="Upload Course Syllabus"
+        />
+      )}
+
+      {/* Edit Modal */}
+      {selectedSyllabus && (
+        <SyllabusEditModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedSyllabus(null);
+          }}
+          onSubmit={handleUpdateSyllabus}
+          syllabus={selectedSyllabus}
         />
       )}
     </div>

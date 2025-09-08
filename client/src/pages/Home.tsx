@@ -30,7 +30,7 @@ const Home: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative w-full overflow-hidden bg-gray-900">
+    <div className="relative w-full overflow-hidden dark:bg-gray-900">
       {/* Full Page Particle Background - this fixes the hover issue */}
       <Particles
         className="absolute inset-0 z-0"
@@ -54,10 +54,10 @@ const Home: React.FC = () => {
             className="absolute inset-0 z-0"
           />
           <div className="relative z-10 flex flex-col items-center px-4">
-            <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl">
+            <h1 className="text-4xl text-gray-900 dark:text-gray-200 font-extrabold tracking-tight md:text-5xl lg:text-6xl">
               Connect, Collaborate, Create.
             </h1>
-            <p className="mt-4 max-w-2xl text-lg text-gray-200 md:text-xl">
+            <p className="mt-4 max-w-2xl text-lg text-gray-900 dark:text-gray-200 md:text-xl">
               The ultimate workspace for students and teachers to share
               knowledge, build projects, and grow together.
             </p>
@@ -73,7 +73,7 @@ const Home: React.FC = () => {
                 asChild
                 size="lg"
                 variant="outline"
-                className="bg-transparent border-white text-white hover:bg-white/90 hover:text-gray-900"
+                className="bg-transparent border-gray-700 dark:border-white text-gray-900 dark:text-white hover:bg-white/90 hover:text-gray-900"
               >
                 <Link to="/about-us">Learn More</Link>
               </Button>

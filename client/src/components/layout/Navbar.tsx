@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 
-import { Button } from "@/components/ui/Button";
+import { Button } from "../ui/Button";
 import {
   Menu,
   X,
@@ -17,20 +17,19 @@ import {
   RotateCw,
   RefreshCcw,
   Bell,
-  FileText,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { getAvatarUrl } from "@/lib/avatar";
+import { cn } from "../../lib/utils";
+import { getAvatarUrl } from "../../lib/avatar";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from "@/components/ui/DropdownMenu";
+} from "../ui/DropdownMenu";
 import NotificationBell from "./NotificationBell";
-import { useScrollDirection } from "@/hooks/useScrollDirection";
-import CopyTooltip from "@/components/ui/CopyTooltip";
+import { useScrollDirection } from "../../hooks/useScrollDirection";
+import CopyTooltip from "../ui/CopyTooltip";
 
 const navLinks = [
   { name: "Our Purpose", href: "/purpose", icon: Users },
@@ -41,6 +40,29 @@ const navLinks = [
   { name: "Projects", href: "/projects", icon: Layers },
 ];
 
+const academicLinks = [
+  {
+    name: "Academic Notes",
+    href: "/academic/notes",
+    description: "Study materials and notes",
+  },
+  {
+    name: "Question Papers",
+    href: "/academic/question-papers",
+    description: "Previous year question papers",
+  },
+  {
+    name: "Syllabus",
+    href: "/academic/syllabus",
+    description: "Course syllabi and curriculum",
+  },
+  {
+    name: "Timetables",
+    href: "/academic/timetables",
+    description: "Class schedules and timetables",
+  },
+];
+
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -49,7 +71,32 @@ const Navbar: React.FC = () => {
   const [copied, setCopied] = useState<{ type: "name" | "username" | null }>({
     type: null,
   });
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
   const scrollDirection = useScrollDirection();
+
+  // Track small screen (mobile) so we can change behavior when mobile menu is open
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 767px)");
+    const onChange = (e: MediaQueryListEvent | MediaQueryList) =>
+      setIsSmallScreen((e as any).matches);
+    // set initial
+    setIsSmallScreen(mq.matches);
+    // add listener
+    if ((mq as any).addEventListener) {
+      (mq as any).addEventListener("change", onChange);
+    } else {
+      // fallback for older browsers
+      (mq as any).addListener(onChange);
+    }
+    return () => {
+      if ((mq as any).removeEventListener) {
+        (mq as any).removeEventListener("change", onChange);
+      } else {
+        (mq as any).removeListener(onChange);
+      }
+    };
+  }, []);
 
   const handleRelogin = async () => {
     setIsRelogging(true);
@@ -60,7 +107,7 @@ const Navbar: React.FC = () => {
         return;
       }
 
-      import("@/services/api")
+      import("../../services/api")
         .then(async ({ default: api }) => {
           // Get fresh user data
           const { data } = await api.get(`/users/${currentUser.username}`);
@@ -108,7 +155,10 @@ const Navbar: React.FC = () => {
   return (
     <header
       className={cn(
-        scrollDirection === "down" ? "-translate-y-full" : "translate-y-0",
+        // when mobile menu is open on small screens, prevent hiding on scroll to keep the menu toggle visible
+        scrollDirection === "down" && !(isMobileMenuOpen && isSmallScreen)
+          ? "-translate-y-full"
+          : "translate-y-0",
         "fixed top-0 left-0 z-50 w-full transition-all duration-300",
         "border-b border-gray-200/50 bg-white/90 backdrop-blur-lg supports-[backdrop-filter]:bg-white/70 dark:bg-gray-900/70 dark:border-gray-800/50"
       )}
@@ -137,6 +187,44 @@ const Navbar: React.FC = () => {
               {link.name}
             </NavLink>
           ))}
+
+          {/* Academic Resources Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="text-sm font-medium text-gray-600 transition-colors hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 flex items-center gap-1">
+                Academic Resources
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              {academicLinks.map((link) => (
+                <DropdownMenuItem key={link.name} asChild>
+                  <Link
+                    to={link.href}
+                    className="flex flex-col items-start gap-1 p-3"
+                  >
+                    <span className="font-medium">{link.name}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {link.description}
+                    </span>
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Conditionally render Admin Panel link */}
           {user && user.role.includes("admin") && (
             <NavLink
@@ -329,122 +417,185 @@ const Navbar: React.FC = () => {
       </div>
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-gray-200/50 bg-white/95 dark:bg-gray-900/95 dark:border-gray-800/50">
-          <nav className="flex flex-col space-y-2 p-4">
-            {navLinks.map((link) => (
-              <NavLink
-                key={link.name}
-                to={link.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800",
-                    { "bg-gray-100 dark:bg-gray-800": isActive }
-                  )
-                }
-              >
-                <link.icon className="h-5 w-5" />
-                {link.name}
-              </NavLink>
-            ))}
-            {/* Conditionally render Admin Panel link in mobile menu */}
-            {user && user.role.includes("admin") && (
-              <NavLink
-                to="/admin"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 rounded-md p-2 text-base font-medium text-red-500 hover:bg-gray-100 dark:hover:bg-gray-800",
-                    { "bg-gray-100 dark:bg-gray-800": isActive }
-                  )
-                }
-              >
-                <ShieldCheck className="h-5 w-5" />
-                Admin Panel
-              </NavLink>
-            )}
-            {/* Conditionally render Teacher Panel link in mobile menu */}
-            {user && user.role.includes("teacher") && (
-              <NavLink
-                to="/teacher"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 rounded-md p-2 text-base font-medium text-green-600 hover:bg-gray-100 dark:hover:bg-gray-800",
-                    { "bg-gray-100 dark:bg-gray-800": isActive }
-                  )
-                }
-              >
-                <Users className="h-5 w-5" />
-                Teacher Panel
-              </NavLink>
-            )}
-            <div className="border-t border-gray-200/50 dark:border-gray-800/50 pt-4 mt-2 flex flex-col space-y-2">
-              {user ? (
-                <>
+          {/* make mobile menu scrollable and constrained to viewport */}
+          <nav className="flex flex-col space-y-2 p-0 max-h-[calc(100vh-5rem)] overflow-auto">
+            {/* compact top bar inside mobile menu: notifications + quick actions */}
+            <div className="flex items-center justify-between gap-2 p-3 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-3">
+                <NotificationBell />
+                <Link
+                  to="/notification-history"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Notifications
+                </Link>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    handleRefresh();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="text-sm px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Refresh
+                </button>
+                <button
+                  onClick={() => {
+                    handleRelogin();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="text-sm px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  Refresh Profile
+                </button>
+                {/* Post button removed on mobile top bar to keep header compact */}
+              </div>
+            </div>
+            <div className="p-4">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.name}
+                  to={link.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800",
+                      { "bg-gray-100 dark:bg-gray-800": isActive }
+                    )
+                  }
+                >
+                  <link.icon className="h-5 w-5" />
+                  {link.name}
+                </NavLink>
+              ))}
+
+              {/* Academic Resources Section */}
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                <p className="px-2 py-1 text-sm font-semibold text-gray-500 dark:text-gray-400">
+                  Academic Resources
+                </p>
+                {academicLinks.map((link) => (
                   <NavLink
-                    to={`/profile/${user.username}`}
+                    key={link.name}
+                    to={link.href}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex flex-col gap-1 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800",
+                        { "bg-gray-100 dark:bg-gray-800": isActive }
+                      )
+                    }
                   >
-                    <User className="h-5 w-5" />
-                    My Profile
+                    <span>{link.name}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {link.description}
+                    </span>
                   </NavLink>
-                  <NavLink
-                    to="/settings"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-                  >
-                    <Settings className="h-5 w-5" />
-                    Settings
-                  </NavLink>
-                  <NavLink
-                    to="/projects/new"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-                  >
-                    <Layers className="h-5 w-5" />
-                    Post Project
-                  </NavLink>
-                  <NavLink
-                    to="/blogs/new"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-                  >
-                    <Rss className="h-5 w-5" />
-                    Post Blog
-                  </NavLink>
-                  <Button
-                    onClick={() => {
-                      logout();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    variant="outline"
-                    className="mt-2"
-                  >
-                    <LogOut className="mr-2 h-5 w-5" />
-                    Logout
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button asChild variant="outline">
-                    <Link
-                      to="/login"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Login
-                    </Link>
-                  </Button>
-                  <Button asChild>
-                    <Link
-                      to="/register"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Register
-                    </Link>
-                  </Button>
-                </>
+                ))}
+              </div>
+
+              {/* Conditionally render Admin Panel link in mobile menu */}
+              {user && user.role.includes("admin") && (
+                <NavLink
+                  to="/admin"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 rounded-md p-2 text-base font-medium text-red-500 hover:bg-gray-100 dark:hover:bg-gray-800",
+                      { "bg-gray-100 dark:bg-gray-800": isActive }
+                    )
+                  }
+                >
+                  <ShieldCheck className="h-5 w-5" />
+                  Admin Panel
+                </NavLink>
               )}
+              {/* Conditionally render Teacher Panel link in mobile menu */}
+              {user && user.role.includes("teacher") && (
+                <NavLink
+                  to="/teacher"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 rounded-md p-2 text-base font-medium text-green-600 hover:bg-gray-100 dark:hover:bg-gray-800",
+                      { "bg-gray-100 dark:bg-gray-800": isActive }
+                    )
+                  }
+                >
+                  <Users className="h-5 w-5" />
+                  Teacher Panel
+                </NavLink>
+              )}
+              <div className="border-t border-gray-200/50 dark:border-gray-800/50 pt-4 mt-2 flex flex-col space-y-2 px-4">
+                {user ? (
+                  <>
+                    <NavLink
+                      to={`/profile/${user.username}`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                      <User className="h-5 w-5" />
+                      My Profile
+                    </NavLink>
+                    <NavLink
+                      to="/settings"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                      <Settings className="h-5 w-5" />
+                      Settings
+                    </NavLink>
+                    <NavLink
+                      to="/projects/new"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                      <Layers className="h-5 w-5" />
+                      Post Project
+                    </NavLink>
+                    <NavLink
+                      to="/blogs/new"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-3 rounded-md p-2 text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                      <Rss className="h-5 w-5" />
+                      Post Blog
+                    </NavLink>
+                    <Button
+                      onClick={() => {
+                        logout();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      variant="outline"
+                      className="mt-2"
+                    >
+                      <LogOut className="mr-2 h-5 w-5" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button asChild variant="outline">
+                      <Link
+                        to="/login"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Login
+                      </Link>
+                    </Button>
+                    <Button asChild>
+                      <Link
+                        to="/register"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Register
+                      </Link>
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </nav>
         </div>

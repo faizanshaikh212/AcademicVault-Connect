@@ -3,17 +3,23 @@ import { Link } from "react-router-dom";
 import api from "@/services/api";
 import { Blog } from "../types";
 import BlogCard from "@/components/shared/BlogCard";
-import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Search, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import NewsletterSubscribe from "@/components/shared/NewsletterSubscribe";
+import AdvancedSearch from "@/components/shared/AdvancedSearch";
+import Sort from "@/components/shared/Sort";
 
 const Blogs: React.FC = () => {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [filteredBlogs, setFilteredBlogs] = useState<Blog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+
+  // advanced search + sort state
+  const [searchTerm, setSearchTerm] = useState(""); // active filter applied to list
+  const [searchQuery, setSearchQuery] = useState(""); // live input
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortOption, setSortOption] = useState<string>("newest");
 
   useEffect(() => {
     const fetchBlogs = async () => {
@@ -41,11 +47,22 @@ const Blogs: React.FC = () => {
     setFilteredBlogs(results);
   }, [searchTerm, blogs]);
 
+  const sortedAndFiltered = filteredBlogs.slice().sort((a, b) => {
+    if (sortOption === "newest")
+      return +new Date(b.createdAt) - +new Date(a.createdAt);
+    if (sortOption === "oldest")
+      return +new Date(a.createdAt) - +new Date(b.createdAt);
+    if (sortOption === "title_asc") return a.title.localeCompare(b.title);
+    if (sortOption === "title_desc") return b.title.localeCompare(a.title);
+    return 0;
+  });
+
   return (
     <div className="relative w-full min-h-screen pt-30">
       <div className="absolute inset-0 -z-10"></div>
-      <div className="container mx-auto px-4 pb-12 text-white">
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+      <div className="container mx-auto px-4 pb-8">
+        {/* Page Header */}
+        <div className="flex flex-col items-start justify-between gap-4 border-b pb-6 md:flex-row md:items-center">
           <div>
             <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
               Community Blogs
@@ -64,32 +81,49 @@ const Blogs: React.FC = () => {
 
       <div className="bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-12">
-          <div className="relative mb-8">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Search articles..."
-              className="w-full pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+          <div className="mb-6">
+            <AdvancedSearch
+              title={"Search articles"}
+              searchQuery={searchQuery}
+              onSearchChange={(v) => setSearchQuery(v)}
+              onSearch={() => setSearchTerm(searchQuery)}
+              showFilters={showFilters}
+              setShowFilters={setShowFilters}
+              showFilterButton={false}
             />
+
+            <div className="flex items-center justify-between mt-2 mb-6">
+              <div />
+              <Sort
+                options={[
+                  { value: "newest", label: "Newest" },
+                  { value: "oldest", label: "Oldest" },
+                  { value: "title_asc", label: "Title A-Z" },
+                  { value: "title_desc", label: "Title Z-A" },
+                ]}
+                value={sortOption}
+                onChange={(v) => setSortOption(v)}
+                className="mt-0"
+              />
+            </div>
           </div>
+
           <div className="min-h-[400px]">
             {isLoading ? (
               <p className="text-center">Loading articles...</p>
             ) : error ? (
               <p className="text-center text-red-500">{error}</p>
-            ) : filteredBlogs.length > 0 ? (
+            ) : sortedAndFiltered.length > 0 ? (
               <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredBlogs.map((blog) => (
+                {sortedAndFiltered.map((blog) => (
                   <BlogCard
                     key={blog._id}
                     blog={blog}
-                    onDelete={() => {
+                    onDelete={() =>
                       setBlogs((prevBlogs) =>
                         prevBlogs.filter((b) => b._id !== blog._id)
-                      );
-                    }}
+                      )
+                    }
                   />
                 ))}
               </div>
