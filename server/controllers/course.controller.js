@@ -67,6 +67,19 @@ const createCourse = async (req, res) => {
   }
 };
 
+// FIXED: Public endpoint for listing all courses (for question paper viewing)
+const getAllCourses = async (req, res) => {
+  try {
+    const courses = await Course.find().sort({
+      createdAt: -1,
+    });
+    res.json({ success: true, data: courses });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
 const getCourses = async (req, res) => {
   try {
     const courses = await Course.find({ creator: req.user._id }).sort({
@@ -136,6 +149,39 @@ const createSemester = async (req, res) => {
       creator: req.user._id,
     });
     res.status(201).json(semester);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// FIXED: Public endpoint for getting semesters for a course (for question paper viewing)
+const getAllSemestersForCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+
+    // Check if courseId is a valid ObjectId or if it's a course name/title
+    let query = {};
+    if (mongoose.Types.ObjectId.isValid(courseId)) {
+      query = { course: courseId };
+    } else {
+      // Try to find course by name/title first
+      const course = await Course.findOne({
+        $or: [
+          { title: { $regex: new RegExp(courseId, "i") } },
+          { name: { $regex: new RegExp(courseId, "i") } },
+        ],
+      });
+      if (course) {
+        query = { course: course._id };
+      } else {
+        // Return empty array if course not found
+        return res.json({ success: true, data: [] });
+      }
+    }
+
+    const semesters = await Semester.find(query).sort({ createdAt: 1 });
+    res.json({ success: true, data: semesters });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error", error: err.message });
@@ -241,6 +287,39 @@ const deleteSubject = async (req, res) => {
   }
 };
 
+// FIXED: Public endpoint for getting subjects for a semester (for question paper viewing)
+const getAllSubjectsForSemester = async (req, res) => {
+  try {
+    const { semesterId } = req.params;
+
+    // Check if semesterId is valid ObjectId or try to find by name
+    let query = {};
+    if (mongoose.Types.ObjectId.isValid(semesterId)) {
+      query = { semester: semesterId };
+    } else {
+      // Try to find semester by name/title first
+      const semester = await Semester.findOne({
+        $or: [
+          { title: { $regex: new RegExp(semesterId, "i") } },
+          { name: { $regex: new RegExp(semesterId, "i") } },
+        ],
+      });
+      if (semester) {
+        query = { semester: semester._id };
+      } else {
+        // Return empty array if semester not found
+        return res.json({ success: true, data: [] });
+      }
+    }
+
+    const subjects = await Subject.find(query).sort({ createdAt: -1 });
+    res.json({ success: true, data: subjects });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
 const getSubjectsForSemester = async (req, res) => {
   try {
     const { semesterId } = req.params;
@@ -271,14 +350,17 @@ const updateSubject = async (req, res) => {
 
 export default {
   createCourse,
+  getAllCourses,
   getCourses,
   updateCourse,
   deleteCourse,
   createSemester,
+  getAllSemestersForCourse,
   getSemestersForCourse,
   updateSemester,
   deleteSemester,
   createSubject,
+  getAllSubjectsForSemester,
   getSubjectsForSemester,
   updateSubject,
   deleteSubject,

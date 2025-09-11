@@ -5,13 +5,24 @@ import courseController from "../controllers/course.controller.js";
 
 const router = express.Router();
 
-// Courses
+// PUBLIC ROUTES (for question paper viewing) - ADDED
+router.get("/public", courseController.getAllCourses);
+router.get(
+  "/semesters/public/course/:courseId",
+  courseController.getAllSemestersForCourse
+);
+router.get(
+  "/subjects/public/semester/:semesterId",
+  courseController.getAllSubjectsForSemester
+);
+
+// PROTECTED ROUTES - Courses
 router.post("/", protect, teacher, courseController.createCourse);
 router.get("/", protect, teacher, courseController.getCourses);
 router.put("/:id", protect, teacher, courseController.updateCourse);
 router.delete("/:id", protect, teacher, courseController.deleteCourse);
 
-// Semesters
+// PROTECTED ROUTES - Semesters
 router.post("/semesters", protect, teacher, courseController.createSemester);
 router.get(
   "/semesters/course/:courseId",
@@ -27,7 +38,7 @@ router.delete(
   courseController.deleteSemester
 );
 
-// Subjects
+// PROTECTED ROUTES - Subjects
 router.post("/subjects", protect, teacher, courseController.createSubject);
 router.get(
   "/subjects/semester/:semesterId",

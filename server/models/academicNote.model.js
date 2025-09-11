@@ -86,6 +86,11 @@ const academicNoteSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    status: {
+      type: String,
+      enum: ["Approved", "In for Review", "Disapproved"],
+      default: "In for Review",
+    },
     isApproved: {
       type: Boolean,
       default: false,
@@ -112,6 +117,14 @@ const academicNoteSchema = new mongoose.Schema(
     academicYear: {
       type: String,
       required: true,
+      index: true,
+    },
+
+    // Type classification
+    type: {
+      type: String,
+      enum: ["Official", "Unofficial"],
+      default: "Unofficial",
       index: true,
     },
   },

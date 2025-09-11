@@ -14,37 +14,27 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Enable CORS for file routes
-router.use(cors());
+router.use(
+  cors({
+    origin: true,
+    credentials: false,
+    optionsSuccessStatus: 200,
+  })
+);
 
-// Add security headers middleware
+// FIXED: Simplified headers for file viewing
 router.use((req, res, next) => {
-  // Allow cross-origin resource access
-  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-  // Allow cross-origin isolation
-  res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
-  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-  // Prevent MIME type sniffing
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  // Set permissive CORS headers
+  // Basic CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Range");
-  res.setHeader(
-    "Access-Control-Expose-Headers",
-    "Content-Range, Accept-Ranges"
-  );
-  // Set Content-Security-Policy
-  res.setHeader(
-    "Content-Security-Policy",
-    "default-src 'self' blob: data:; frame-ancestors 'self'; object-src 'self' blob:;"
-  );
-  // Set referrer policy
-  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  // Set CSP
-  res.setHeader(
-    "Content-Security-Policy",
-    "default-src 'self'; img-src 'self' data: blob:; object-src 'self' blob:; frame-ancestors 'self'"
-  );
+
+  // Prevent MIME type sniffing
+  res.setHeader("X-Content-Type-Options", "nosniff");
+
+  // Allow cross-origin resource access
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+
   next();
 });
 
@@ -89,22 +79,34 @@ router.get("/view/:filePath(*)", async (req, res) => {
       ".png": "image/png",
     };
 
-    res.setHeader(
-      "Content-Type",
-      contentTypes[ext] || "application/octet-stream"
-    );
+    // FIXED: Set proper headers for inline viewing
+    const contentType = contentTypes[ext] || "application/octet-stream";
+    res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Length", stats.size);
-    // For viewing, we don't set Content-Disposition to "attachment"
+
+    // CRITICAL FIX: For PDFs and viewable files, use inline disposition
+    if ([".pdf", ".txt", ".jpg", ".jpeg", ".png"].includes(ext)) {
+      res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
+    } else {
+      // For documents that browsers can't display natively, still try inline first
+      res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
+    }
 
     // Set cache control headers
-    res.setHeader("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
+    res.setHeader("Cache-Control", "public, max-age=3600");
 
-    // Set Access-Control-Allow headers
+    // FIXED: Set proper CORS headers for viewing
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Range");
+    res.setHeader(
+      "Access-Control-Expose-Headers",
+      "Content-Length, Content-Range, Accept-Ranges"
+    );
+
+    // Remove conflicting Cross-Origin headers that might cause about:blank
+    // res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    // res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
 
     // Stream the file
     const fileStream = await fs.readFile(fullPath);
@@ -115,7 +117,7 @@ router.get("/view/:filePath(*)", async (req, res) => {
   }
 });
 
-// Serve uploaded files for download
+// Serve uploaded files for download (force download)
 router.get("/download/:filePath(*)", async (req, res) => {
   try {
     const filePath = decodeURIComponent(req.params.filePath);
@@ -141,9 +143,9 @@ router.get("/download/:filePath(*)", async (req, res) => {
     const stats = await fs.stat(fullPath);
     const fileName = path.basename(fullPath);
 
-    // Set appropriate headers
+    // Set appropriate headers for DOWNLOAD
     res.setHeader("Content-Length", stats.size);
-    res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
     res.setHeader("Accept-Ranges", "bytes");
 
     // Determine content type based on file extension

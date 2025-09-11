@@ -53,10 +53,42 @@ export const getAllNotes = async (req, res) => {
       limit = 20,
       sortBy = "createdAt",
       sortOrder = "desc",
+      uploader,
+      excludeUploader,
+      isApproved,
     } = req.query;
 
     // Build query
-    let query = { isApproved: true };
+    let query = {};
+
+    // Handle approval filter for management interface
+    if (isApproved !== undefined) {
+      if (isApproved === "false") {
+        // For management, show both "In Review" and "Disapproved" when isApproved=false
+        query.status = { $in: ["In for Review", "Disapproved"] };
+      } else if (isApproved === "true") {
+        query.status = "Approved";
+      }
+    } else {
+      // For public access (non-admin users), show approved and "In Review" notes
+      if (
+        !req.user ||
+        (!req.user.role.includes("admin") && !req.user.role.includes("teacher"))
+      ) {
+        query.status = { $in: ["Approved", "In for Review"] };
+      }
+      // For admin/teacher users, show all notes by default (no status filter)
+    }
+
+    // Handle uploader filtering
+    if (uploader) {
+      query.uploader = uploader;
+    }
+
+    // Handle exclude uploader filtering
+    if (excludeUploader) {
+      query.uploader = { $ne: excludeUploader };
+    }
 
     // Flexible search: accept `search` or `keyword` and perform case-insensitive
     // substring matching across common fields (title, course, subject, description, tags)
@@ -201,6 +233,8 @@ export const uploadNote = async (req, res) => {
       semester,
       academicYear,
       tags,
+      type,
+      status,
     } = req.body;
 
     // Support either an uploaded file (multipart) or a provided fileUrl
@@ -255,6 +289,34 @@ export const uploadNote = async (req, res) => {
       fileSize = 0;
     }
 
+    // Determine status based on user role
+    let noteStatus = status;
+    let isApproved = false;
+
+    if (req.user.role.includes("admin")) {
+      // Admins can set any status, default to Approved
+      noteStatus = status || "Approved";
+      isApproved = noteStatus === "Approved";
+    } else if (req.user.role.includes("teacher")) {
+      // Teachers can set status, default to Approved for teachers
+      noteStatus = status || "Approved";
+      isApproved = noteStatus === "Approved";
+    } else {
+      // Students: always "In for Review", never approved
+      noteStatus = "In for Review";
+      isApproved = false;
+    }
+
+    // Set default type based on user role
+    let noteType = type;
+    if (!noteType) {
+      if (req.user.role.includes("teacher")) {
+        noteType = "Official";
+      } else {
+        noteType = "Unofficial";
+      }
+    }
+
     // Create note record
     const note = new AcademicNote({
       title,
@@ -262,7 +324,9 @@ export const uploadNote = async (req, res) => {
       course,
       subject,
       semester,
-      academicYear,
+      academicYear: academicYear || new Date().getFullYear().toString(), // Default to current year if not provided
+      type: noteType,
+      status: noteStatus,
       tags: parsedTags,
       fileType: fileExtension,
       fileSize: fileSize,
@@ -272,7 +336,7 @@ export const uploadNote = async (req, res) => {
       downloadUrl: uploadedFile.downloadUrl,
       uploader: req.user._id,
       isAdminUploaded: req.user.role.includes("admin"),
-      isApproved: req.user.role.includes("admin"), // Auto-approve admin uploads
+      isApproved: isApproved,
     });
 
     await note.save();
@@ -345,6 +409,8 @@ export const updateNote = async (req, res) => {
       semester,
       academicYear,
       tags,
+      type,
+      status,
     } = req.body;
 
     // Parse tags if it's a string
@@ -353,18 +419,36 @@ export const updateNote = async (req, res) => {
       parsedTags = typeof tags === "string" ? JSON.parse(tags) : tags;
     }
 
+    // Handle status update and approval logic
+    let updateData = {
+      title: title || note.title,
+      description: description || note.description,
+      course: course || note.course,
+      subject: subject || note.subject,
+      semester: semester || note.semester,
+      academicYear: academicYear || note.academicYear,
+      type: type !== undefined ? type : note.type, // Use type if provided, otherwise keep existing
+      tags: parsedTags,
+    };
+
+    // Handle status field for approval logic
+    if (status !== undefined) {
+      if (req.user.role.includes("admin")) {
+        // Admins can set any status
+        updateData.status = status;
+        updateData.isApproved = status === "Approved";
+      } else if (req.user.role.includes("teacher")) {
+        // Teachers can set any status
+        updateData.status = status;
+        updateData.isApproved = status === "Approved";
+      }
+      // Students cannot change approval status
+    }
+
     // Update note
     const updatedNote = await AcademicNote.findByIdAndUpdate(
       req.params.id,
-      {
-        title: title || note.title,
-        description: description || note.description,
-        course: course || note.course,
-        subject: subject || note.subject,
-        semester: semester || note.semester,
-        academicYear: academicYear || note.academicYear,
-        tags: parsedTags,
-      },
+      updateData,
       { new: true, runValidators: true }
     ).populate("uploader", "firstName lastName username avatar");
 
