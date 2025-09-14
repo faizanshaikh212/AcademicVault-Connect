@@ -66,10 +66,16 @@ export const getAllTimetables = async (req, res) => {
 
     // Handle approval status filtering
     if (isApproved !== undefined) {
-      query.isApproved = isApproved === "true";
+      query.isApproved = isApproved === "true" || isApproved === true;
     } else {
-      // Default to showing approved items only for public access
-      query.isApproved = true;
+      // For admin/teacher users, show all by default. For others, show approved only
+      if (
+        !req.user ||
+        (!req.user.role.includes("admin") && !req.user.role.includes("teacher"))
+      ) {
+        query.isApproved = true;
+      }
+      // Admin/teacher users see all timetables by default (no isApproved filter)
     }
 
     // Flexible keyword search (accept both `search` and `keyword`) and perform

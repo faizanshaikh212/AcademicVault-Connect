@@ -25,23 +25,20 @@ const TimetableForm: React.FC<Props> = ({
   const [description, setDescription] = useState(
     initialValues.description || ""
   );
-  const [courseId, setCourseId] = useState(initialValues.courseId || "");
-  const [semesterId, setSemesterId] = useState(initialValues.semesterId || "");
+  const [courseId, setCourseId] = useState("");
+  const [semesterId, setSemesterId] = useState("");
   const [courses, setCourses] = useState<any[]>([]);
   const [semesters, setSemesters] = useState<any[]>([]);
   const [courseFallback] = useState(
     typeof initialValues.course === "string" ? initialValues.course : ""
   );
-  const [type, setType] = useState(initialValues.type || "");
+  const [type, setType] = useState(
+    initialValues.timetableType || initialValues.type || ""
+  );
   const [academicYear, setAcademicYear] = useState(
     initialValues.academicYear || ""
   );
-  const [status, setStatus] = useState(
-    createMode
-      ? "Approved"
-      : initialValues.status ||
-          (initialValues.isApproved ? "Approved" : "In for Review")
-  );
+  // Timetables only use isApproved boolean, no status string field
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState(initialValues.fileUrl || "");
   const [submitting, setSubmitting] = useState(false);
@@ -96,7 +93,6 @@ const TimetableForm: React.FC<Props> = ({
           );
         if (type) fd.append("timetableType", String(type));
         if (academicYear) fd.append("academicYear", String(academicYear));
-        if (status) fd.append("status", String(status));
         await onSubmit(fd);
       } else {
         const payload: any = {
@@ -106,7 +102,6 @@ const TimetableForm: React.FC<Props> = ({
           semesterId,
           timetableType: type,
           academicYear,
-          status,
         };
         if (fileUrl) payload.fileUrl = fileUrl;
         await onSubmit(payload);
@@ -121,11 +116,53 @@ const TimetableForm: React.FC<Props> = ({
       try {
         const res = await coursesService.listCourses();
         if (!mounted) return;
-        setCourses((res as any).data || []);
-        if (courseId) {
-          const s = await coursesService.listSemestersForCourse(courseId);
+        const coursesData = (res as any).data || [];
+        setCourses(coursesData);
+
+        // If editing, find the course ID based on the course name
+        if (!createMode && initialValues.course) {
+          const matchingCourse = coursesData.find(
+            (c: any) =>
+              c.title === initialValues.course ||
+              c.name === initialValues.course ||
+              c._id === initialValues.course
+          );
+          if (matchingCourse) {
+            setCourseId(matchingCourse._id);
+          }
+        }
+
+        // Load semesters for the selected course
+        const currentCourseId =
+          courseId ||
+          coursesData.find(
+            (c: any) =>
+              c.title === initialValues.course ||
+              c.name === initialValues.course ||
+              c._id === initialValues.course
+          )?._id;
+
+        if (currentCourseId) {
+          const s = await coursesService.listSemestersForCourse(
+            currentCourseId
+          );
           if (!mounted) return;
-          setSemesters((s as any).data || []);
+          const semestersData = (s as any).data || [];
+          setSemesters(semestersData);
+
+          // If editing, find the semester ID based on the semester name
+          if (!createMode && initialValues.semester) {
+            const matchingSemester = semestersData.find(
+              (sem: any) =>
+                sem.title === initialValues.semester ||
+                sem.name === initialValues.semester ||
+                sem.number === initialValues.semester ||
+                sem._id === initialValues.semester
+            );
+            if (matchingSemester) {
+              setSemesterId(matchingSemester._id);
+            }
+          }
         }
       } catch (err) {
         console.error("Failed to load course data", err);
@@ -134,7 +171,7 @@ const TimetableForm: React.FC<Props> = ({
     return () => {
       mounted = false;
     };
-  }, [courseId]);
+  }, [courseId, createMode, initialValues.course, initialValues.semester]);
 
   return (
     <form onSubmit={handleSubmit} className="p-6">
@@ -208,33 +245,17 @@ const TimetableForm: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Academic Year *
-            </label>
-            <input
-              value={academicYear}
-              onChange={(e) => setAcademicYear(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
-              placeholder="e.g., 2023-2024"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Status
-            </label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
-            >
-              <option value="Approved">Approved</option>
-              <option value="In for Review">In for Review</option>
-            </select>
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+            Academic Year *
+          </label>
+          <input
+            value={academicYear}
+            onChange={(e) => setAcademicYear(e.target.value)}
+            className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+            placeholder="e.g., 2023-2024"
+            required
+          />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
