@@ -27,6 +27,7 @@ interface AcademicResource {
   year?: string;
   month?: string;
   type?: string; // timetable type
+  timetableType?: string; // specific timetable type field
   fileUrl?: string;
   isApproved?: boolean;
   viewCount?: number;
@@ -335,14 +336,35 @@ const AcademicManagementNew: React.FC<AcademicManagementProps> = ({
     }
   };
 
+  // FIXED: Use proper view endpoint for files
   const handleView = async (resource: AcademicResource) => {
     try {
       await academicUtils.trackResourceView(resource._id, resourceType as any);
     } catch (e) {
       /* ignore */
     }
-    if (resource.publicUrl)
-      window.open(resource.publicUrl, "_blank", "noopener,noreferrer");
+
+    let url = resource.publicUrl || resource.fileUrl;
+    if (!url) {
+      toast.error("No file available to view");
+      return;
+    }
+
+    // Check if it's a local file path and convert to view endpoint
+    if (
+      url.includes("LocalStorage") ||
+      url.startsWith("/uploads") ||
+      (!url.startsWith("http") && !url.startsWith("https"))
+    ) {
+      const relativePath = url
+        .replace(/.*LocalStorage[\/\\]/, "")
+        .replace(/\\/g, "/");
+      url = `${window.location.origin}/api/files/view/${encodeURIComponent(
+        relativePath
+      )}`;
+    }
+
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleEditSubmit = async (values: any) => {
@@ -547,6 +569,9 @@ const AcademicManagementNew: React.FC<AcademicManagementProps> = ({
                           Course
                         </th>
                         <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Semester
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
                           Subject
                         </th>
                         <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
@@ -566,36 +591,73 @@ const AcademicManagementNew: React.FC<AcademicManagementProps> = ({
 
                     {resourceType === "syllabus" && (
                       <>
-                        <th>Title</th>
-                        <th>Course</th>
-                        <th>Semester(s)</th>
-                        <th>Year</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Title
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Course
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Semester(s)
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Year
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Actions
+                        </th>
                       </>
                     )}
 
                     {resourceType === "timetables" && (
                       <>
-                        <th>Title</th>
-                        <th>Course</th>
-                        <th>Type</th>
-                        <th>File URL</th>
-                        <th>Semester</th>
-                        <th>Year</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Title
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Course
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Semester
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Type
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Year
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Actions
+                        </th>
                       </>
                     )}
 
                     {resourceType === "notes" && (
                       <>
-                        <th>Title</th>
-                        <th>Course</th>
-                        <th>Subject</th>
-                        <th>Status</th>
-                        <th>Stats</th>
-                        <th>Actions</th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Title
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Course
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Subject
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Type
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center">
+                          Actions
+                        </th>
                       </>
                     )}
                   </tr>
@@ -648,7 +710,7 @@ const AcademicManagementNew: React.FC<AcademicManagementProps> = ({
                       })() ||
                       "-";
 
-                    const rType = r.type || "-";
+                    const rType = r.timetableType || r.type || "-";
                     return (
                       <tr
                         key={r._id}
@@ -658,6 +720,9 @@ const AcademicManagementNew: React.FC<AcademicManagementProps> = ({
                           <>
                             <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
                               {getCourseLabel(r)}
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {getSemesterLabel(r)}
                             </td>
                             <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
                               {getSubjectLabel(r)}
@@ -704,90 +769,106 @@ const AcademicManagementNew: React.FC<AcademicManagementProps> = ({
 
                         {resourceType === "syllabus" && (
                           <>
-                            <td className="px-6 py-4">{r.title}</td>
-                            <td className="px-6 py-4">{getCourseLabel(r)}</td>
-                            <td className="px-6 py-4">{getSemesterLabel(r)}</td>
-                            <td className="px-6 py-4">{inferredYear}</td>
-                            <td className="px-6 py-4">
-                              {r.isApproved ? (
-                                <CheckCircle className="w-5 h-5 text-green-500" />
-                              ) : (
-                                <Clock className="w-5 h-5 text-yellow-500" />
-                              )}{" "}
-                              <span
-                                className={`text-sm ${
-                                  r.isApproved
-                                    ? "text-green-600"
-                                    : "text-yellow-600"
-                                }`}
-                              >
-                                {r.isApproved ? "Approved" : "Pending"}
-                              </span>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {r.title}
                             </td>
-                            <td className="px-6 py-4">
-                              <ActionButtons
-                                resource={r}
-                                onView={() => handleView(r)}
-                                onEdit={() => {
-                                  setSelectedResource(r);
-                                  setShowEditModal(true);
-                                }}
-                                onDelete={() => handleDelete(r)}
-                              />
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {getCourseLabel(r)}
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {getSemesterLabel(r)}
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {inferredYear}
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              <div className="flex items-center justify-center gap-2">
+                                {r.isApproved ? (
+                                  <CheckCircle className="w-5 h-5 text-green-500" />
+                                ) : (
+                                  <Clock className="w-5 h-5 text-yellow-500" />
+                                )}
+                                <span
+                                  className={`text-sm ${
+                                    r.isApproved
+                                      ? "text-green-600"
+                                      : "text-yellow-600"
+                                  }`}
+                                >
+                                  {r.isApproved ? "Approved" : "Pending"}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              <div className="flex items-center justify-center">
+                                <ActionButtons
+                                  resource={r}
+                                  onView={() => handleView(r)}
+                                  onEdit={() => {
+                                    setSelectedResource(r);
+                                    setShowEditModal(true);
+                                  }}
+                                  onDelete={() => handleDelete(r)}
+                                />
+                              </div>
                             </td>
                           </>
                         )}
 
                         {resourceType === "timetables" && (
                           <>
-                            <td className="px-6 py-4">{r.title}</td>
-                            <td className="px-6 py-4">{getCourseLabel(r)}</td>
-                            <td className="px-6 py-4">{rType}</td>
-                            <td className="px-6 py-4">
-                              <a
-                                href={r.fileUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-blue-600"
-                              >
-                                {r.fileUrl ? "Open" : "-"}
-                              </a>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {r.title}
                             </td>
-                            <td className="px-6 py-4">{getSemesterLabel(r)}</td>
-                            <td className="px-6 py-4">{inferredYear}</td>
-                            <td className="px-6 py-4">
-                              {r.isApproved ? (
-                                <CheckCircle className="w-5 h-5 text-green-500" />
-                              ) : (
-                                <Clock className="w-5 h-5 text-yellow-500" />
-                              )}{" "}
-                              <span
-                                className={`text-sm ${
-                                  r.isApproved
-                                    ? "text-green-600"
-                                    : "text-yellow-600"
-                                }`}
-                              >
-                                {r.isApproved ? "Approved" : "Pending"}
-                              </span>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {getCourseLabel(r)}
                             </td>
-                            <td className="px-6 py-4">
-                              <ActionButtons
-                                resource={r}
-                                onView={() => handleView(r)}
-                                onEdit={() => {
-                                  setSelectedResource(r);
-                                  setShowEditModal(true);
-                                }}
-                                onDelete={() => handleDelete(r)}
-                              />
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {getSemesterLabel(r)}
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {rType}
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {inferredYear}
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              <div className="flex items-center justify-center gap-2">
+                                {r.isApproved ? (
+                                  <CheckCircle className="w-5 h-5 text-green-500" />
+                                ) : (
+                                  <Clock className="w-5 h-5 text-yellow-500" />
+                                )}
+                                <span
+                                  className={`text-sm ${
+                                    r.isApproved
+                                      ? "text-green-600"
+                                      : "text-yellow-600"
+                                  }`}
+                                >
+                                  {r.isApproved ? "Approved" : "Pending"}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              <div className="flex items-center justify-center">
+                                <ActionButtons
+                                  resource={r}
+                                  onView={() => handleView(r)}
+                                  onEdit={() => {
+                                    setSelectedResource(r);
+                                    setShowEditModal(true);
+                                  }}
+                                  onDelete={() => handleDelete(r)}
+                                />
+                              </div>
                             </td>
                           </>
                         )}
 
                         {resourceType === "notes" && (
                           <>
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
                               <div>
                                 <div className="font-medium text-gray-900 dark:text-white">
                                   {r.title}
@@ -801,37 +882,45 @@ const AcademicManagementNew: React.FC<AcademicManagementProps> = ({
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4">{getCourseLabel(r)}</td>
-                            <td className="px-6 py-4">{getSubjectLabel(r)}</td>
-                            <td className="px-6 py-4">
-                              {r.isApproved ? (
-                                <CheckCircle className="w-5 h-5 text-green-500" />
-                              ) : (
-                                <Clock className="w-5 h-5 text-yellow-500" />
-                              )}{" "}
-                              <span
-                                className={`text-sm ${
-                                  r.isApproved
-                                    ? "text-green-600"
-                                    : "text-yellow-600"
-                                }`}
-                              >
-                                {r.isApproved ? "Approved" : "Pending"}
-                              </span>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {getCourseLabel(r)}
                             </td>
-                            <td className="px-6 py-4">
-                              Views: {r.viewCount || 0}
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {getSubjectLabel(r)}
                             </td>
-                            <td className="px-6 py-4">
-                              <ActionButtons
-                                resource={r}
-                                onView={() => handleView(r)}
-                                onEdit={() => {
-                                  setSelectedResource(r);
-                                  setShowEditModal(true);
-                                }}
-                                onDelete={() => handleDelete(r)}
-                              />
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              {r.type || "Unofficial"}
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              <div className="flex items-center justify-center gap-2">
+                                {r.isApproved ? (
+                                  <CheckCircle className="w-5 h-5 text-green-500" />
+                                ) : (
+                                  <Clock className="w-5 h-5 text-yellow-500" />
+                                )}
+                                <span
+                                  className={`text-sm ${
+                                    r.isApproved
+                                      ? "text-green-600"
+                                      : "text-yellow-600"
+                                  }`}
+                                >
+                                  {r.isApproved ? "Approved" : "Pending"}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 border-l border-r border-gray-200 dark:border-gray-700 text-center align-middle">
+                              <div className="flex items-center justify-center">
+                                <ActionButtons
+                                  resource={r}
+                                  onView={() => handleView(r)}
+                                  onEdit={() => {
+                                    setSelectedResource(r);
+                                    setShowEditModal(true);
+                                  }}
+                                  onDelete={() => handleDelete(r)}
+                                />
+                              </div>
                             </td>
                           </>
                         )}

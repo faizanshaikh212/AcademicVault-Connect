@@ -33,18 +33,37 @@ const TimetableForm: React.FC<Props> = ({
     typeof initialValues.course === "string" ? initialValues.course : ""
   );
   const [type, setType] = useState(initialValues.type || "");
+  const [academicYear, setAcademicYear] = useState(
+    initialValues.academicYear || ""
+  );
+  const [status, setStatus] = useState(
+    createMode
+      ? "Approved"
+      : initialValues.status ||
+          (initialValues.isApproved ? "Approved" : "In for Review")
+  );
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState(initialValues.fileUrl || "");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (createMode && !file && !fileUrl) {
-      toast.error("Provide file or URL");
+
+    // Validate required fields
+    if (!title.trim()) {
+      toast.error("Title is required.");
       return;
     }
-    if (!title) {
-      toast.error("Title required");
+    if (!courseId) {
+      toast.error("Course selection is required.");
+      return;
+    }
+    if (!semesterId) {
+      toast.error("Semester selection is required.");
+      return;
+    }
+    if (createMode && !file && !fileUrl.trim()) {
+      toast.error("Please provide a file or a file URL.");
       return;
     }
     setSubmitting(true);
@@ -75,10 +94,20 @@ const TimetableForm: React.FC<Props> = ({
                 selectedSemester.number
             )
           );
-        if (type) fd.append("type", String(type));
+        if (type) fd.append("timetableType", String(type));
+        if (academicYear) fd.append("academicYear", String(academicYear));
+        if (status) fd.append("status", String(status));
         await onSubmit(fd);
       } else {
-        const payload: any = { title, description, courseId, semesterId, type };
+        const payload: any = {
+          title,
+          description,
+          courseId,
+          semesterId,
+          timetableType: type,
+          academicYear,
+          status,
+        };
         if (fileUrl) payload.fileUrl = fileUrl;
         await onSubmit(payload);
       }
@@ -110,6 +139,9 @@ const TimetableForm: React.FC<Props> = ({
   return (
     <form onSubmit={handleSubmit} className="p-6">
       <div className="bg-white dark:bg-zinc-800/60 dark:border dark:border-zinc-700 rounded-lg shadow-sm p-4 space-y-4">
+        <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          <span className="font-medium">* Required fields</span>
+        </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Title *
@@ -136,7 +168,7 @@ const TimetableForm: React.FC<Props> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Course
+              Course *
             </label>
             <select
               value={courseId}
@@ -145,6 +177,7 @@ const TimetableForm: React.FC<Props> = ({
                 setSemesterId("");
               }}
               className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+              required
             >
               <option value="">Select Course</option>
               {courses.map((c) => (
@@ -156,13 +189,14 @@ const TimetableForm: React.FC<Props> = ({
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Semester
+              Semester *
             </label>
             <select
               value={semesterId}
               onChange={(e) => setSemesterId(e.target.value)}
               disabled={!courseId}
               className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+              required
             >
               <option value="">Select Semester</option>
               {semesters.map((s) => (
@@ -177,16 +211,46 @@ const TimetableForm: React.FC<Props> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              Academic Year *
+            </label>
+            <input
+              value={academicYear}
+              onChange={(e) => setAcademicYear(e.target.value)}
+              className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+              placeholder="e.g., 2023-2024"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              Status
+            </label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+            >
+              <option value="Approved">Approved</option>
+              <option value="In for Review">In for Review</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Type
             </label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
-              className="mt-1 block w-full max-w-xs rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+              className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
             >
               <option value="Regular">Regular</option>
               <option value="Exam">Exam</option>
-              <option value="Class">Class</option>
+              <option value="Special">Special</option>
+              <option value="Holiday">Holiday</option>
             </select>
           </div>
 

@@ -178,6 +178,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkSubscriptionStatus();
   }, [user?.email, token]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (token) {
+        refreshToken();
+      }
+    }, 14 * 60 * 1000); // Refresh every 14 minutes
+    return () => clearInterval(interval);
+  }, [token]);
+
   // Function to handle user login
   const login = (data: AuthState) => {
     if (data.user && data.token) {
@@ -246,12 +255,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshToken = async (): Promise<string | null> => {
+    try {
+      const {
+        data: { token: newToken },
+      } = await api.post("/auth/refresh");
+      if (newToken) {
+        setToken(newToken);
+        localStorage.setItem("token", newToken);
+        return newToken;
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to refresh token", error);
+      logout(); // Logout on refresh failure
+      return null;
+    }
+  };
+
   const value = {
     user,
     token,
     login,
     logout,
     isLoading,
+    refreshToken,
     updateProfile,
     updateUser,
     verifyPassword,

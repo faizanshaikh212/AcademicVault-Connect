@@ -103,23 +103,6 @@ const syllabusSchema = new mongoose.Schema(
       type: Date,
     },
 
-    // Version control
-    version: {
-      type: String,
-      default: "1.0",
-    },
-    previousVersions: [
-      {
-        version: String,
-        fileId: String,
-        updatedAt: Date,
-        updatedBy: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
-      },
-    ],
-
     // Analytics
     downloadCount: {
       type: Number,
@@ -170,27 +153,6 @@ syllabusSchema.methods.incrementDownloadCount = function () {
 
 syllabusSchema.methods.incrementViewCount = function () {
   this.viewCount += 1;
-  return this.save();
-};
-
-syllabusSchema.methods.createNewVersion = function (newFileData, updatedBy) {
-  // Store current version in history
-  this.previousVersions.push({
-    version: this.version,
-    fileId: this.fileId,
-    updatedAt: new Date(),
-    updatedBy: updatedBy,
-  });
-
-  // Update to new version
-  const versionParts = this.version.split(".");
-  const majorVersion = parseInt(versionParts[0]);
-  const minorVersion = parseInt(versionParts[1]) + 1;
-  this.version = `${majorVersion}.${minorVersion}`;
-
-  // Update file data
-  Object.assign(this, newFileData);
-
   return this.save();
 };
 

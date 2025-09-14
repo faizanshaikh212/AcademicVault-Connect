@@ -21,9 +21,52 @@ const QuestionPaperForm: React.FC<Props> = ({
   submitLabel,
   loading = false,
 }) => {
-  const [courseId, setCourseId] = useState(initialValues.courseId || "");
-  const [semesterId, setSemesterId] = useState(initialValues.semesterId || "");
-  const [subjectId, setSubjectId] = useState(initialValues.subjectId || "");
+  // Map resource fields to form fields
+  const getInitialCourseId = () => {
+    if (initialValues.courseId) return initialValues.courseId;
+    if (
+      initialValues.course &&
+      typeof initialValues.course === "object" &&
+      initialValues.course._id
+    ) {
+      return initialValues.course._id;
+    }
+    // If course is a string, we need to find the matching course from the courses list
+    // This will be handled in useEffect after courses are loaded
+    return "";
+  };
+
+  const getInitialSemesterId = () => {
+    if (initialValues.semesterId) return initialValues.semesterId;
+    if (
+      initialValues.semester &&
+      typeof initialValues.semester === "object" &&
+      initialValues.semester._id
+    ) {
+      return initialValues.semester._id;
+    }
+    // If semester is a string, we need to find the matching semester from the semesters list
+    // This will be handled in useEffect after semesters are loaded
+    return "";
+  };
+
+  const getInitialSubjectId = () => {
+    if (initialValues.subjectId) return initialValues.subjectId;
+    if (
+      initialValues.subject &&
+      typeof initialValues.subject === "object" &&
+      initialValues.subject._id
+    ) {
+      return initialValues.subject._id;
+    }
+    // If subject is a string, we need to find the matching subject from the subjects list
+    // This will be handled in useEffect after subjects are loaded
+    return "";
+  };
+
+  const [courseId, setCourseId] = useState(getInitialCourseId());
+  const [semesterId, setSemesterId] = useState(getInitialSemesterId());
+  const [subjectId, setSubjectId] = useState(getInitialSubjectId());
   const [year, setYear] = useState(
     initialValues.year || initialValues.examYear || ""
   );
@@ -34,6 +77,24 @@ const QuestionPaperForm: React.FC<Props> = ({
   const [semesters, setSemesters] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState(() => {
+    // For edit mode, show current status from the database
+    if (!createMode) {
+      // Map database status to display format
+      if (initialValues.status) {
+        const dbStatus = initialValues.status.toLowerCase();
+        if (dbStatus === "approved") return "Approved";
+        if (dbStatus === "pending") return "In for Review";
+        if (dbStatus === "rejected") return "Disapproved";
+      }
+      // Fallback to isApproved field
+      return initialValues.isApproved ? "Approved" : "In for Review";
+    }
+    // For create mode, default based on user role
+    return initialValues.uploader?.role?.includes("teacher")
+      ? "Approved"
+      : "In for Review";
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -41,16 +102,26 @@ const QuestionPaperForm: React.FC<Props> = ({
       try {
         const c = await coursesService.listCourses();
         if (!mounted) return;
-        setCourses((c as any).data || []);
-        if (courseId) {
-          const s = await coursesService.listSemestersForCourse(courseId);
-          if (!mounted) return;
-          setSemesters((s as any).data || []);
-        }
-        if (semesterId) {
-          const sub = await coursesService.listSubjectsForSemester(semesterId);
-          if (!mounted) return;
-          setSubjects((sub as any).data || []);
+        // Handle new response format
+        const loadedCourses = c?.data || c || [];
+        const coursesData = Array.isArray(loadedCourses) ? loadedCourses : [];
+        setCourses(coursesData);
+
+        // If we have a course string in initialValues, find the matching course ID
+        if (
+          initialValues.course &&
+          typeof initialValues.course === "string" &&
+          !courseId
+        ) {
+          const matchingCourse = coursesData.find(
+            (course: any) =>
+              course.title === initialValues.course ||
+              course.name === initialValues.course ||
+              course._id === initialValues.course
+          );
+          if (matchingCourse) {
+            setCourseId(matchingCourse._id);
+          }
         }
       } catch (err) {
         console.error("Failed to load course data", err);
@@ -59,7 +130,97 @@ const QuestionPaperForm: React.FC<Props> = ({
     return () => {
       mounted = false;
     };
-  }, [courseId, semesterId]);
+  }, []);
+
+  // Load semesters when courseId changes
+  useEffect(() => {
+    if (!courseId) {
+      setSemesters([]);
+      setSubjects([]);
+      return;
+    }
+
+    let mounted = true;
+    (async () => {
+      try {
+        const s = await coursesService.listSemestersForCourse(courseId);
+        if (!mounted) return;
+        // Handle new response format
+        const loadedSemesters = s?.data || s || [];
+        const semestersData = Array.isArray(loadedSemesters)
+          ? loadedSemesters
+          : [];
+        setSemesters(semestersData);
+
+        // If we have a semester string in initialValues, find the matching semester ID
+        if (
+          initialValues.semester &&
+          typeof initialValues.semester === "string" &&
+          !semesterId
+        ) {
+          const matchingSemester = semestersData.find(
+            (semester: any) =>
+              semester.title === initialValues.semester ||
+              semester.name === initialValues.semester ||
+              semester.number?.toString() === initialValues.semester ||
+              semester._id === initialValues.semester
+          );
+          if (matchingSemester) {
+            setSemesterId(matchingSemester._id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load semester data", err);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [courseId, initialValues.semester, semesterId]);
+
+  // Load subjects when semesterId changes
+  useEffect(() => {
+    if (!semesterId) {
+      setSubjects([]);
+      return;
+    }
+
+    let mounted = true;
+    (async () => {
+      try {
+        const sub = await coursesService.listSubjectsForSemester(semesterId);
+        if (!mounted) return;
+        // Handle new response format
+        const loadedSubjects = sub?.data || sub || [];
+        const subjectsData = Array.isArray(loadedSubjects)
+          ? loadedSubjects
+          : [];
+        setSubjects(subjectsData);
+
+        // If we have a subject string in initialValues, find the matching subject ID
+        if (
+          initialValues.subject &&
+          typeof initialValues.subject === "string" &&
+          !subjectId
+        ) {
+          const matchingSubject = subjectsData.find(
+            (subject: any) =>
+              subject.title === initialValues.subject ||
+              subject.name === initialValues.subject ||
+              subject._id === initialValues.subject
+          );
+          if (matchingSubject) {
+            setSubjectId(matchingSubject._id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load subject data", err);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [semesterId, initialValues.subject, subjectId]);
 
   const handleCourseChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setCourseId(e.target.value);
@@ -75,7 +236,9 @@ const QuestionPaperForm: React.FC<Props> = ({
     setSubjectId("");
     try {
       const res = await coursesService.listSubjectsForSemester(sid);
-      setSubjects((res as any).data || []);
+      // Handle new response format
+      const subjectsData = res?.data || res || [];
+      setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load subjects");
@@ -151,10 +314,18 @@ const QuestionPaperForm: React.FC<Props> = ({
 
         // examYear
         fd.append("examYear", String(year));
+        fd.append("status", String(status));
 
         await onSubmit(fd);
       } else {
-        const payload = { courseId, semesterId, subjectId, year, month };
+        const payload = {
+          courseId,
+          semesterId,
+          subjectId,
+          year,
+          month,
+          status,
+        };
         await onSubmit(payload);
       }
     } finally {
@@ -269,7 +440,7 @@ const QuestionPaperForm: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
               File URL
@@ -280,6 +451,23 @@ const QuestionPaperForm: React.FC<Props> = ({
               className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
             />
           </div>
+
+          {!createMode && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                Status
+              </label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+              >
+                <option value="Approved">Approved</option>
+                <option value="In for Review">In for Review</option>
+                <option value="Disapproved">Disapproved</option>
+              </select>
+            </div>
+          )}
 
           <div>
             <UploadZone file={file} setFile={setFile} />

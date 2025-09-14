@@ -46,6 +46,9 @@ export const getAllSyllabus = async (req, res) => {
       semester,
       degreeType,
       tags,
+      uploader,
+      excludeUploader,
+      isApproved,
       page = 1,
       limit = 20,
       sortBy = "createdAt",
@@ -53,7 +56,15 @@ export const getAllSyllabus = async (req, res) => {
     } = req.query;
 
     // Build query
-    let query = { isApproved: true };
+    let query = {};
+
+    // Handle approval status filtering
+    if (isApproved !== undefined) {
+      query.isApproved = isApproved === "true";
+    } else {
+      // Default to showing approved items only for public access
+      query.isApproved = true;
+    }
 
     // Flexible keyword search (accept both `search` and `keyword`) and perform
     // case-insensitive substring matches across title/course/description/tags
@@ -102,6 +113,16 @@ export const getAllSyllabus = async (req, res) => {
     if (tags) {
       const tagArray = Array.isArray(tags) ? tags : [tags];
       query.tags = { $in: tagArray };
+    }
+
+    // Handle uploader filtering
+    if (uploader) {
+      query.uploader = uploader;
+    }
+
+    // Handle exclude uploader filtering
+    if (excludeUploader) {
+      query.uploader = { $ne: excludeUploader };
     }
 
     // Pagination
@@ -156,8 +177,7 @@ export const getSyllabusById = async (req, res) => {
   try {
     const syllabus = await Syllabus.findById(req.params.id)
       .populate("uploader", "firstName lastName username avatar")
-      .populate("approvedBy", "firstName lastName username")
-      .populate("previousVersions.updatedBy", "firstName lastName username");
+      .populate("approvedBy", "firstName lastName username");
 
     if (!syllabus) {
       return res.status(404).json({
@@ -352,6 +372,7 @@ export const updateSyllabus = async (req, res) => {
       credits,
       duration,
       prerequisites,
+      isApproved,
     } = req.body;
 
     // Parse arrays if they're strings
@@ -376,12 +397,13 @@ export const updateSyllabus = async (req, res) => {
         course: course || syllabus.course,
         description: description || syllabus.description,
         academicYear: academicYear || syllabus.academicYear,
-        semester: semester || syllabus.semester,
+        semester: semester !== undefined ? semester : syllabus.semester, // Allow empty string to clear semester
         degreeType: degreeType || syllabus.degreeType,
         tags: parsedTags,
         credits: credits ? parseInt(credits) : syllabus.credits,
         duration: duration || syllabus.duration,
         prerequisites: parsedPrerequisites,
+        isApproved: isApproved !== undefined ? isApproved : syllabus.isApproved,
       },
       { new: true, runValidators: true }
     ).populate("uploader", "firstName lastName username avatar");
@@ -446,17 +468,15 @@ export const updateSyllabusFile = async (req, res) => {
       { course: syllabus.course, academicYear: syllabus.academicYear }
     );
 
-    // Create new version
-    const newFileData = {
-      fileType: fileExtension,
-      fileSize: req.file.size,
-      originalFileName: req.file.originalname,
-      fileId: uploadedFile.fileId,
-      publicUrl: uploadedFile.publicUrl,
-      downloadUrl: uploadedFile.downloadUrl,
-    };
+    // Update file data directly
+    syllabus.fileType = fileExtension;
+    syllabus.fileSize = req.file.size;
+    syllabus.originalFileName = req.file.originalname;
+    syllabus.fileId = uploadedFile.fileId;
+    syllabus.publicUrl = uploadedFile.publicUrl;
+    syllabus.downloadUrl = uploadedFile.downloadUrl;
 
-    await syllabus.createNewVersion(newFileData, req.user._id);
+    await syllabus.save();
 
     res.status(200).json({
       success: true,
@@ -503,18 +523,6 @@ export const deleteSyllabus = async (req, res) => {
       await fileStorageService.deleteFile(syllabus.fileId, "syllabus");
     } catch (storageError) {
       console.error("Error deleting current file from storage:", storageError);
-    }
-
-    // Delete previous versions from storage
-    for (const version of syllabus.previousVersions) {
-      try {
-        await fileStorageService.deleteFile(version.fileId, "syllabus");
-      } catch (storageError) {
-        console.error(
-          "Error deleting version file from storage:",
-          storageError
-        );
-      }
     }
 
     // Delete from database

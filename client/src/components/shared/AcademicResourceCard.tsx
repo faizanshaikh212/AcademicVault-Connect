@@ -14,6 +14,7 @@ import {
   FileText,
   CheckCircle,
   AlertCircle,
+  Lock,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -132,9 +133,6 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
                 <span className="font-medium">Credits:</span> {syllabus.credits}
               </p>
             )}
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              <span className="font-medium">Version:</span> {syllabus.version}
-            </p>
           </div>
         );
 
@@ -201,8 +199,34 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
 
   // tags intentionally hidden
 
+  // Get the status for notes
+  const noteStatus = resourceType === "notes" ? (resource as any).status : null;
+
+  // Check visibility based on status
+  const isDisapprovedNote =
+    resourceType === "notes" &&
+    noteStatus === "Disapproved" &&
+    !isTeacher &&
+    !isAdmin;
+  const isInReviewNote =
+    resourceType === "notes" && noteStatus === "In for Review";
+
+  // Don't render disapproved notes for students
+  if (isDisapprovedNote) {
+    return null;
+  }
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div
+      className={`bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700 overflow-hidden ${
+        // Gray out disapproved notes for teachers/admins
+        resourceType === "notes" &&
+        noteStatus === "Disapproved" &&
+        (isTeacher || isAdmin)
+          ? "opacity-60 grayscale"
+          : ""
+      }`}
+    >
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-start justify-between">
@@ -214,12 +238,40 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
               <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded-full">
                 {getResourceTypeLabel()}
               </span>
-              {resource.isAdminUploaded && (
+              {/* Show type for notes */}
+              {resourceType === "notes" && (resource as any).type && (
+                <span
+                  className={`text-xs font-medium px-2 py-1 rounded-full ${
+                    (resource as any).type === "Official"
+                      ? "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900"
+                      : "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-900"
+                  }`}
+                >
+                  {(resource as any).type}
+                </span>
+              )}
+              {/* Show status for notes */}
+              {resourceType === "notes" && noteStatus && (
+                <span
+                  className={`text-xs font-medium px-2 py-1 rounded-full ${
+                    noteStatus === "Approved"
+                      ? "text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900"
+                      : noteStatus === "In for Review"
+                      ? "text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900"
+                      : "text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900"
+                  }`}
+                >
+                  {noteStatus}
+                </span>
+              )}
+              {/* Legacy admin uploaded tag for other resources */}
+              {resourceType !== "notes" && resource.isAdminUploaded && (
                 <span className="text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900 px-2 py-1 rounded-full">
                   Official
                 </span>
               )}
-              {!resource.isApproved && (
+              {/* Legacy pending tag for other resources */}
+              {resourceType !== "notes" && !resource.isApproved && (
                 <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900 px-2 py-1 rounded-full">
                   Pending
                 </span>
@@ -296,9 +348,17 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
 
         {/* Actions */}
         {showActions && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 relative">
             <button
               onClick={async () => {
+                // Don't allow viewing "In Review" notes
+                if (isInReviewNote) {
+                  toast.error(
+                    "This note is currently under review and cannot be viewed"
+                  );
+                  return;
+                }
+
                 try {
                   const url = resource.fileUrl || resource.publicUrl;
                   if (!url) {
@@ -333,10 +393,21 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
                   toast.error("Error opening file");
                 }
               }}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 text-white rounded-lg transition-colors duration-200 relative ${
+                isInReviewNote
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
+              disabled={isInReviewNote}
             >
               <Eye className="w-4 h-4" />
               View
+              {/* Lock overlay for In Review notes */}
+              {isInReviewNote && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-400 bg-opacity-75 rounded-lg">
+                  <Lock className="w-5 h-5 text-white" />
+                </div>
+              )}
             </button>
             {/* Show Edit button for admin, teacher, or resource owner */}
             {(isAdmin ||

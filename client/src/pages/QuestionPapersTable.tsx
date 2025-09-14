@@ -321,17 +321,24 @@ const QuestionPapersTable: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // FIXED: Handle view paper - use same approach as AcademicResourceCard
   const handleViewPaper = async (paper: QuestionPaper) => {
     try {
-      // Open the public/file URL in a new tab (view only). Then call GET to increment view count on the server.
       const url = paper.fileUrl || paper.publicUrl;
       if (!url) {
         toast.error("No file available to view");
         return;
       }
+
+      // For question papers, use the download tracking endpoint (same as AcademicResourceCard)
+      try {
+        await questionPapersService.trackDownload(paper._id);
+      } catch (err) {
+        // ignore tracking errors
+      }
+
+      // Open the URL directly in a new tab (same as AcademicResourceCard)
       window.open(url, "_blank", "noopener,noreferrer");
-      // GETting the paper will increment viewCount on the server (controller increments view on GET)
-      await questionPapersService.getQuestionPaperById(paper._id);
     } catch (error) {
       console.error("Error viewing paper:", error);
       toast.error("Failed to open paper");
@@ -362,7 +369,7 @@ const QuestionPapersTable: React.FC = () => {
           },
           ""
         );
-      } catch (e) { }
+      } catch (e) {}
       return;
     }
 
@@ -380,7 +387,7 @@ const QuestionPapersTable: React.FC = () => {
         },
         ""
       );
-    } catch (e) { }
+    } catch (e) {}
   };
 
   const renderBreadcrumb = () => {
@@ -426,7 +433,7 @@ const QuestionPapersTable: React.FC = () => {
               },
               ""
             );
-          } catch (e) { }
+          } catch (e) {}
         },
       });
       if (selectedSemesterLabel)
@@ -647,10 +654,11 @@ const QuestionPapersTable: React.FC = () => {
             {searchResults.map((paper, i) => (
               <div
                 key={paper._id}
-                className={`rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700 ${focusedIndex === i
-                  ? "ring-2 ring-blue-400 dark:ring-blue-300"
-                  : "bg-white dark:bg-gray-800"
-                  }`}
+                className={`rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700 ${
+                  focusedIndex === i
+                    ? "ring-2 ring-blue-400 dark:ring-blue-300"
+                    : "bg-white dark:bg-gray-800"
+                }`}
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -659,7 +667,8 @@ const QuestionPapersTable: React.FC = () => {
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
                       {highlightMatches(
-                        `${paper.degreeType} • ${paper.course} • ${paper.semester || "General"
+                        `${paper.degreeType} • ${paper.course} • ${
+                          paper.semester || "General"
                         } • ${paper.examYear}`,
                         searchQuery
                       )}
@@ -731,7 +740,6 @@ const QuestionPapersTable: React.FC = () => {
                   </p>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
@@ -799,8 +807,9 @@ const QuestionPapersTable: React.FC = () => {
               <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                 {searchResults === null
                   ? ""
-                  : `${searchResults.length} result${searchResults.length === 1 ? "" : "s"
-                  }`}
+                  : `${searchResults.length} result${
+                      searchResults.length === 1 ? "" : "s"
+                    }`}
               </div>
             </div>
           </div>

@@ -52,6 +52,9 @@ export const getAllTimetables = async (req, res) => {
       degreeType,
       timetableType,
       isActive,
+      uploader,
+      excludeUploader,
+      isApproved,
       page = 1,
       limit = 20,
       sortBy = "effectiveFrom",
@@ -59,7 +62,15 @@ export const getAllTimetables = async (req, res) => {
     } = req.query;
 
     // Build query
-    let query = { isApproved: true };
+    let query = {};
+
+    // Handle approval status filtering
+    if (isApproved !== undefined) {
+      query.isApproved = isApproved === "true";
+    } else {
+      // Default to showing approved items only for public access
+      query.isApproved = true;
+    }
 
     // Flexible keyword search (accept both `search` and `keyword`) and perform
     // case-insensitive substring matching across title/course/description/tags
@@ -112,6 +123,16 @@ export const getAllTimetables = async (req, res) => {
     if (degreeType) query.degreeType = degreeType;
     if (timetableType) query.timetableType = timetableType;
     if (isActive !== undefined) query.isActive = isActive === "true";
+
+    // Handle uploader filtering
+    if (uploader) {
+      query.uploader = uploader;
+    }
+
+    // Handle exclude uploader filtering
+    if (excludeUploader) {
+      query.uploader = { $ne: excludeUploader };
+    }
 
     // Only show active timetables by default
     if (isActive === undefined) {
@@ -311,6 +332,9 @@ export const uploadTimetable = async (req, res) => {
     let originalFileName = "";
 
     if (req.file) {
+      fileExtension = req.file.originalname.split(".").pop().toLowerCase();
+      const fileName = `${Date.now()}-${req.file.originalname}`;
+
       uploadedFile = await fileStorageService.uploadFile(
         req.file.buffer,
         fileName,
@@ -318,7 +342,6 @@ export const uploadTimetable = async (req, res) => {
         "timetables",
         { course, semester, academicYear }
       );
-      fileExtension = req.file.originalname.split(".").pop().toLowerCase();
       fileSize = req.file.size;
       originalFileName = req.file.originalname;
     } else if (req.body.fileUrl) {
@@ -432,6 +455,7 @@ export const updateTimetable = async (req, res) => {
       effectiveTo,
       isActive,
       tags,
+      status,
     } = req.body;
 
     // Parse tags if it's a string
@@ -440,26 +464,39 @@ export const updateTimetable = async (req, res) => {
       parsedTags = typeof tags === "string" ? JSON.parse(tags) : tags;
     }
 
+    // Handle status update and approval logic
+    let updateData = {
+      title: title || timetable.title,
+      course: course || timetable.course,
+      semester: semester || timetable.semester,
+      academicYear: academicYear || timetable.academicYear,
+      degreeType: degreeType || timetable.degreeType,
+      description: description || timetable.description,
+      timetableType: timetableType || timetable.timetableType,
+      effectiveFrom: effectiveFrom
+        ? new Date(effectiveFrom)
+        : timetable.effectiveFrom,
+      effectiveTo: effectiveTo ? new Date(effectiveTo) : timetable.effectiveTo,
+      isActive: isActive !== undefined ? isActive : timetable.isActive,
+      tags: parsedTags,
+    };
+
+    // Handle status field for approval logic
+    if (status !== undefined) {
+      if (req.user.role.includes("admin")) {
+        // Admins can set any status
+        updateData.isApproved = status === "Approved";
+      } else if (req.user.role.includes("teacher")) {
+        // Teachers can set any status
+        updateData.isApproved = status === "Approved";
+      }
+      // Students cannot change approval status
+    }
+
     // Update timetable
     const updatedTimetable = await Timetable.findByIdAndUpdate(
       req.params.id,
-      {
-        title: title || timetable.title,
-        course: course || timetable.course,
-        semester: semester || timetable.semester,
-        academicYear: academicYear || timetable.academicYear,
-        degreeType: degreeType || timetable.degreeType,
-        description: description || timetable.description,
-        timetableType: timetableType || timetable.timetableType,
-        effectiveFrom: effectiveFrom
-          ? new Date(effectiveFrom)
-          : timetable.effectiveFrom,
-        effectiveTo: effectiveTo
-          ? new Date(effectiveTo)
-          : timetable.effectiveTo,
-        isActive: isActive !== undefined ? isActive : timetable.isActive,
-        tags: parsedTags,
-      },
+      updateData,
       { new: true, runValidators: true }
     ).populate("uploader", "firstName lastName username avatar");
 

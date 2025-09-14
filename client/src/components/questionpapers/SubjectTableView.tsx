@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 import { QuestionPaper } from "../../types/academic";
-import { Eye, Edit, Calendar, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Eye,
+  Edit,
+  Calendar,
+  FileText,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
 interface Props {
   papersBySemester: { [semester: string]: QuestionPaper[] };
@@ -23,10 +30,12 @@ const SubjectTableView: React.FC<Props> = ({
   const [expandedSubjects, setExpandedSubjects] = useState<Set<string>>(() => {
     // Auto-expand all subjects by default
     const allSubjects = new Set<string>();
-    Object.keys(papersBySemester || {}).forEach(semester => {
+    Object.keys(papersBySemester || {}).forEach((semester) => {
       const papers = papersBySemester[semester] || [];
-      const subjects = [...new Set(papers.map(p => (p as any).subject || "General"))];
-      subjects.forEach(subject => {
+      const subjects = [
+        ...new Set(papers.map((p) => (p as any).subject || "General")),
+      ];
+      subjects.forEach((subject) => {
         allSubjects.add(`${semester}-${subject}`);
       });
     });
@@ -157,7 +166,8 @@ const SubjectTableView: React.FC<Props> = ({
                         {subject}
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {papers.length} question paper{papers.length !== 1 ? 's' : ''} available
+                        {papers.length} question paper
+                        {papers.length !== 1 ? "s" : ""} available
                       </p>
                     </div>
                   </div>
@@ -174,8 +184,12 @@ const SubjectTableView: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Papers Table */}
-              <div className={`transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+              {/* Papers Table - FIXED WITH PROPER BORDERS AND CENTERING */}
+              <div
+                className={`transition-all duration-300 ease-in-out ${
+                  isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                } overflow-hidden`}
+              >
                 <div className="p-6">
                   {papers.length === 0 ? (
                     <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -184,51 +198,55 @@ const SubjectTableView: React.FC<Props> = ({
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="min-w-full">
-                        <thead>
-                          <tr className="border-b border-gray-200 dark:border-gray-700">
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                              <div className="flex items-center space-x-1">
+                      <table className="min-w-full border-collapse border border-gray-300 dark:border-gray-600">
+                        <thead className="bg-gray-50 dark:bg-gray-900">
+                          <tr>
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider border border-gray-300 dark:border-gray-600">
+                              <div className="flex items-center justify-center space-x-1">
                                 <Calendar className="w-4 h-4" />
                                 <span>Year</span>
                               </div>
                             </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider border border-gray-300 dark:border-gray-600">
                               Month
                             </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider border border-gray-300 dark:border-gray-600">
                               Type
                             </th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider border border-gray-300 dark:border-gray-600">
                               Actions
                             </th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-300 dark:divide-gray-600">
                           {papers.map((paper, index) => (
                             <tr
                               key={paper._id}
                               className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
                               style={{ animationDelay: `${index * 50}ms` }}
                             >
-                              <td className="px-4 py-4 whitespace-nowrap">
-                                <div className="flex items-center space-x-2">
+                              <td className="px-4 py-4 whitespace-nowrap text-center border border-gray-300 dark:border-gray-600">
+                                <div className="flex items-center justify-center space-x-2">
                                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                    {(paper as any).year || paper.examYear || "-"}
+                                    {(paper as any).year ||
+                                      paper.examYear ||
+                                      "-"}
                                   </span>
                                 </div>
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                                {(paper as any).month || (paper as any).examMonth || "-"}
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 text-center border border-gray-300 dark:border-gray-600">
+                                {(paper as any).month ||
+                                  (paper as any).examMonth ||
+                                  "-"}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap">
+                              <td className="px-4 py-4 whitespace-nowrap text-center border border-gray-300 dark:border-gray-600">
                                 <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs font-medium rounded-full">
                                   {paper.examType || "Final"}
                                 </span>
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap">
-                                <div className="flex items-center space-x-3">
+                              <td className="px-4 py-4 whitespace-nowrap text-center border border-gray-300 dark:border-gray-600">
+                                <div className="flex items-center justify-center space-x-3">
                                   <button
                                     onClick={() => onView(paper)}
                                     className="inline-flex items-center space-x-1 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 text-sm font-medium rounded-lg transition-colors duration-150"
@@ -236,15 +254,18 @@ const SubjectTableView: React.FC<Props> = ({
                                     <Eye className="w-4 h-4" />
                                     <span>View</span>
                                   </button>
-                                  {isTeacher && paper.uploader && (paper.uploader as any)._id === currentUserId && (
-                                    <button
-                                      onClick={() => onEdit!(paper)}
-                                      className="inline-flex items-center space-x-1 px-3 py-1.5 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900 dark:hover:bg-amber-800 text-amber-700 dark:text-amber-300 text-sm font-medium rounded-lg transition-colors duration-150"
-                                    >
-                                      <Edit className="w-4 h-4" />
-                                      <span>Edit</span>
-                                    </button>
-                                  )}
+                                  {isTeacher &&
+                                    paper.uploader &&
+                                    (paper.uploader as any)._id ===
+                                      currentUserId && (
+                                      <button
+                                        onClick={() => onEdit!(paper)}
+                                        className="inline-flex items-center space-x-1 px-3 py-1.5 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900 dark:hover:bg-amber-800 text-amber-700 dark:text-amber-300 text-sm font-medium rounded-lg transition-colors duration-150"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                        <span>Edit</span>
+                                      </button>
+                                    )}
                                 </div>
                               </td>
                             </tr>

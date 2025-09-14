@@ -51,6 +51,7 @@ export const getAllQuestionPapers = async (req, res) => {
       examType,
       search,
       keyword,
+      isApproved,
       page = 1,
       limit = 20,
       sortBy = "examYear",
@@ -58,13 +59,19 @@ export const getAllQuestionPapers = async (req, res) => {
     } = req.query;
 
     // Build query
-    // By default show approved papers. If a user is authenticated, include
-    // their own uploads (so teachers see their unapproved uploads).
     let query = {};
-    if (req.user && req.user._id) {
-      query.$or = [{ isApproved: true }, { uploader: req.user._id }];
+
+    // Handle approval status filtering
+    if (isApproved !== undefined) {
+      query.isApproved = isApproved === "true";
     } else {
-      query.isApproved = true;
+      // Default to showing approved items only for public access
+      // If user is authenticated, include their own uploads (so teachers see their unapproved uploads)
+      if (req.user && req.user._id) {
+        query.$or = [{ isApproved: true }, { uploader: req.user._id }];
+      } else {
+        query.isApproved = true;
+      }
     }
 
     // Flexible regex/OR search across common fields (supports short queries)
@@ -98,8 +105,6 @@ export const getAllQuestionPapers = async (req, res) => {
           orClauses.push({ tags: { $regex: esc, $options: "i" } });
         });
 
-
-
         // If any token or the full query is numeric, also match examYear
         if (!Number.isNaN(Number(raw))) {
           orClauses.push({ examYear: parseInt(raw) });
@@ -121,7 +126,9 @@ export const getAllQuestionPapers = async (req, res) => {
     if (semester) query.semester = semester;
     if (subject) {
       // Make subject search more flexible - handle partial matches and variations
-      const subjectPattern = subject.replace(/\s+/g, '\\s*').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const subjectPattern = subject
+        .replace(/\s+/g, "\\s*")
+        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       query.subject = new RegExp(subjectPattern, "i");
     }
     if (examYear) query.examYear = parseInt(examYear);
@@ -177,7 +184,7 @@ export const getAvailableSubjects = async (req, res) => {
     res.status(200).json({
       success: true,
       data: subjects.sort(),
-      query: query
+      query: query,
     });
   } catch (error) {
     console.error("Error fetching available subjects:", error);
@@ -248,14 +255,21 @@ export const getQuestionPapersByCategory = async (req, res) => {
     }
 
     // Debug logging to help troubleshoot
-    console.log(`Found ${papers.length} papers for degreeType: ${degreeType}, course: ${course}`);
+    console.log(
+      `Found ${papers.length} papers for degreeType: ${degreeType}, course: ${course}`
+    );
     if (papers.length > 0) {
-      console.log('Sample subjects:', papers.slice(0, 3).map(p => p.subject));
+      console.log(
+        "Sample subjects:",
+        papers.slice(0, 3).map((p) => p.subject)
+      );
     }
 
     // Additional fallback: if still no papers, try a more flexible search
-    if ((!papers || papers.length === 0)) {
-      console.log(`No papers found for degreeType: ${degreeType}, course: ${course}. Trying flexible search...`);
+    if (!papers || papers.length === 0) {
+      console.log(
+        `No papers found for degreeType: ${degreeType}, course: ${course}. Trying flexible search...`
+      );
 
       // Try searching without degreeType constraint
       const flexibleQuery = { course: new RegExp(course, "i") };
@@ -340,6 +354,7 @@ export const uploadQuestionPaper = async (req, res) => {
       examType,
       description,
       tags,
+      status,
     } = req.body;
 
     // Allow either uploaded file or external file URL
@@ -490,6 +505,7 @@ export const updateQuestionPaper = async (req, res) => {
       examType,
       description,
       tags,
+      status,
     } = req.body;
 
     // Parse tags if it's a string
@@ -498,24 +514,51 @@ export const updateQuestionPaper = async (req, res) => {
       parsedTags = typeof tags === "string" ? JSON.parse(tags) : tags;
     }
 
+    // Prepare update object
+    const updateData = {
+      title: title || questionPaper.title,
+      degreeType: degreeType || questionPaper.degreeType,
+      course: course || questionPaper.course,
+      semester: semester || questionPaper.semester,
+      subject: subject || questionPaper.subject,
+      examYear: examYear ? parseInt(examYear) : questionPaper.examYear,
+      month: month || questionPaper.month,
+      year: year
+        ? parseInt(year)
+        : questionPaper.year || questionPaper.examYear,
+      examType: examType || questionPaper.examType,
+      description: description || questionPaper.description,
+      tags: parsedTags,
+    };
+
+    // Handle status field - convert to isApproved and status
+    if (status !== undefined) {
+      const statusValue = String(status).trim();
+      if (statusValue === "Approved") {
+        updateData.isApproved = true;
+        updateData.status = "approved";
+        updateData.approvedBy = req.user._id;
+        updateData.approvedAt = new Date();
+      } else if (statusValue === "In for Review") {
+        updateData.isApproved = false;
+        updateData.status = "pending";
+        // Clear approval fields if changing from approved to pending
+        if (questionPaper.isApproved) {
+          updateData.approvedBy = undefined;
+          updateData.approvedAt = undefined;
+        }
+      } else if (statusValue === "Disapproved") {
+        updateData.isApproved = false;
+        updateData.status = "rejected";
+        updateData.approvedBy = undefined;
+        updateData.approvedAt = undefined;
+      }
+    }
+
     // Update question paper
     const updatedQuestionPaper = await QuestionPaper.findByIdAndUpdate(
       req.params.id,
-      {
-        title: title || questionPaper.title,
-        degreeType: degreeType || questionPaper.degreeType,
-        course: course || questionPaper.course,
-        semester: semester || questionPaper.semester,
-        subject: subject || questionPaper.subject,
-        examYear: examYear ? parseInt(examYear) : questionPaper.examYear,
-        month: month || questionPaper.month,
-        year: year
-          ? parseInt(year)
-          : questionPaper.year || questionPaper.examYear,
-        examType: examType || questionPaper.examType,
-        description: description || questionPaper.description,
-        tags: parsedTags,
-      },
+      updateData,
       { new: true, runValidators: true }
     ).populate("uploader", "firstName lastName username avatar");
 

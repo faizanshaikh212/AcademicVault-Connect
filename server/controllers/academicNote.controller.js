@@ -293,16 +293,12 @@ export const uploadNote = async (req, res) => {
     let noteStatus = status;
     let isApproved = false;
 
-    if (req.user.role.includes("admin")) {
-      // Admins can set any status, default to Approved
-      noteStatus = status || "Approved";
-      isApproved = noteStatus === "Approved";
-    } else if (req.user.role.includes("teacher")) {
-      // Teachers can set status, default to Approved for teachers
+    if (req.user.role.includes("teacher")) {
+      // Teachers (regardless of other roles): can set status, default to Approved
       noteStatus = status || "Approved";
       isApproved = noteStatus === "Approved";
     } else {
-      // Students: always "In for Review", never approved
+      // Non-teachers (students only): always "In for Review", never approved
       noteStatus = "In for Review";
       isApproved = false;
     }

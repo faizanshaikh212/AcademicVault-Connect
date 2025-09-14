@@ -58,10 +58,13 @@ const CourseManagement: React.FC = () => {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const { data } = await coursesService.listCourses();
-      setCourses(data || []);
+      const response = await coursesService.listMyCourses();
+      // Handle both formats: direct array or { data: array }
+      const coursesData = response.data || response || [];
+      setCourses(Array.isArray(coursesData) ? coursesData : []);
     } catch (err) {
       console.error(err);
+      setCourses([]);
     } finally {
       setLoading(false);
     }
@@ -403,10 +406,15 @@ const CourseSemesters: React.FC<{ course: any; onUpdate: () => void }> = ({
 
   const fetchSemesters = async () => {
     try {
-      const { data } = await coursesService.listSemestersForCourse(course._id);
-      setSemesters(data || []);
+      const response = await coursesService.listMySemestersForCourse(
+        course._id
+      );
+      // Handle both formats: direct array or { data: array }
+      const semestersData = response.data || response || [];
+      setSemesters(Array.isArray(semestersData) ? semestersData : []);
     } catch (err) {
       console.error(err);
+      setSemesters([]);
     }
   };
 
@@ -576,12 +584,15 @@ const SemesterSubjects: React.FC<{ semester: any; onRefresh: () => void }> = ({
 
   const fetchSubjects = async () => {
     try {
-      const { data } = await coursesService.listSubjectsForSemester(
+      const response = await coursesService.listMySubjectsForSemester(
         semester._id
       );
-      setSubjects(data || []);
+      // Handle both formats: direct array or { data: array }
+      const subjectsData = response.data || response || [];
+      setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
     } catch (err) {
       console.error(err);
+      setSubjects([]);
     }
   };
 

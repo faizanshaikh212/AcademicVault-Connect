@@ -29,7 +29,11 @@ import {
 export const notesService = {
   // Get all notes with search and filtering
   async getAllNotes(
-    params: NotesSearchParams = {}
+    params: NotesSearchParams & {
+      uploader?: string;
+      excludeUploader?: string;
+      isApproved?: boolean | string;
+    } = {}
   ): Promise<AcademicResourceListResponse<AcademicNote>> {
     const response = await api.get("/academic/notes", { params });
     return response.data;

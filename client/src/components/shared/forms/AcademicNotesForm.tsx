@@ -25,14 +25,62 @@ const AcademicNotesForm: React.FC<Props> = ({
   const [description, setDescription] = useState(
     initialValues.description || ""
   );
-  const [courseId, setCourseId] = useState(initialValues.courseId || "");
-  const [semesterId, setSemesterId] = useState(initialValues.semesterId || "");
-  const [subjectId, setSubjectId] = useState(initialValues.subjectId || "");
+  // Map resource fields to form fields
+  const getInitialCourseId = () => {
+    if (initialValues.courseId) return initialValues.courseId;
+    if (
+      initialValues.course &&
+      typeof initialValues.course === "object" &&
+      initialValues.course._id
+    ) {
+      return initialValues.course._id;
+    }
+    // If course is a string, we need to find the matching course from the courses list
+    // This will be handled in useEffect after courses are loaded
+    return "";
+  };
+
+  const getInitialSemesterId = () => {
+    if (initialValues.semesterId) return initialValues.semesterId;
+    if (
+      initialValues.semester &&
+      typeof initialValues.semester === "object" &&
+      initialValues.semester._id
+    ) {
+      return initialValues.semester._id;
+    }
+    // If semester is a string, we need to find the matching semester from the semesters list
+    // This will be handled in useEffect after semesters are loaded
+    return "";
+  };
+
+  const getInitialSubjectId = () => {
+    if (initialValues.subjectId) return initialValues.subjectId;
+    if (
+      initialValues.subject &&
+      typeof initialValues.subject === "object" &&
+      initialValues.subject._id
+    ) {
+      return initialValues.subject._id;
+    }
+    // If subject is a string, we need to find the matching subject from the subjects list
+    // This will be handled in useEffect after subjects are loaded
+    return "";
+  };
+
+  const [courseId, setCourseId] = useState(getInitialCourseId());
+  const [semesterId, setSemesterId] = useState(getInitialSemesterId());
+  const [subjectId, setSubjectId] = useState(getInitialSubjectId());
   const [courses, setCourses] = useState<any[]>([]);
   const [semesters, setSemesters] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [courseFallback] = useState(
     typeof initialValues.course === "string" ? initialValues.course : ""
+  );
+  const [academicYear, setAcademicYear] = useState(
+    initialValues.academicYear ||
+      initialValues.year ||
+      new Date().getFullYear().toString()
   );
   const [type, setType] = useState(
     initialValues.type ||
@@ -40,24 +88,49 @@ const AcademicNotesForm: React.FC<Props> = ({
         ? "Official"
         : "Unofficial")
   );
-  const [status, setStatus] = useState(
-    initialValues.status ||
-      (initialValues.uploader?.role?.includes("teacher")
-        ? "Approved"
-        : "In for Review")
-  );
+  const [status, setStatus] = useState(() => {
+    // For edit mode, show current status from the database
+    if (!createMode) {
+      return (
+        initialValues.status ||
+        (initialValues.isApproved ? "Approved" : "In for Review")
+      );
+    }
+    // For create mode, default based on user role
+    return initialValues.uploader?.role?.includes("teacher")
+      ? "Approved"
+      : "In for Review";
+  });
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState(initialValues.fileUrl || "");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (createMode && !file && !fileUrl) {
-      toast.error("Please provide a file or a file URL.");
+
+    // Validate required fields
+    if (!title.trim()) {
+      toast.error("Title is required.");
       return;
     }
-    if (!title) {
-      toast.error("Title is required.");
+    if (!description.trim()) {
+      toast.error("Description is required.");
+      return;
+    }
+    if (!courseId) {
+      toast.error("Course selection is required.");
+      return;
+    }
+    if (!subjectId) {
+      toast.error("Subject selection is required.");
+      return;
+    }
+    if (!academicYear) {
+      toast.error("Academic Year is required.");
+      return;
+    }
+    if (createMode && !file && !fileUrl.trim()) {
+      toast.error("Please provide a file or a file URL.");
       return;
     }
 
@@ -95,6 +168,7 @@ const AcademicNotesForm: React.FC<Props> = ({
             "subject",
             String(selectedSubject.title || selectedSubject.name)
           );
+        fd.append("academicYear", String(academicYear));
         fd.append("type", String(type));
         fd.append("status", String(status));
         await onSubmit(fd);
@@ -105,6 +179,7 @@ const AcademicNotesForm: React.FC<Props> = ({
           courseId,
           semesterId,
           subjectId,
+          academicYear,
           type,
           status,
         };
@@ -122,16 +197,24 @@ const AcademicNotesForm: React.FC<Props> = ({
       try {
         const res = await coursesService.listCourses();
         if (!mounted) return;
-        setCourses((res as any).data || []);
-        if (courseId) {
-          const s = await coursesService.listSemestersForCourse(courseId);
-          if (!mounted) return;
-          setSemesters((s as any).data || []);
-        }
-        if (semesterId) {
-          const sub = await coursesService.listSubjectsForSemester(semesterId);
-          if (!mounted) return;
-          setSubjects((sub as any).data || []);
+        const loadedCourses = (res as any).data || [];
+        setCourses(loadedCourses);
+
+        // If we have a course string in initialValues, find the matching course ID
+        if (
+          initialValues.course &&
+          typeof initialValues.course === "string" &&
+          !courseId
+        ) {
+          const matchingCourse = loadedCourses.find(
+            (c: any) =>
+              c.title === initialValues.course ||
+              c.name === initialValues.course ||
+              c._id === initialValues.course
+          );
+          if (matchingCourse) {
+            setCourseId(matchingCourse._id);
+          }
         }
       } catch (err) {
         console.error("Failed to load course data", err);
@@ -140,11 +223,96 @@ const AcademicNotesForm: React.FC<Props> = ({
     return () => {
       mounted = false;
     };
-  }, [courseId, semesterId]);
+  }, []);
+
+  // Load semesters when courseId changes
+  useEffect(() => {
+    if (!courseId) {
+      setSemesters([]);
+      setSubjects([]);
+      return;
+    }
+
+    let mounted = true;
+    (async () => {
+      try {
+        const s = await coursesService.listSemestersForCourse(courseId);
+        if (!mounted) return;
+        const loadedSemesters = (s as any).data || [];
+        setSemesters(loadedSemesters);
+
+        // If we have a semester string in initialValues, find the matching semester ID
+        if (
+          initialValues.semester &&
+          typeof initialValues.semester === "string" &&
+          !semesterId
+        ) {
+          const matchingSemester = loadedSemesters.find(
+            (s: any) =>
+              s.title === initialValues.semester ||
+              s.name === initialValues.semester ||
+              s.number?.toString() === initialValues.semester ||
+              s._id === initialValues.semester
+          );
+          if (matchingSemester) {
+            setSemesterId(matchingSemester._id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load semester data", err);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [courseId, initialValues.semester, semesterId]);
+
+  // Load subjects when semesterId changes
+  useEffect(() => {
+    if (!semesterId) {
+      setSubjects([]);
+      return;
+    }
+
+    let mounted = true;
+    (async () => {
+      try {
+        const sub = await coursesService.listSubjectsForSemester(semesterId);
+        if (!mounted) return;
+        const loadedSubjects = (sub as any).data || [];
+        setSubjects(loadedSubjects);
+
+        // If we have a subject string in initialValues, find the matching subject ID
+        if (
+          initialValues.subject &&
+          typeof initialValues.subject === "string" &&
+          !subjectId
+        ) {
+          const matchingSubject = loadedSubjects.find(
+            (s: any) =>
+              s.title === initialValues.subject ||
+              s.name === initialValues.subject ||
+              s._id === initialValues.subject
+          );
+          if (matchingSubject) {
+            setSubjectId(matchingSubject._id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load subject data", err);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [semesterId, initialValues.subject, subjectId]);
 
   return (
     <form onSubmit={handleSubmit} className="p-6">
       <div className="bg-white dark:bg-zinc-800/60 dark:border dark:border-zinc-700 rounded-lg shadow-sm p-4 space-y-4">
+        <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          <span className="font-medium">* Required fields</span>
+        </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Title *
@@ -153,25 +321,27 @@ const AcademicNotesForm: React.FC<Props> = ({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+            required
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-            Description
+            Description *
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
             rows={4}
+            required
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Course
+              Course *
             </label>
             <select
               value={courseId}
@@ -181,6 +351,7 @@ const AcademicNotesForm: React.FC<Props> = ({
                 setSubjectId("");
               }}
               className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+              required
             >
               <option value="">Select Course</option>
               {courses.map((c) => (
@@ -213,13 +384,14 @@ const AcademicNotesForm: React.FC<Props> = ({
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Subject
+              Subject *
             </label>
             <select
               value={subjectId}
               onChange={(e) => setSubjectId(e.target.value)}
               disabled={!semesterId}
               className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+              required
             >
               <option value="">Select Subject</option>
               {subjects.map((s) => (
@@ -228,6 +400,19 @@ const AcademicNotesForm: React.FC<Props> = ({
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              Academic Year *
+            </label>
+            <input
+              type="number"
+              value={academicYear}
+              onChange={(e) => setAcademicYear(e.target.value)}
+              placeholder="2024"
+              className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+              required
+            />
           </div>
         </div>
 
@@ -250,35 +435,37 @@ const AcademicNotesForm: React.FC<Props> = ({
 
         <div className="grid grid-cols-2 gap-2">
           {!createMode && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                Type
-              </label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
-              >
-                <option value="Official">Official</option>
-                <option value="Unofficial">Unofficial</option>
-              </select>
-            </div>
-          )}
+            <>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Type
+                </label>
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+                >
+                  <option value="Official">Official</option>
+                  <option value="Unofficial">Unofficial</option>
+                </select>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Status
-            </label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
-            >
-              <option value="Approved">Approved</option>
-              <option value="In for Review">In for Review</option>
-              <option value="Dissaproved">Dissaproved</option>
-            </select>
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Status
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+                >
+                  <option value="Approved">Approved</option>
+                  <option value="In for Review">In for Review</option>
+                  <option value="Disapproved">Disapproved</option>
+                </select>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex justify-end gap-3">

@@ -20,31 +20,75 @@ const SyllabusForm: React.FC<Props> = ({
   submitLabel,
   loading = false,
 }) => {
+  // Map resource fields to form fields
+  const getInitialCourseId = () => {
+    if (initialValues.courseId) return initialValues.courseId;
+    if (
+      initialValues.course &&
+      typeof initialValues.course === "object" &&
+      initialValues.course._id
+    ) {
+      return initialValues.course._id;
+    }
+    // If course is a string, we need to find the matching course from the courses list
+    // This will be handled in useEffect after courses are loaded
+    return "";
+  };
+
+  const getInitialSemesterId = () => {
+    if (initialValues.semesterId) return initialValues.semesterId;
+    if (
+      initialValues.semester &&
+      typeof initialValues.semester === "object" &&
+      initialValues.semester._id
+    ) {
+      return initialValues.semester._id;
+    }
+    // If semester is a string, we need to find the matching semester from the semesters list
+    // This will be handled in useEffect after semesters are loaded
+    return "";
+  };
+
   const [title, setTitle] = useState(initialValues.title || "");
   const [description, setDescription] = useState(
     initialValues.description || ""
   );
-  const [courseId, setCourseId] = useState(initialValues.courseId || "");
+  const [courseId, setCourseId] = useState(getInitialCourseId());
   const [courses, setCourses] = useState<any[]>([]);
   const [semesters, setSemesters] = useState<any[]>([]);
   // If the initial data had a plain course string (no id) keep it as fallback
   const [courseFallback] = useState(
     typeof initialValues.course === "string" ? initialValues.course : ""
   );
-  const [year, setYear] = useState(initialValues.academicYear || "");
-  const [status, setStatus] = useState(initialValues.status || "Approved");
+  const [year, setYear] = useState(
+    initialValues.academicYear || initialValues.year || ""
+  );
+  const [isApproved, setIsApproved] = useState(
+    createMode ? true : initialValues.isApproved || false // Default to Approved for new uploads
+  );
   const [file, setFile] = useState<File | null>(null);
-  const [fileUrl] = useState(initialValues.fileUrl || "");
+  const [fileUrl, setFileUrl] = useState(initialValues.fileUrl || "");
   const [submitting, setSubmitting] = useState(false);
+  const [semesterId, setSemesterId] = useState(getInitialSemesterId());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (createMode && !file && !fileUrl) {
-      toast.error("Provide file or URL");
+
+    // Validate required fields
+    if (!title.trim()) {
+      toast.error("Title is required.");
       return;
     }
-    if (!title) {
-      toast.error("Title required");
+    if (!courseId) {
+      toast.error("Course selection is required.");
+      return;
+    }
+    if (!year.trim()) {
+      toast.error("Academic Year is required.");
+      return;
+    }
+    if (createMode && !file && !fileUrl.trim()) {
+      toast.error("Please provide a file or a file URL.");
       return;
     }
     setSubmitting(true);
@@ -57,11 +101,7 @@ const SyllabusForm: React.FC<Props> = ({
         if (description) fd.append("description", String(description));
         // derive human-readable course/semester
         const selectedCourse = courses.find((c) => c._id === courseId);
-        const selectedSemester = semesters.find(
-          (s) =>
-            s._id === initialValues.semesterId ||
-            s._id === initialValues.semester
-        );
+        const selectedSemester = semesters.find((s) => s._id === semesterId);
         fd.append(
           "course",
           String(
@@ -80,7 +120,7 @@ const SyllabusForm: React.FC<Props> = ({
             )
           );
         if (year) fd.append("academicYear", String(year));
-        fd.append("status", String(status));
+        fd.append("isApproved", String(isApproved));
         await onSubmit(fd);
       } else {
         const payload: any = {
@@ -88,8 +128,24 @@ const SyllabusForm: React.FC<Props> = ({
           description,
           courseId,
           academicYear: year,
-          status,
+          isApproved,
         };
+
+        // Add semester - empty string for "All Semesters", or specific semester name
+        if (semesterId === "") {
+          // "All Semesters" selected - send empty string to clear semester field
+          payload.semester = "";
+        } else {
+          const selectedSemester = semesters.find((s) => s._id === semesterId);
+          if (selectedSemester) {
+            payload.semester = String(
+              selectedSemester.title ||
+                selectedSemester.name ||
+                selectedSemester.number
+            );
+          }
+        }
+
         if (fileUrl) payload.fileUrl = fileUrl;
         await onSubmit(payload);
       }
@@ -104,11 +160,24 @@ const SyllabusForm: React.FC<Props> = ({
       try {
         const res = await coursesService.listCourses();
         if (!mounted) return;
-        setCourses((res as any).data || []);
-        if (courseId) {
-          const s = await coursesService.listSemestersForCourse(courseId);
-          if (!mounted) return;
-          setSemesters((s as any).data || []);
+        const loadedCourses = (res as any).data || [];
+        setCourses(loadedCourses);
+
+        // If we have a course string in initialValues, find the matching course ID
+        if (
+          initialValues.course &&
+          typeof initialValues.course === "string" &&
+          !courseId
+        ) {
+          const matchingCourse = loadedCourses.find(
+            (c: any) =>
+              c.title === initialValues.course ||
+              c.name === initialValues.course ||
+              c._id === initialValues.course
+          );
+          if (matchingCourse) {
+            setCourseId(matchingCourse._id);
+          }
         }
       } catch (err) {
         console.error("Failed to load course data", err);
@@ -117,11 +186,73 @@ const SyllabusForm: React.FC<Props> = ({
     return () => {
       mounted = false;
     };
-  }, [courseId]);
+  }, []);
+
+  // Load semesters when courseId changes
+  useEffect(() => {
+    if (!courseId) {
+      setSemesters([]);
+      setSemesterId(""); // Reset semester when course is cleared
+      return;
+    }
+
+    let mounted = true;
+    (async () => {
+      try {
+        const s = await coursesService.listSemestersForCourse(courseId);
+        if (!mounted) return;
+        const loadedSemesters = (s as any).data || [];
+        setSemesters(loadedSemesters);
+
+        // Only try to match semester if we have initial values
+        if (
+          initialValues.semester &&
+          typeof initialValues.semester === "string" &&
+          !semesterId
+        ) {
+          // Check if it's "All Semesters" (empty or common indicators)
+          if (
+            !initialValues.semester.trim() ||
+            initialValues.semester.toLowerCase() === "all semesters" ||
+            initialValues.semester.toLowerCase() === "all"
+          ) {
+            // Keep semesterId as empty string for "All Semesters"
+            setSemesterId("");
+          } else {
+            // Try to find matching semester
+            const matchingSemester = loadedSemesters.find(
+              (s: any) =>
+                s.title === initialValues.semester ||
+                s.name === initialValues.semester ||
+                s.number?.toString() === initialValues.semester ||
+                s._id === initialValues.semester
+            );
+            if (matchingSemester) {
+              setSemesterId(matchingSemester._id);
+            } else {
+              // If no match found, assume it's "All Semesters"
+              setSemesterId("");
+            }
+          }
+        } else if (courseId !== getInitialCourseId()) {
+          // If course changed, reset semester
+          setSemesterId("");
+        }
+      } catch (err) {
+        console.error("Failed to load semester data", err);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [courseId]); // Removed semesterId from dependencies to avoid infinite loops
 
   return (
     <form onSubmit={handleSubmit} className="p-6">
       <div className="bg-white dark:bg-zinc-800/60 dark:border dark:border-zinc-700 rounded-lg shadow-sm p-4 space-y-4">
+        <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          <span className="font-medium">* Required fields</span>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -132,17 +263,22 @@ const SyllabusForm: React.FC<Props> = ({
               onChange={(e) => setTitle(e.target.value)}
               className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100 dark:placeholder:text-zinc-500"
               aria-required
+              required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Course
+              Course *
             </label>
             <select
               value={courseId}
-              onChange={(e) => setCourseId(e.target.value)}
+              onChange={(e) => {
+                setCourseId(e.target.value);
+                setSemesterId(""); // Reset semester when course changes
+              }}
               className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100 dark:placeholder:text-zinc-500"
+              required
             >
               <option value="">Select Course</option>
               {courses.map((c) => (
@@ -169,13 +305,14 @@ const SyllabusForm: React.FC<Props> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Academic Year (optional)
+              Academic Year *
             </label>
             <input
               value={year}
               onChange={(e) => setYear(e.target.value)}
               className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100 dark:placeholder:text-zinc-500"
               placeholder="e.g., 2023-2024"
+              required
             />
           </div>
 
@@ -184,8 +321,9 @@ const SyllabusForm: React.FC<Props> = ({
               Semester (optional)
             </label>
             <select
-              value={initialValues.semesterId || initialValues.semester || ""}
-              onChange={() => {}}
+              key={`semester-${courseId}`} // Force re-render when course changes
+              value={semesterId}
+              onChange={(e) => setSemesterId(e.target.value)}
               className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100 dark:placeholder:text-zinc-500"
             >
               <option value="">All Semesters</option>
@@ -198,22 +336,35 @@ const SyllabusForm: React.FC<Props> = ({
           </div>
         </div>
 
-        <UploadZone file={file} setFile={setFile} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              File URL (optional)
+            </label>
+            <input
+              value={fileUrl}
+              onChange={(e) => setFileUrl(e.target.value)}
+              className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100 dark:placeholder:text-zinc-500"
+              placeholder="https://example.com/file.pdf"
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-            Status
-          </label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="mt-1 block w-48 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
-          >
-            <option value="Approved">Approved</option>
-            <option value="In for Review">In for Review</option>
-            <option value="Dissaproved">Dissaproved</option>
-          </select>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              Status
+            </label>
+            <select
+              value={isApproved ? "Approved" : "In Review"}
+              onChange={(e) => setIsApproved(e.target.value === "Approved")}
+              className="mt-1 block w-full max-w-xs rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+            >
+              <option value="Approved">Approved</option>
+              <option value="In Review">In Review</option>
+            </select>
+          </div>
         </div>
+
+        <UploadZone file={file} setFile={setFile} />
 
         <div className="flex justify-end gap-3">
           <button
