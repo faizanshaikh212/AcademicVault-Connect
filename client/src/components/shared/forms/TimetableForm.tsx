@@ -25,8 +25,33 @@ const TimetableForm: React.FC<Props> = ({
   const [description, setDescription] = useState(
     initialValues.description || ""
   );
-  const [courseId, setCourseId] = useState("");
-  const [semesterId, setSemesterId] = useState("");
+  const getInitialCourseId = () => {
+    if (initialValues.courseId) return initialValues.courseId;
+    if (
+      initialValues.course &&
+      typeof initialValues.course === "object" &&
+      initialValues.course._id
+    ) {
+      return initialValues.course._id;
+    }
+    // Will try to resolve after courses are loaded
+    return "";
+  };
+
+  const getInitialSemesterId = () => {
+    if (initialValues.semesterId) return initialValues.semesterId;
+    if (
+      initialValues.semester &&
+      typeof initialValues.semester === "object" &&
+      initialValues.semester._id
+    ) {
+      return initialValues.semester._id;
+    }
+    return "";
+  };
+
+  const [courseId, setCourseId] = useState(getInitialCourseId());
+  const [semesterId, setSemesterId] = useState(getInitialSemesterId());
   const [courses, setCourses] = useState<any[]>([]);
   const [semesters, setSemesters] = useState<any[]>([]);
   const [courseFallback] = useState(
@@ -34,6 +59,10 @@ const TimetableForm: React.FC<Props> = ({
   );
   const [type, setType] = useState(
     initialValues.timetableType || initialValues.type || ""
+  );
+  // For edit mode allow setting status (Approved / In for Review)
+  const [status, setStatus] = useState(
+    !createMode ? (initialValues.isApproved ? "Approved" : "In for Review") : ""
   );
   const [academicYear, setAcademicYear] = useState(
     initialValues.academicYear || ""
@@ -104,6 +133,8 @@ const TimetableForm: React.FC<Props> = ({
           academicYear,
         };
         if (fileUrl) payload.fileUrl = fileUrl;
+        // Include status in update payload so server can set isApproved accordingly
+        if (status) payload.status = status;
         await onSubmit(payload);
       }
     } finally {
@@ -274,7 +305,6 @@ const TimetableForm: React.FC<Props> = ({
               <option value="Holiday">Holiday</option>
             </select>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
               File URL
@@ -286,6 +316,23 @@ const TimetableForm: React.FC<Props> = ({
             />
           </div>
         </div>
+
+        {/* Show Status selection in edit mode so teachers/admins can change approval */}
+        {!createMode && (
+          <div className="mt-3">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              Status
+            </label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="mt-1 block w-48 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-100"
+            >
+              <option value="Approved">Approved</option>
+              <option value="In for Review">In for Review</option>
+            </select>
+          </div>
+        )}
 
         <UploadZone file={file} setFile={setFile} />
 

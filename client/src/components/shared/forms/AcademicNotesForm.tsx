@@ -169,8 +169,9 @@ const AcademicNotesForm: React.FC<Props> = ({
             String(selectedSubject.title || selectedSubject.name)
           );
         fd.append("academicYear", String(academicYear));
-        fd.append("type", String(type));
-        fd.append("status", String(status));
+        // Do NOT send type/status from client when creating a new note.
+        // Server will determine defaults based on authenticated user's roles
+        // (teacher -> Official/Approved, student -> Unofficial/In for Review).
         await onSubmit(fd);
       } else {
         const payload: any = {

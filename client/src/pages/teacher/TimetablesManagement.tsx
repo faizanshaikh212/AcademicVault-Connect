@@ -39,11 +39,10 @@ const TeacherTimetablesManagement: React.FC = () => {
   // Service for pending review timetables
   const pendingTimetablesService = {
     getAll: async (params?: any) => {
-      // Get unapproved timetables (exclude current user's own uploads)
+      // Get unapproved timetables (include current user's own uploads)
       const response = await timetablesService.getAllTimetables({
         ...params,
         isApproved: "false",
-        excludeUploader: user?._id,
       });
       return {
         data: response.data.map((item: any) => ({

@@ -140,24 +140,32 @@ export const getAllTimetables = async (req, res) => {
       query.uploader = { $ne: excludeUploader };
     }
 
-    // Only show active timetables by default
+    // Only show active timetables by default. However, if the caller
+    // explicitly provided an isApproved parameter (either true or false),
+    // we should not layer the default active/effectiveFrom constraints on
+    // top of the approval filter. This mirrors how notes handle explicit
+    // status/isApproved filtering and prevents hiding pending items.
     if (isActive === undefined) {
-      const now = new Date();
-      query.isActive = true;
-      query.effectiveFrom = { $lte: now };
+      const explicitIsApprovedProvided = typeof isApproved !== "undefined";
 
-      const activeOr = [
-        { effectiveTo: { $exists: false } },
-        { effectiveTo: null },
-        { effectiveTo: { $gte: now } },
-      ];
+      if (!explicitIsApprovedProvided) {
+        const now = new Date();
+        query.isActive = true;
+        query.effectiveFrom = { $lte: now };
 
-      // If search already added a $or, combine them with $and so both conditions apply
-      if (query.$or) {
-        query.$and = [{ $or: query.$or }, { $or: activeOr }];
-        delete query.$or;
-      } else {
-        query.$or = activeOr;
+        const activeOr = [
+          { effectiveTo: { $exists: false } },
+          { effectiveTo: null },
+          { effectiveTo: { $gte: now } },
+        ];
+
+        // If search already added a $or, combine them with $and so both conditions apply
+        if (query.$or) {
+          query.$and = [{ $or: query.$or }, { $or: activeOr }];
+          delete query.$or;
+        } else {
+          query.$or = activeOr;
+        }
       }
     }
 
@@ -166,19 +174,16 @@ export const getAllTimetables = async (req, res) => {
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
 
-    // Execute query
+    // Diagnostic logging: incoming query and constructed Mongo query
     try {
+      console.debug("getAllTimetables - incoming req.query =", req.query);
       console.debug(
-        "getAllTimetables qParam=",
-        qParam,
-        "query=",
+        "getAllTimetables - constructed mongo query =",
         JSON.stringify(query)
       );
     } catch (e) {
       console.debug(
-        "getAllTimetables qParam=",
-        qParam,
-        "query=(unserializable)"
+        "getAllTimetables - constructed mongo query (unserializable)"
       );
     }
 
@@ -190,6 +195,17 @@ export const getAllTimetables = async (req, res) => {
       .limit(parseInt(limit));
 
     const total = await Timetable.countDocuments(query);
+
+    try {
+      console.debug(
+        `getAllTimetables - returned ${timetables.length} records (total ${total}). ids=`,
+        timetables.map((t) => t._id?.toString())
+      );
+    } catch (e) {
+      console.debug(
+        "getAllTimetables - returned results (could not stringify ids)"
+      );
+    }
 
     res.status(200).json({
       success: true,
@@ -453,6 +469,8 @@ export const updateTimetable = async (req, res) => {
       title,
       course,
       semester,
+      courseId,
+      semesterId,
       academicYear,
       degreeType,
       description,
@@ -464,17 +482,53 @@ export const updateTimetable = async (req, res) => {
       status,
     } = req.body;
 
+    console.log("DEBUG: updateTimetable received:", {
+      course,
+      semester,
+      courseId,
+      semesterId,
+      status,
+      reqBody: req.body,
+    });
+
     // Parse tags if it's a string
     let parsedTags = timetable.tags;
     if (tags) {
       parsedTags = typeof tags === "string" ? JSON.parse(tags) : tags;
     }
 
+    // Handle course/semester - form sends courseId/semesterId but we need to resolve to names
+    let finalCourse = course || timetable.course;
+    let finalSemester = semester || timetable.semester;
+
+    // If we got courseId/semesterId, we need to resolve them to names
+    if (courseId && courseId !== course) {
+      // Find the course name from the ID
+      const Course = (await import("../models/course.model.js")).default;
+      const courseDoc = await Course.findById(courseId);
+      if (courseDoc) {
+        finalCourse = courseDoc.title || courseDoc.name || courseId;
+      }
+    }
+
+    if (semesterId && semesterId !== semester) {
+      // Find the semester name from the ID
+      const Semester = (await import("../models/semester.model.js")).default;
+      const semesterDoc = await Semester.findById(semesterId);
+      if (semesterDoc) {
+        finalSemester =
+          semesterDoc.title ||
+          semesterDoc.name ||
+          semesterDoc.number ||
+          semesterId;
+      }
+    }
+
     // Handle status update and approval logic
     let updateData = {
       title: title || timetable.title,
-      course: course || timetable.course,
-      semester: semester || timetable.semester,
+      course: finalCourse,
+      semester: finalSemester,
       academicYear: academicYear || timetable.academicYear,
       degreeType: degreeType || timetable.degreeType,
       description: description || timetable.description,

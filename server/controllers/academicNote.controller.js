@@ -290,14 +290,28 @@ export const uploadNote = async (req, res) => {
     }
 
     // Determine status based on user role
+    console.log(
+      "DEBUG: uploadNote - user role:",
+      req.user.role,
+      "status param:",
+      status,
+      "type param:",
+      type
+    );
     let noteStatus = status;
     let isApproved = false;
 
-    if (req.user.role.includes("teacher")) {
+    if (req.user.role && req.user.role.includes("teacher")) {
+      console.log(
+        "DEBUG: uploadNote - user is teacher, setting status to Approved"
+      );
       // Teachers (regardless of other roles): can set status, default to Approved
       noteStatus = status || "Approved";
       isApproved = noteStatus === "Approved";
     } else {
+      console.log(
+        "DEBUG: uploadNote - user is not teacher, setting status to In for Review"
+      );
       // Non-teachers (students only): always "In for Review", never approved
       noteStatus = "In for Review";
       isApproved = false;
@@ -306,12 +320,20 @@ export const uploadNote = async (req, res) => {
     // Set default type based on user role
     let noteType = type;
     if (!noteType) {
-      if (req.user.role.includes("teacher")) {
+      if (req.user.role && req.user.role.includes("teacher")) {
+        console.log("DEBUG: uploadNote - setting type to Official");
         noteType = "Official";
       } else {
+        console.log("DEBUG: uploadNote - setting type to Unofficial");
         noteType = "Unofficial";
       }
     }
+
+    console.log("DEBUG: uploadNote - final values:", {
+      noteType,
+      noteStatus,
+      isApproved,
+    });
 
     // Create note record
     const note = new AcademicNote({
