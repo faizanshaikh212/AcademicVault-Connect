@@ -178,7 +178,7 @@ const TimetablesPage: React.FC = () => {
   };
 
   const isTeacher =
-    user && Array.isArray(user.role) && user.role.includes("teacher");
+    user && Array.isArray(user.role) && (user.role.includes("teacher") || user.role.includes("admin"));
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative  pt-25">
@@ -233,11 +233,10 @@ const TimetablesPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-                  showFilters
+                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${showFilters
                     ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300"
                     : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
+                  }`}
               >
                 <Filter className="w-5 h-5" />
                 Filters
@@ -489,11 +488,10 @@ const TimetablesPage: React.FC = () => {
                       <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`px-3 py-2 rounded ${
-                          page === pagination.current
+                        className={`px-3 py-2 rounded ${page === pagination.current
                             ? "bg-blue-600 text-white"
                             : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                        }`}
+                          }`}
                       >
                         {page}
                       </button>

@@ -54,4 +54,9 @@ router.delete(
   courseController.deleteSubject
 );
 
+// PROTECTED ROUTES - Course Access Management
+router.get("/teachers", protect, teacher, courseController.getTeachersForAccess);
+router.post("/:courseId/grant-access", protect, teacher, courseController.grantCourseAccess);
+router.post("/:courseId/revoke-access", protect, teacher, courseController.revokeCourseAccess);
+
 export default router;

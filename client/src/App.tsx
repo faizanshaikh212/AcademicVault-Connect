@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, Outlet } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
+import { RoleProvider } from "./contexts/RoleContext";
 
 // Page Imports
 import Home from "./pages/Home";
@@ -58,7 +59,6 @@ import AdminRoute from "./components/layout/AdminRoute";
 import AdminLayout from "./components/layout/AdminLayout";
 import TeacherRoute from "./components/layout/TeacherRoute";
 import TeacherLayout from "./components/layout/TeacherLayout";
-import TeacherNewsManagement from "./pages/teacher/NewsManagement";
 import TeacherNoticesManagement from "./pages/teacher/NoticesManagement";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import TeacherNotesManagement from "./pages/teacher/NotesManagement";
@@ -109,92 +109,93 @@ function App() {
   }
 
   return (
-    <div className="text-gray-800 dark:text-gray-200">
-      <CookieBanner />
-      <CookieSettingsModal />
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route element={<AdminRoute />}>
-          <Route path="/admin/*" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<UserManagement />} />
-            <Route path="premium-users" element={<PremiumUsersManagement />} />
-            <Route path="requests" element={<RoleRequests />} />
-            <Route path="premium-requests" element={<PremiumRequests />} />
-            <Route path="customer-care" element={<CustomerCare />} />
-            <Route path="content" element={<ContentManagement />} />
-            <Route path="news" element={<NewsManagement />} />
-            <Route path="news/new" element={<NewsForm />} />
-            <Route path="notices" element={<NoticeManagement />} />
-            <Route path="notices/new" element={<NewsForm />} />
-            <Route path="subscribers" element={<SubscriberList />} />
+    <RoleProvider>
+      <div className="text-gray-800 dark:text-gray-200">
+        <CookieBanner />
+        <CookieSettingsModal />
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/admin/*" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<UserManagement />} />
+              <Route path="premium-users" element={<PremiumUsersManagement />} />
+              <Route path="requests" element={<RoleRequests />} />
+              <Route path="premium-requests" element={<PremiumRequests />} />
+              <Route path="customer-care" element={<CustomerCare />} />
+              <Route path="content" element={<ContentManagement />} />
+              <Route path="news" element={<NewsManagement />} />
+              <Route path="news/new" element={<NewsForm />} />
+              <Route path="notices" element={<NoticeManagement />} />
+              <Route path="notices/new" element={<NewsForm />} />
+              <Route path="subscribers" element={<SubscriberList />} />
+            </Route>
           </Route>
-        </Route>
-        {/* Teacher Panel Routes */}
-        <Route element={<TeacherRoute />}>
-          <Route path="/teacher/*" element={<TeacherLayout />}>
-            <Route index element={<TeacherDashboard />} />
-            <Route path="news" element={<TeacherNewsManagement />} />
-            <Route path="notices" element={<TeacherNoticesManagement />} />
-            <Route path="notes" element={<TeacherNotesManagement />} />
-            <Route
-              path="question-papers"
-              element={<TeacherQuestionPapersManagement />}
-            />
-            <Route path="syllabus" element={<TeacherSyllabusManagement />} />
-            <Route
-              path="timetables"
-              element={<TeacherTimetablesManagement />}
-            />
-            <Route path="courses" element={<TeacherCourseManagement />} />
-            <Route path="students" element={<TeacherStudentManagement />} />
+          {/* Teacher Panel Routes */}
+          <Route element={<TeacherRoute />}>
+            <Route path="/teacher/*" element={<TeacherLayout />}>
+              <Route index element={<TeacherDashboard />} />
+              <Route path="notices" element={<TeacherNoticesManagement />} />
+              <Route path="notes" element={<TeacherNotesManagement />} />
+              <Route
+                path="question-papers"
+                element={<TeacherQuestionPapersManagement />}
+              />
+              <Route path="syllabus" element={<TeacherSyllabusManagement />} />
+              <Route
+                path="timetables"
+                element={<TeacherTimetablesManagement />}
+              />
+              <Route path="courses" element={<TeacherCourseManagement />} />
+              <Route path="students" element={<TeacherStudentManagement />} />
+            </Route>
           </Route>
-        </Route>
-        <Route element={<ProtectedRoute />}></Route>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Home />} />
-          <Route path="projects" element={<Projects />} />
-          <Route path="projects/:id" element={<ProjectDetail />} />
-          <Route path="blogs" element={<Blogs />} />
-          <Route path="blogs/:id" element={<BlogDetail />} />
-          <Route path="news" element={<News />} />
-          <Route path="news/:id" element={<NewsDetail />} />
-          <Route path="notices" element={<NoticesPage />} />
-          <Route path="notices/:id" element={<NoticeDetail />} />
-          <Route path="purpose" element={<OurPurpose />} />
-          <Route path="network" element={<OurNetwork />} />
+          <Route element={<ProtectedRoute />}></Route>
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<Home />} />
+            <Route path="projects" element={<Projects />} />
+            <Route path="projects/:id" element={<ProjectDetail />} />
+            <Route path="blogs" element={<Blogs />} />
+            <Route path="blogs/:id" element={<BlogDetail />} />
+            <Route path="news" element={<News />} />
+            <Route path="news/:id" element={<NewsDetail />} />
+            <Route path="notices" element={<NoticesPage />} />
+            <Route path="notices/:id" element={<NoticeDetail />} />
+            <Route path="purpose" element={<OurPurpose />} />
+            <Route path="network" element={<OurNetwork />} />
 
-          {/* Academic Resources Routes */}
-          <Route path="academic/notes" element={<AcademicNotes />} />
-          <Route path="academic/question-papers" element={<QuestionPapers />} />
-          <Route path="academic/syllabus" element={<Syllabus />} />
-          <Route path="academic/timetables" element={<Timetables />} />
+            {/* Academic Resources Routes */}
+            <Route path="academic/notes" element={<AcademicNotes />} />
+            <Route path="academic/question-papers" element={<QuestionPapers />} />
+            <Route path="academic/syllabus" element={<Syllabus />} />
+            <Route path="academic/timetables" element={<Timetables />} />
 
 
-          <Route path="profile/:username" element={<Profile />} />
-          <Route element={<ProtectedRoute />}>
-            <Route path="projects/new" element={<ProjectForm />} />
-            <Route path="projects/edit/:id" element={<ProjectForm />} />
-            <Route path="blogs/new" element={<BlogForm />} />
-            <Route path="blogs/edit/:id" element={<BlogForm />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="settings/sessions" element={<SessionsPage />} />
-            <Route path="request-teacher-role" element={<RoleRequest />} />
-            <Route path="request-premium" element={<RequestPremium />} />
-            <Route
-              path="notification-history"
-              element={<NotificationHistory />}
-            />
+            <Route path="profile/:username" element={<Profile />} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="projects/new" element={<ProjectForm />} />
+              <Route path="projects/edit/:id" element={<ProjectForm />} />
+              <Route path="blogs/new" element={<BlogForm />} />
+              <Route path="blogs/edit/:id" element={<BlogForm />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="settings/sessions" element={<SessionsPage />} />
+              <Route path="request-teacher-role" element={<RoleRequest />} />
+              <Route path="request-premium" element={<RequestPremium />} />
+              <Route
+                path="notification-history"
+                element={<NotificationHistory />}
+              />
+            </Route>
+            <Route path="/terms" element={<TermsAndConditions />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/about-us" element={<AboutUs />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
-          <Route path="/terms" element={<TermsAndConditions />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/contact" element={<ContactUs />} />
-          <Route path="/about-us" element={<AboutUs />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
-    </div>
+        </Routes>
+      </div>
+    </RoleProvider>
   );
 }
 

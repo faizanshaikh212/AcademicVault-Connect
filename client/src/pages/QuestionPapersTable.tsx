@@ -27,7 +27,7 @@ interface QuestionPapersByCategory {
 
 const QuestionPapersTable: React.FC = () => {
   const auth = useContext(AuthContext);
-  const isTeacher = auth?.user?.role?.includes("teacher");
+  const isTeacher = auth?.user?.role?.includes("teacher") || auth?.user?.role?.includes("admin");
 
   const [currentView, setCurrentView] = useState<
     "categories" | "courses" | "table"
@@ -370,7 +370,7 @@ const QuestionPapersTable: React.FC = () => {
           },
           ""
         );
-      } catch (e) {}
+      } catch (e) { }
       return;
     }
 
@@ -388,7 +388,7 @@ const QuestionPapersTable: React.FC = () => {
         },
         ""
       );
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const renderBreadcrumb = () => {
@@ -434,7 +434,7 @@ const QuestionPapersTable: React.FC = () => {
               },
               ""
             );
-          } catch (e) {}
+          } catch (e) { }
         },
       });
       if (selectedSemesterLabel)
@@ -764,17 +764,16 @@ const QuestionPapersTable: React.FC = () => {
                       placeholder="Search question papers by title, course, or tags..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && (() => {})}
+                      onKeyDown={(e) => e.key === "Enter" && (() => { })}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-                      showFilters
+                    className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${showFilters
                         ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300"
                         : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`}
+                      }`}
                   >
                     <Filter className="w-5 h-5" />
                     Filters
@@ -875,9 +874,8 @@ const QuestionPapersTable: React.FC = () => {
                 <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                   {searchResults === null
                     ? ""
-                    : `${searchResults.length} result${
-                        searchResults.length === 1 ? "" : "s"
-                      }`}
+                    : `${searchResults.length} result${searchResults.length === 1 ? "" : "s"
+                    }`}
                 </div>
               </div>
             </div>

@@ -42,6 +42,7 @@ import pageRoutes from "./routes/page.routes.js";
 import academicRoutes from "./routes/academic.routes.js";
 import courseRoutes from "./routes/course.routes.js";
 import studentRoutes from "./routes/student.routes.js";
+import debugRoutes from "./routes/debug.routes.js";
 
 // Load environment variables from .env file (for development only)
 dotenv.config();
@@ -81,6 +82,7 @@ app.use("/api", pageRoutes); // This includes /api/pages routes
 app.use("/api/academic", academicRoutes); // Academic resources routes
 app.use("/api/courses", courseRoutes); // Teacher course/semester/subject management
 app.use("/api/students", studentRoutes); // Teacher student management
+app.use("/api/debug", debugRoutes); // Debug endpoints (development only)
 
 // Import and use file routes
 import fileRoutes from "./routes/files.routes.js";

@@ -3,6 +3,7 @@ import { toast } from "react-hot-toast";
 import { BookOpen } from "lucide-react";
 import UploadZone from "../UploadZone";
 import coursesService from "../../../services/courses.service";
+import { useRole } from "../../../contexts/RoleContext";
 
 interface Props {
   initialValues?: any;
@@ -79,27 +80,31 @@ const AcademicNotesForm: React.FC<Props> = ({
   );
   const [academicYear, setAcademicYear] = useState(
     initialValues.academicYear ||
-      initialValues.year ||
-      new Date().getFullYear().toString()
+    initialValues.year ||
+    new Date().getFullYear().toString()
   );
-  const [type, setType] = useState(
-    initialValues.type ||
-      (initialValues.uploader?.role?.includes("teacher")
-        ? "Official"
-        : "Unofficial")
-  );
-  const [status, setStatus] = useState(() => {
-    // For edit mode, show current status from the database
+  const { shouldUseTeacherPrivileges, getAcademicNoteDefaults } = useRole();
+  const noteDefaults = getAcademicNoteDefaults();
+
+  const [type, setType] = useState(() => {
     if (!createMode) {
+      // For edit mode, use existing value
+      return initialValues.type || noteDefaults.type;
+    }
+    // For create mode, use role-based defaults
+    return noteDefaults.type;
+  });
+
+  const [status, setStatus] = useState(() => {
+    if (!createMode) {
+      // For edit mode, show current status from the database
       return (
         initialValues.status ||
         (initialValues.isApproved ? "Approved" : "In for Review")
       );
     }
-    // For create mode, default based on user role
-    return initialValues.uploader?.role?.includes("teacher")
-      ? "Approved"
-      : "In for Review";
+    // For create mode, use role-based defaults
+    return noteDefaults.status;
   });
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState(initialValues.fileUrl || "");
@@ -150,8 +155,8 @@ const AcademicNotesForm: React.FC<Props> = ({
           "course",
           String(
             (selectedCourse && (selectedCourse.title || selectedCourse.name)) ||
-              courseFallback ||
-              courseId
+            courseFallback ||
+            courseId
           )
         );
         if (selectedSemester)
@@ -159,8 +164,8 @@ const AcademicNotesForm: React.FC<Props> = ({
             "semester",
             String(
               selectedSemester.title ||
-                selectedSemester.name ||
-                selectedSemester.number
+              selectedSemester.name ||
+              selectedSemester.number
             )
           );
         if (selectedSubject)

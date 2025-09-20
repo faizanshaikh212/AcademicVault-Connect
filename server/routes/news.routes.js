@@ -189,7 +189,7 @@ newsRouter.get("/news/subscribers", [auth, admin], async (req, res) => {
   }
 });
 
-// Get all news (admin)
+// Get all news (admin only)
 newsRouter.get("/news/all", [auth, admin], async (req, res) => {
   try {
     const news = await News.find()

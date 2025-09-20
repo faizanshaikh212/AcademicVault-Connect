@@ -91,7 +91,7 @@ const QuestionPaperForm: React.FC<Props> = ({
       return initialValues.isApproved ? "Approved" : "In for Review";
     }
     // For create mode, default based on user role
-    return initialValues.uploader?.role?.includes("teacher")
+    return (initialValues.uploader?.role?.includes("teacher") || initialValues.uploader?.role?.includes("admin"))
       ? "Approved"
       : "In for Review";
   });
@@ -288,7 +288,7 @@ const QuestionPaperForm: React.FC<Props> = ({
           "course",
           String(
             (selectedCourse && (selectedCourse.title || selectedCourse.name)) ||
-              courseId
+            courseId
           )
         );
         fd.append(
@@ -298,7 +298,7 @@ const QuestionPaperForm: React.FC<Props> = ({
               (selectedSemester.title ||
                 selectedSemester.name ||
                 selectedSemester.number)) ||
-              semesterId
+            semesterId
           )
         );
         fd.append(
@@ -306,7 +306,7 @@ const QuestionPaperForm: React.FC<Props> = ({
           String(
             (selectedSubject &&
               (selectedSubject.title || selectedSubject.name)) ||
-              subjectId
+            subjectId
           )
         );
         fd.append("year", String(year));

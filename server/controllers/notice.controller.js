@@ -17,11 +17,14 @@ export const getPublishedNotices = async (req, res) => {
 // Get all notices (admin)
 export const getAllNotices = async (req, res) => {
   try {
+    console.log("Attempting to fetch all notices...");
     const notices = await Notice.find()
       .populate("author", "username")
       .sort({ createdAt: -1 });
+    console.log("Successfully fetched notices:", notices.length);
     res.json(notices);
   } catch (error) {
+    console.error("Error in getAllNotices:", error);
     res.status(500).json({ message: "Failed to fetch notices", error: error.message });
   }
 };

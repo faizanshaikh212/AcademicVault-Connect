@@ -241,7 +241,7 @@ const Navbar: React.FC = () => {
             </NavLink>
           )}
           {/* Conditionally render Teacher Panel link */}
-          {user && user.role.includes("teacher") && (
+          {user && (user.role.includes("teacher") || user.role.includes("admin")) && (
             <NavLink
               to="/teacher"
               className={({ isActive }) =>
@@ -346,27 +346,23 @@ const Navbar: React.FC = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={isRefreshing ? undefined : handleRefresh}
-                    className={`${
-                      isRefreshing ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
+                    className={`${isRefreshing ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                   >
                     <RotateCw
-                      className={`mr-2 h-4 w-4 ${
-                        isRefreshing ? "animate-spin" : ""
-                      }`}
+                      className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""
+                        }`}
                     />
                     <span>Refresh Page</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={isRelogging ? undefined : handleRelogin}
-                    className={`${
-                      isRelogging ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
+                    className={`${isRelogging ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                   >
                     <RefreshCcw
-                      className={`mr-2 h-4 w-4 ${
-                        isRelogging ? "animate-spin" : ""
-                      }`}
+                      className={`mr-2 h-4 w-4 ${isRelogging ? "animate-spin" : ""
+                        }`}
                     />
                     <span>Refresh Profile</span>
                   </DropdownMenuItem>
@@ -513,7 +509,7 @@ const Navbar: React.FC = () => {
                 </NavLink>
               )}
               {/* Conditionally render Teacher Panel link in mobile menu */}
-              {user && user.role.includes("teacher") && (
+              {user && (user.role.includes("teacher") || user.role.includes("admin")) && (
                 <NavLink
                   to="/teacher"
                   onClick={() => setIsMobileMenuOpen(false)}

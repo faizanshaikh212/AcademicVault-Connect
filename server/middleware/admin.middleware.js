@@ -1,3 +1,5 @@
+import { hasRole, logRoleCheck } from "../utils/roleUtils.js";
+
 /**
  * Admin Authorization Middleware Module
  * Protects admin-only routes by verifying admin role
@@ -22,26 +24,47 @@
  * 3. User's roles include "admin"
  */
 const admin = (req, res, next) => {
-  // Import logger if needed for debugging
-  // import logger from "../utils/logger.js";
+  const context = `${req.method} ${req.originalUrl}`;
 
-  // Uncomment these lines if you need to debug admin access
-  /*
-  if (req.user) {
-    logger.debug(
-      req.user.username,
-      "Is 'admin'?",
-      req.user.role.includes("admin")
-    );
-  } else {
-    logger.debug("No user object found on request.");
+  // Check if user exists and has role property
+  if (!req.user) {
+    logRoleCheck(null, [], 'admin', false, context + ' - No user object');
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required.",
+      error: "NO_USER_OBJECT"
+    });
   }
-  */
 
-  if (req.user && req.user.role && req.user.role.includes("admin")) {
+  if (!req.user.role) {
+    logRoleCheck(req.user._id, [], 'admin', false, context + ' - No role property');
+    return res.status(403).json({
+      success: false,
+      message: "User role information missing.",
+      error: "NO_ROLE_PROPERTY"
+    });
+  }
+
+  // Check if user has admin role
+  const hasAccess = hasRole(req.user.role, 'admin');
+
+  logRoleCheck(req.user._id, req.user.role, 'admin', hasAccess, context);
+
+  if (hasAccess) {
     next();
   } else {
-    res.status(403).json({ message: "Not authorized as an admin." });
+    res.status(403).json({
+      success: false,
+      message: "Not authorized as an admin.",
+      error: "INSUFFICIENT_PERMISSIONS",
+      requiredRole: "admin",
+      userRoles: req.user.role,
+      debug: process.env.NODE_ENV === 'development' ? {
+        userId: req.user._id,
+        endpoint: req.originalUrl,
+        timestamp: new Date().toISOString()
+      } : undefined
+    });
   }
 };
 

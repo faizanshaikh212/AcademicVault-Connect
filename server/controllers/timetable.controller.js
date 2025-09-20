@@ -717,9 +717,8 @@ export const toggleTimetableStatus = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: `Timetable ${
-        newStatus ? "activated" : "deactivated"
-      } successfully`,
+      message: `Timetable ${newStatus ? "activated" : "deactivated"
+        } successfully`,
       data: timetable,
     });
   } catch (error) {

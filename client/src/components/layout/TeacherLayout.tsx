@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 const teacherNavLinks = [
   { name: "Dashboard", href: "/teacher", icon: LayoutDashboard },
-  { name: "News Management", href: "/teacher/news", icon: Mail },
   { name: "Notice Management", href: "/teacher/notices", icon: Mail },
   { name: "Course Management", href: "/teacher/courses", icon: BookOpen },
   {
@@ -65,9 +64,7 @@ const TeacherLayout: React.FC = () => {
                 <li key={link.name}>
                   <NavLink
                     to={link.href}
-                    end={
-                      link.href === "/teacher" || link.href === "/teacher/news"
-                    }
+                    end={link.href === "/teacher"}
                     onClick={() => setIsSidebarOpen(false)}
                     className={({ isActive }) =>
                       cn(

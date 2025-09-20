@@ -7,6 +7,12 @@ import AcademicNote from "../models/academicNote.model.js";
 import fileStorageService from "../services/fileStorage.service.js";
 import multer from "multer";
 import { createNotification } from "./notification.controller.js";
+import {
+  shouldUseTeacherPrivileges,
+  shouldUseAdminPrivileges,
+  getAcademicNoteDefaults,
+  logRoleCheck
+} from "../utils/roleUtils.js";
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
@@ -289,50 +295,43 @@ export const uploadNote = async (req, res) => {
       fileSize = 0;
     }
 
-    // Determine status based on user role
-    console.log(
-      "DEBUG: uploadNote - user role:",
-      req.user.role,
-      "status param:",
-      status,
-      "type param:",
-      type
-    );
-    let noteStatus = status;
-    let isApproved = false;
+    // Determine status and type based on user role precedence
+    const userRoles = req.user.role || [];
+    const noteDefaults = getAcademicNoteDefaults(userRoles);
 
-    if (req.user.role && req.user.role.includes("teacher")) {
-      console.log(
-        "DEBUG: uploadNote - user is teacher, setting status to Approved"
-      );
-      // Teachers (regardless of other roles): can set status, default to Approved
-      noteStatus = status || "Approved";
+    logRoleCheck(
+      req.user._id,
+      userRoles,
+      'academic_note_upload',
+      true,
+      `Academic Note Upload - ${title}`
+    );
+
+    // Use provided values or defaults based on role precedence
+    let noteStatus = status || noteDefaults.status;
+    let noteType = type || noteDefaults.type;
+    let isApproved = noteDefaults.isApproved;
+
+    // If user has teacher privileges, they can override defaults
+    if (shouldUseTeacherPrivileges(userRoles)) {
+      // Teachers and admins can set custom status and type
+      if (status) noteStatus = status;
+      if (type) noteType = type;
       isApproved = noteStatus === "Approved";
     } else {
-      console.log(
-        "DEBUG: uploadNote - user is not teacher, setting status to In for Review"
-      );
-      // Non-teachers (students only): always "In for Review", never approved
+      // Students always get "In for Review" status and "Unofficial" type
       noteStatus = "In for Review";
+      noteType = "Unofficial";
       isApproved = false;
     }
 
-    // Set default type based on user role
-    let noteType = type;
-    if (!noteType) {
-      if (req.user.role && req.user.role.includes("teacher")) {
-        console.log("DEBUG: uploadNote - setting type to Official");
-        noteType = "Official";
-      } else {
-        console.log("DEBUG: uploadNote - setting type to Unofficial");
-        noteType = "Unofficial";
-      }
-    }
-
-    console.log("DEBUG: uploadNote - final values:", {
-      noteType,
-      noteStatus,
-      isApproved,
+    console.log("DEBUG: uploadNote - role precedence applied:", {
+      userRoles,
+      hasTeacherPrivileges: shouldUseTeacherPrivileges(userRoles),
+      hasAdminPrivileges: shouldUseAdminPrivileges(userRoles),
+      finalType: noteType,
+      finalStatus: noteStatus,
+      finalIsApproved: isApproved,
     });
 
     // Create note record
@@ -353,7 +352,7 @@ export const uploadNote = async (req, res) => {
       publicUrl: uploadedFile.publicUrl,
       downloadUrl: uploadedFile.downloadUrl,
       uploader: req.user._id,
-      isAdminUploaded: req.user.role.includes("admin"),
+      isAdminUploaded: shouldUseAdminPrivileges(userRoles),
       isApproved: isApproved,
     });
 
@@ -362,8 +361,8 @@ export const uploadNote = async (req, res) => {
     // Populate uploader info
     await note.populate("uploader", "firstName lastName username avatar");
 
-    // Create notification for admin if user upload
-    if (!req.user.role.includes("admin")) {
+    // Create notification for admin if non-admin upload
+    if (!shouldUseAdminPrivileges(userRoles)) {
       // Find all admins
       const User = (await import("../models/user.model.js")).default;
       const admins = await User.find({ role: "admin" });
@@ -605,9 +604,8 @@ export const rejectNote = async (req, res) => {
       recipient: note.uploader,
       sender: req.user._id,
       type: "academic_note_rejected",
-      message: `Your academic note "${note.title}" has been rejected. Reason: ${
-        reason || "No reason provided"
-      }`,
+      message: `Your academic note "${note.title}" has been rejected. Reason: ${reason || "No reason provided"
+        }`,
       link: "/academic/notes",
     });
 

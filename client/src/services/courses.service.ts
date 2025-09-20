@@ -55,6 +55,27 @@ const updateSubject = (id: string, payload: any) =>
   api.put(`/courses/subjects/${id}`, payload);
 const deleteSubject = (id: string) => api.delete(`/courses/subjects/${id}`);
 
+// Course sharing methods (kept for backward compatibility but not used in simple version)
+const shareCourse = (courseId: string, payload: { teacherId: string; permissions: string[] }) =>
+  api.post(`/courses/${courseId}/share`, payload);
+
+const unshareCourse = (courseId: string, payload: { teacherId: string }) =>
+  api.post(`/courses/${courseId}/unshare`, payload);
+
+const getTeachersForSharing = () => api.get(`/courses/teachers/list`);
+
+const transferOwnership = (courseId: string, payload: { newOwnerId: string }) =>
+  api.post(`/courses/${courseId}/transfer`, payload);
+
+// Course access management methods
+const getTeachersForAccess = () => api.get(`/courses/teachers`);
+
+const grantCourseAccess = (courseId: string, payload: { userId: string }) =>
+  api.post(`/courses/${courseId}/grant-access`, payload);
+
+const revokeCourseAccess = (courseId: string, payload: { userId: string }) =>
+  api.post(`/courses/${courseId}/revoke-access`, payload);
+
 export default {
   createCourse,
   listCourses,
@@ -71,4 +92,11 @@ export default {
   listMySubjectsForSemester,
   updateSubject,
   deleteSubject,
+  shareCourse,
+  unshareCourse,
+  transferOwnership,
+  getTeachersForSharing,
+  getTeachersForAccess,
+  grantCourseAccess,
+  revokeCourseAccess,
 };

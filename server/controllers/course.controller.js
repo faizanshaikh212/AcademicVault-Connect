@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import Course from "../models/course.model.js";
 import Semester from "../models/semester.model.js";
 import Subject from "../models/subject.model.js";
+import User from "../models/user.model.js";
+import { shouldUseAdminPrivileges } from "../utils/roleUtils.js";
 
 const isOwner = (doc, userId) =>
   doc && doc.creator && doc.creator.toString() === userId.toString();
@@ -82,12 +84,72 @@ const getAllCourses = async (req, res) => {
 
 const getCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ creator: req.user._id }).sort({
-      createdAt: -1,
+    // Get ALL courses with creator and sharedWith populated
+    const allCourses = await Course.find()
+      .populate('creator', 'firstName lastName username')
+      .populate('sharedWith.user', 'firstName lastName username')
+      .populate('sharedWith.grantedBy', 'firstName lastName username')
+      .sort({ createdAt: -1 });
+
+    // Add access control information to each course
+    const coursesWithAccess = allCourses.map(course => {
+      const courseObj = course.toObject();
+
+      // Check if user is admin using role utilities
+      const userRoles = req.user.roles || (req.user.role ? [req.user.role] : []);
+      const isAdmin = shouldUseAdminPrivileges(userRoles);
+
+      // Check if user is the creator
+      const isCreator = course.creator && course.creator._id.toString() === req.user._id.toString();
+
+      // Check if user has shared access (safely handle missing sharedWith field)
+      let hasSharedAccess = false;
+      try {
+        if (courseObj.sharedWith && Array.isArray(courseObj.sharedWith)) {
+          hasSharedAccess = courseObj.sharedWith.some(share => {
+            const userId = share.user?._id || share.user;
+            return userId && userId.toString() === req.user._id.toString();
+          });
+        }
+      } catch (shareErr) {
+        console.warn('Error checking shared access for course:', courseObj._id, shareErr.message);
+        hasSharedAccess = false;
+      }
+
+      // If course has no creator, assign current user as creator
+      if (!course.creator) {
+        courseObj.creator = {
+          _id: req.user._id,
+          firstName: req.user.firstName,
+          lastName: req.user.lastName,
+          username: req.user.username
+        };
+        // Update in database asynchronously
+        Course.findByIdAndUpdate(course._id, { creator: req.user._id }).catch(console.error);
+      }
+
+      // Ensure sharedWith is an array (for backward compatibility)
+      if (!courseObj.sharedWith) {
+        courseObj.sharedWith = [];
+      }
+
+      // Add access control flags
+      courseObj.userAccess = {
+        canEdit: isAdmin || isCreator || hasSharedAccess,
+        canDelete: isAdmin || isCreator, // Only owner/admin can delete
+        canManage: isAdmin || isCreator || hasSharedAccess,
+        canGrantAccess: isAdmin || isCreator, // Only owner/admin can grant access
+        isOwner: isCreator,
+        isAdmin: isAdmin,
+        hasSharedAccess: hasSharedAccess
+      };
+
+      return courseObj;
     });
-    res.json(courses);
+
+    res.json(coursesWithAccess);
   } catch (err) {
-    console.error(err);
+    console.error('Error in getCourses:', err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -140,8 +202,25 @@ const createSemester = async (req, res) => {
       return res.status(400).json({ message: "Title and course required" });
     const course = await Course.findById(courseId);
     if (!course) return res.status(404).json({ message: "Course not found" });
-    if (!isOwner(course, req.user._id))
-      return res.status(403).json({ message: "Not authorized" });
+
+    // Check if user has access to manage this course (admin, creator, or shared access)
+    const userRoles = req.user.roles || (req.user.role ? [req.user.role] : []);
+    const isAdmin = shouldUseAdminPrivileges(userRoles);
+    const isCreator = course.creator && course.creator.toString() === req.user._id.toString();
+
+    // Check if user has shared access
+    let hasSharedAccess = false;
+    if (course.sharedWith && Array.isArray(course.sharedWith)) {
+      hasSharedAccess = course.sharedWith.some(share => {
+        const userId = share.user?._id || share.user;
+        return userId && userId.toString() === req.user._id.toString();
+      });
+    }
+
+    const hasAccess = isAdmin || isCreator || hasSharedAccess;
+    if (!hasAccess) {
+      return res.status(403).json({ message: "Not authorized to create semesters for this course" });
+    }
     const semester = await Semester.create({
       title,
       course: courseId,
@@ -191,10 +270,50 @@ const getAllSemestersForCourse = async (req, res) => {
 const getSemestersForCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
-    const semesters = await Semester.find({
-      course: courseId,
-      creator: req.user._id,
-    }).sort({ createdAt: 1 });
+
+    // First check if user has access to this course
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // Check if user has access to this course (admin, creator, or shared access)
+    const userRoles = req.user.roles || (req.user.role ? [req.user.role] : []);
+    const isAdmin = shouldUseAdminPrivileges(userRoles);
+    const isCreator = course.creator && course.creator.toString() === req.user._id.toString();
+
+    // Check if user has shared access
+    let hasSharedAccess = false;
+    if (course.sharedWith && Array.isArray(course.sharedWith)) {
+      hasSharedAccess = course.sharedWith.some(share => {
+        const userId = share.user?._id || share.user;
+        return userId && userId.toString() === req.user._id.toString();
+      });
+    }
+
+    const hasAccess = isAdmin || isCreator || hasSharedAccess || !course.creator; // Allow access if no creator set
+
+    if (!hasAccess) {
+      return res.status(403).json({ message: "Not authorized to view this course's semesters" });
+    }
+
+    // Get all semesters for this course
+    let semesters = await Semester.find({ course: courseId }).sort({ createdAt: 1 });
+
+    // Update semesters without creator to have course creator as creator
+    if (semesters.length > 0) {
+      await Semester.updateMany(
+        {
+          course: courseId,
+          $or: [
+            { creator: { $exists: false } },
+            { creator: null }
+          ]
+        },
+        { creator: course.creator || req.user._id }
+      );
+    }
+
     res.json(semesters);
   } catch (err) {
     console.error(err);
@@ -252,8 +371,29 @@ const createSubject = async (req, res) => {
         .json({ message: "Title, semester and course required" });
     const sem = await Semester.findById(semId);
     if (!sem) return res.status(404).json({ message: "Semester not found" });
-    if (!isOwner(sem, req.user._id))
-      return res.status(403).json({ message: "Not authorized" });
+
+    // Check if user has access to the course
+    const course = await Course.findById(courseId);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    // Check if user has access to manage this course (admin, creator, or shared access)
+    const userRoles = req.user.roles || (req.user.role ? [req.user.role] : []);
+    const isAdmin = shouldUseAdminPrivileges(userRoles);
+    const isCreator = course.creator && course.creator.toString() === req.user._id.toString();
+
+    // Check if user has shared access
+    let hasSharedAccess = false;
+    if (course.sharedWith && Array.isArray(course.sharedWith)) {
+      hasSharedAccess = course.sharedWith.some(share => {
+        const userId = share.user?._id || share.user;
+        return userId && userId.toString() === req.user._id.toString();
+      });
+    }
+
+    const hasAccess = isAdmin || isCreator || hasSharedAccess;
+    if (!hasAccess) {
+      return res.status(403).json({ message: "Not authorized to create subjects for this course" });
+    }
     const subject = await Subject.create({
       title,
       code,
@@ -277,8 +417,31 @@ const deleteSubject = async (req, res) => {
       return res.status(400).json({ message: "Invalid subject id" });
     const subject = await Subject.findById(id);
     if (!subject) return res.status(404).json({ message: "Not found" });
-    if (!isOwner(subject, req.user._id))
-      return res.status(403).json({ message: "Not authorized" });
+
+    // Get the course to check permissions
+    const course = await Course.findById(subject.course);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    // Check if user has access to manage this course (admin, creator, or shared access)
+    const userRoles = req.user.roles || (req.user.role ? [req.user.role] : []);
+    const isAdmin = shouldUseAdminPrivileges(userRoles);
+    const isCourseCreator = course.creator && course.creator.toString() === req.user._id.toString();
+    const isSubjectCreator = isOwner(subject, req.user._id);
+
+    // Check if user has shared access to the course
+    let hasSharedAccess = false;
+    if (course.sharedWith && Array.isArray(course.sharedWith)) {
+      hasSharedAccess = course.sharedWith.some(share => {
+        const userId = share.user?._id || share.user;
+        return userId && userId.toString() === req.user._id.toString();
+      });
+    }
+
+    const hasAccess = isAdmin || isCourseCreator || isSubjectCreator || hasSharedAccess;
+    if (!hasAccess) {
+      return res.status(403).json({ message: "Not authorized to delete this subject" });
+    }
+
     await Subject.findByIdAndDelete(id);
     res.json({ message: "Deleted" });
   } catch (err) {
@@ -323,12 +486,45 @@ const getAllSubjectsForSemester = async (req, res) => {
 const getSubjectsForSemester = async (req, res) => {
   try {
     const { semesterId } = req.params;
-    const subjects = await Subject.find({
-      semester: semesterId,
-      creator: req.user._id,
-    }).sort({ createdAt: -1 });
+
+    // First get the semester to find the course
+    const semester = await Semester.findById(semesterId);
+    if (!semester) {
+      return res.status(404).json({ message: "Semester not found" });
+    }
+
+    // Then check if user has access to the course
+    const course = await Course.findById(semester.course);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // Check if user has access to this course (admin, creator, or shared access)
+    const userRoles = req.user.roles || (req.user.role ? [req.user.role] : []);
+    const isAdmin = shouldUseAdminPrivileges(userRoles);
+    const isCreator = course.creator && course.creator.toString() === req.user._id.toString();
+
+    // Check if user has shared access
+    let hasSharedAccess = false;
+    if (course.sharedWith && Array.isArray(course.sharedWith)) {
+      hasSharedAccess = course.sharedWith.some(share => {
+        const userId = share.user?._id || share.user;
+        return userId && userId.toString() === req.user._id.toString();
+      });
+    }
+
+    const hasAccess = isAdmin || isCreator || hasSharedAccess || !course.creator;
+
+    if (!hasAccess) {
+      return res.status(403).json({ message: "Not authorized to view this semester's subjects" });
+    }
+
+    // Get all subjects for this semester
+    const subjects = await Subject.find({ semester: semesterId }).sort({ createdAt: -1 });
+
     res.json(subjects);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
@@ -337,11 +533,154 @@ const updateSubject = async (req, res) => {
   try {
     const subject = await Subject.findById(req.params.id);
     if (!subject) return res.status(404).json({ message: "Not found" });
-    if (!isOwner(subject, req.user._id))
-      return res.status(403).json({ message: "Not authorized" });
+
+    // Get the course to check permissions
+    const course = await Course.findById(subject.course);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    // Check if user has access to manage this course (admin, creator, or shared access)
+    const userRoles = req.user.roles || (req.user.role ? [req.user.role] : []);
+    const isAdmin = shouldUseAdminPrivileges(userRoles);
+    const isCourseCreator = course.creator && course.creator.toString() === req.user._id.toString();
+    const isSubjectCreator = isOwner(subject, req.user._id);
+
+    // Check if user has shared access to the course
+    let hasSharedAccess = false;
+    if (course.sharedWith && Array.isArray(course.sharedWith)) {
+      hasSharedAccess = course.sharedWith.some(share => {
+        const userId = share.user?._id || share.user;
+        return userId && userId.toString() === req.user._id.toString();
+      });
+    }
+
+    const hasAccess = isAdmin || isCourseCreator || isSubjectCreator || hasSharedAccess;
+    if (!hasAccess) {
+      return res.status(403).json({ message: "Not authorized to update this subject" });
+    }
+
     Object.assign(subject, req.body);
     await subject.save();
     res.json(subject);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// Course Access Management
+const getTeachersForAccess = async (req, res) => {
+  try {
+    // Find all users who have teacher role (can have other roles too)
+    const teachers = await User.find({
+      $or: [
+        { role: "teacher" },
+        { roles: { $in: ["teacher"] } }
+      ]
+    }).select('firstName lastName username email').sort({ firstName: 1, lastName: 1 });
+
+    res.json(teachers);
+  } catch (err) {
+    console.error('Error in getTeachersForAccess:', err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+const grantCourseAccess = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // Check if user has permission to grant access (owner or admin)
+    const userRoles = req.user.roles || (req.user.role ? [req.user.role] : []);
+    const isAdmin = shouldUseAdminPrivileges(userRoles);
+    const isOwner = course.creator && course.creator.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ message: "Not authorized to grant access to this course" });
+    }
+
+    // Initialize sharedWith if it doesn't exist
+    if (!course.sharedWith) {
+      course.sharedWith = [];
+    }
+
+    // Check if user already has access
+    const existingAccess = course.sharedWith.find(share => share.user.toString() === userId);
+    if (existingAccess) {
+      return res.status(400).json({ message: "User already has access to this course" });
+    }
+
+    // Add user to shared access
+    course.sharedWith.push({
+      user: userId,
+      grantedBy: req.user._id,
+      grantedAt: new Date()
+    });
+
+    await course.save();
+
+    // Return updated course with populated shared users
+    const updatedCourse = await Course.findById(courseId)
+      .populate('creator', 'firstName lastName username')
+      .populate('sharedWith.user', 'firstName lastName username')
+      .populate('sharedWith.grantedBy', 'firstName lastName username');
+
+    res.json(updatedCourse);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+const revokeCourseAccess = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // Check if user has permission to revoke access (owner or admin)
+    const userRoles = req.user.roles || (req.user.role ? [req.user.role] : []);
+    const isAdmin = shouldUseAdminPrivileges(userRoles);
+    const isOwner = course.creator && course.creator.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ message: "Not authorized to revoke access to this course" });
+    }
+
+    // Initialize sharedWith if it doesn't exist
+    if (!course.sharedWith) {
+      course.sharedWith = [];
+    }
+
+    // Remove user from shared access
+    course.sharedWith = course.sharedWith.filter(share => share.user.toString() !== userId);
+
+    await course.save();
+
+    // Return updated course with populated shared users
+    const updatedCourse = await Course.findById(courseId)
+      .populate('creator', 'firstName lastName username')
+      .populate('sharedWith.user', 'firstName lastName username')
+      .populate('sharedWith.grantedBy', 'firstName lastName username');
+
+    res.json(updatedCourse);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error", error: err.message });
@@ -364,4 +703,7 @@ export default {
   getSubjectsForSemester,
   updateSubject,
   deleteSubject,
+  getTeachersForAccess,
+  grantCourseAccess,
+  revokeCourseAccess,
 };

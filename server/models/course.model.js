@@ -20,6 +20,23 @@ const courseSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    // Users who have been granted access to manage this course
+    sharedWith: [{
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+      },
+      grantedAt: {
+        type: Date,
+        default: Date.now
+      },
+      grantedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+      }
+    }],
     metadata: { type: Object },
   },
   { timestamps: true }

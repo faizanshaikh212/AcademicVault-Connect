@@ -5,6 +5,7 @@
 
 import React from "react";
 import { useAuth } from "../../hooks/useAuth";
+import { useRole } from "../../contexts/RoleContext";
 import {
   Eye,
   Edit,
@@ -50,6 +51,7 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
   isTeacher = false,
 }) => {
   const { user } = useAuth();
+  const { shouldUseTeacherPrivileges, shouldUseAdminPrivileges } = useRole();
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -170,11 +172,10 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
                 Status:
               </span>
               <span
-                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                  timetable.isActive
-                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                    : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
-                }`}
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${timetable.isActive
+                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                  : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+                  }`}
               >
                 {timetable.isActive ? (
                   <>
@@ -203,11 +204,14 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
   const noteStatus = resourceType === "notes" ? (resource as any).status : null;
 
   // Check visibility based on status
+  const hasTeacherPrivileges = shouldUseTeacherPrivileges();
+  const hasAdminPrivileges = shouldUseAdminPrivileges();
+
   const isDisapprovedNote =
     resourceType === "notes" &&
     noteStatus === "Disapproved" &&
-    !isTeacher &&
-    !isAdmin;
+    !hasTeacherPrivileges &&
+    !hasAdminPrivileges;
   const isInReviewNote =
     resourceType === "notes" && noteStatus === "In for Review";
 
@@ -221,11 +225,11 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
       className={`bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700 overflow-hidden ${
         // Gray out disapproved notes for teachers/admins
         resourceType === "notes" &&
-        noteStatus === "Disapproved" &&
-        (isTeacher || isAdmin)
+          noteStatus === "Disapproved" &&
+          (hasTeacherPrivileges || hasAdminPrivileges)
           ? "opacity-60 grayscale"
           : ""
-      }`}
+        }`}
     >
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
@@ -241,11 +245,10 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
               {/* Show type for notes */}
               {resourceType === "notes" && (resource as any).type && (
                 <span
-                  className={`text-xs font-medium px-2 py-1 rounded-full ${
-                    (resource as any).type === "Official"
-                      ? "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900"
-                      : "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-900"
-                  }`}
+                  className={`text-xs font-medium px-2 py-1 rounded-full ${(resource as any).type === "Official"
+                    ? "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900"
+                    : "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-900"
+                    }`}
                 >
                   {(resource as any).type}
                 </span>
@@ -253,13 +256,12 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
               {/* Show status for notes */}
               {resourceType === "notes" && noteStatus && (
                 <span
-                  className={`text-xs font-medium px-2 py-1 rounded-full ${
-                    noteStatus === "Approved"
-                      ? "text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900"
-                      : noteStatus === "In for Review"
+                  className={`text-xs font-medium px-2 py-1 rounded-full ${noteStatus === "Approved"
+                    ? "text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900"
+                    : noteStatus === "In for Review"
                       ? "text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900"
                       : "text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900"
-                  }`}
+                    }`}
                 >
                   {noteStatus}
                 </span>
@@ -316,18 +318,17 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
           <div className="flex items-center gap-2">
             {resource.uploader &&
-            ((resource.uploader as any).avatar ||
-              (resource.uploader as any).profile?.avatar ||
-              (resource.uploader as any).profile?.avatarUrl) ? (
+              ((resource.uploader as any).avatar ||
+                (resource.uploader as any).profile?.avatar ||
+                (resource.uploader as any).profile?.avatarUrl) ? (
               <img
                 src={
                   (resource.uploader as any).avatar ||
                   (resource.uploader as any).profile?.avatar ||
                   (resource.uploader as any).profile?.avatarUrl
                 }
-                alt={`${resource.uploader.firstName || ""} ${
-                  resource.uploader.lastName || ""
-                }`}
+                alt={`${resource.uploader.firstName || ""} ${resource.uploader.lastName || ""
+                  }`}
                 className="w-8 h-8 rounded-full object-cover"
               />
             ) : (
@@ -393,11 +394,10 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
                   toast.error("Error opening file");
                 }
               }}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 text-white rounded-lg transition-colors duration-200 relative ${
-                isInReviewNote
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 text-white rounded-lg transition-colors duration-200 relative ${isInReviewNote
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+                }`}
               disabled={isInReviewNote}
             >
               <Eye className="w-4 h-4" />
@@ -410,8 +410,8 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
               )}
             </button>
             {/* Show Edit button for admin, teacher, or resource owner */}
-            {(isAdmin ||
-              isTeacher ||
+            {(hasAdminPrivileges ||
+              hasTeacherPrivileges ||
               (user && resource.uploader._id === user._id)) &&
               onEdit && (
                 <button
@@ -423,7 +423,7 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
                 </button>
               )}
             {/* Show Delete button for admin or resource owner */}
-            {(isAdmin || (user && resource.uploader._id === user._id)) &&
+            {(hasAdminPrivileges || (user && resource.uploader._id === user._id)) &&
               onDelete && (
                 <button
                   onClick={() => onDelete(resource)}
