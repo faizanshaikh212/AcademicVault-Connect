@@ -1,0 +1,23 @@
+%%{init: { 'theme': 'default' }}%%
+flowchart TB
+  %% Compact vertical layout
+  U["User"] -->|POST /auth/login| Auth["Auth Ctrl"]
+  Auth -->|validate| Users[(Users)]
+  Auth -->|create session| Sessions[(Sessions)]
+  Auth -->|issue tokens| Tokens[(Tokens)]
+  Tokens -->|store refresh| Client["Client App"]
+
+  Client -->|call| Protected["Protected API"]
+  Protected -->|refresh| Refresh["/auth/refresh"]
+  Refresh -->|verify| Sessions
+  Refresh -->|rotate| Sessions
+  Refresh -->|return| Client
+
+  Logout["Logout"] -->|revoke| Sessions
+  Sessions -->|revoke| Users
+
+  subgraph DriveOAuth[Google Drive OAuth]
+    Auth -->|Google OAuth| OAuth["OAuth Flow"]
+    OAuth -->|store| UserToken[(UserToken)]
+    UserToken -->|used by| Drive[(Drive API)]
+  end

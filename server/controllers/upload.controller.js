@@ -85,30 +85,70 @@ const uploadFile = async (req, res) => {
     }
 
     // For avatar uploads, Cloudinary will automatically handle the 1:1 aspect ratio
-    // and GIF animation based on premium status in cloudinary.js config
+    // and GIF animation based on premium status in cloudinary.js config.
+    // Support two flows:
+    // 1) multer-storage-cloudinary: multer has already uploaded the file to Cloudinary
+    //    and `req.file` contains cloud upload metadata (e.g., path/secure_url, filename/public_id)
+    // 2) memoryStorage: `req.file.buffer` exists and we upload via fileStorageService (which now uploads images to Cloudinary)
 
     const fileStorageService = (
       await import("../services/fileStorage.service.js")
     ).default;
 
-    // Upload the file using local storage service
-    const uploadResult = await fileStorageService.uploadFile(
-      req.file.buffer,
-      req.file.originalname,
-      req.file.mimetype,
-      "uploads", // general category for regular uploads
-      {}
-    );
+    let uploadResult;
+
+    // Detect if multer-storage-cloudinary uploaded the file already
+    const cloudUrl =
+      req.file.path || req.file.secure_url || req.file.url || req.file.location;
+    const cloudPublicId =
+      req.file.filename || req.file.public_id || req.file.originalname;
+
+    if (cloudUrl) {
+      // Build a normalized response similar to fileStorageService
+      const publicUrl = cloudUrl;
+      const downloadUrl = cloudUrl;
+      const fileId = cloudPublicId
+        ? `cloudinary:${cloudPublicId}`
+        : `cloudinary:${Date.now()}`;
+
+      uploadResult = {
+        fileId,
+        fileName:
+          req.file.originalname ||
+          req.file.name ||
+          req.file.originalname ||
+          "file",
+        fileSize: req.file.size || 0,
+        mimeType: req.file.mimetype || "image",
+        publicUrl,
+        downloadUrl,
+        storageType: "cloudinary",
+        raw: req.file,
+      };
+    } else if (req.file && req.file.buffer) {
+      // Fallback: original flow — upload via fileStorageService (handles images -> Cloudinary)
+      const result = await fileStorageService.uploadFile(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype,
+        "uploads",
+        {}
+      );
+      uploadResult = result;
+    } else {
+      return res.status(400).json({ message: "No file data available" });
+    }
 
     res.status(200).json({
       message: "File uploaded successfully.",
       filePath: uploadResult.publicUrl,
-      fileType: req.file.mimetype,
-      originalName: req.file.originalname,
-      fileSize: req.file.size,
+      fileType: uploadResult.mimeType || req.file.mimetype,
+      originalName: req.file.originalname || uploadResult.fileName,
+      fileSize: uploadResult.fileSize || req.file.size,
       isAvatar: req.path.includes("avatar"),
       downloadUrl: uploadResult.downloadUrl,
       embedUrl: uploadResult.embedUrl,
+      storageType: uploadResult.storageType,
     });
   } catch (error) {
     logger.error("Upload error:", error);

@@ -24,7 +24,12 @@ const TeacherQuestionPapersManagement: React.FC = () => {
       return {
         data: response.data.map((item: any) => ({
           ...item,
-          academicYear: item.academicYear || "N/A",
+          // Prefer explicit academicYear, fall back to examYear (string) if present
+          academicYear:
+            item.academicYear ||
+            (item.examYear !== undefined && item.examYear !== null
+              ? String(item.examYear)
+              : "N/A"),
           tags: item.tags || [],
         })),
         pagination: response.pagination,
@@ -47,7 +52,12 @@ const TeacherQuestionPapersManagement: React.FC = () => {
       return {
         data: response.data.map((item: any) => ({
           ...item,
-          academicYear: item.academicYear || "N/A",
+          // Prefer explicit academicYear, fall back to examYear (string) if present
+          academicYear:
+            item.academicYear ||
+            (item.examYear !== undefined && item.examYear !== null
+              ? String(item.examYear)
+              : "N/A"),
           tags: item.tags || [],
         })),
         pagination: response.pagination,

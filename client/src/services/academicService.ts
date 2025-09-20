@@ -159,6 +159,33 @@ export const questionPapersService = {
     data: Partial<QuestionPaperUploadForm>
   ): Promise<AcademicResourceResponse<QuestionPaper>> {
     const response = await api.put(`/academic/question-papers/${id}`, data);
+    // After updating, fetch the authoritative resource from the server and
+    // dispatch it to ensure all listeners receive the canonical, up-to-date
+    // document (some server-side processing may modify fields).
+    try {
+      const fresh = await api.get(`/academic/question-papers/${id}`);
+      const resource = fresh?.data?.data || response.data?.data;
+      if (typeof window !== "undefined" && window.dispatchEvent) {
+        window.dispatchEvent(
+          new CustomEvent("questionPaper:updated", {
+            detail: { id, resource },
+          })
+        );
+      }
+    } catch (e) {
+      // fallback: still dispatch whatever the PUT returned
+      try {
+        if (typeof window !== "undefined" && window.dispatchEvent) {
+          window.dispatchEvent(
+            new CustomEvent("questionPaper:updated", {
+              detail: { id, resource: response.data?.data },
+            })
+          );
+        }
+      } catch (e2) {
+        /* ignore */
+      }
+    }
     return response.data;
   },
 
@@ -167,6 +194,15 @@ export const questionPapersService = {
     id: string
   ): Promise<AcademicResourceResponse<null>> {
     const response = await api.delete(`/academic/question-papers/${id}`);
+    try {
+      if (typeof window !== "undefined" && window.dispatchEvent) {
+        window.dispatchEvent(
+          new CustomEvent("questionPaper:updated", { detail: { id } })
+        );
+      }
+    } catch (e) {
+      // ignore
+    }
     return response.data;
   },
 

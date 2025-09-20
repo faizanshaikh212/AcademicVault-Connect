@@ -56,7 +56,7 @@ const ContactUs: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full min-h-screen bg-gray-900">
+    <div className="relative w-full min-h-screen bg-gray-900 pt-10">
       <Particles
         className="absolute inset-0 z-0"
         particleCount={100}

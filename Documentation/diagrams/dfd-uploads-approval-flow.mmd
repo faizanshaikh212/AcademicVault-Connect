@@ -1,0 +1,22 @@
+%%{init: { 'theme': 'default' }}%%
+flowchart TD
+  User["User (Uploader)"] -->|POST /api/uploads| UploadAPI["Upload Controller (Server)"]
+  UploadAPI -->|store temp| TempStore[(Temp Storage / Buffer)]
+  UploadAPI -->|upload file| GoogleDrive[(Google Drive)]
+  GoogleDrive -->|returns fileId, urls| UploadAPI
+  UploadAPI -->|create metadata| ContentDB[(MongoDB Content Collection)]
+  ContentDB -->|status: pending| AdminQueue[(Admin Review Queue)]
+
+  Admin["Admin Reviewer"] -->|GET pending| AdminUI["Admin UI / Controller"]
+  AdminUI -->|approve/reject| AdminAPI["Admin Controller"]
+  AdminAPI -->|update| ContentDB
+  AdminAPI -->|notify uploader| Notification[(Notifications Collection & Push)]
+
+  subgraph NotesModel[Notes / Models]
+    NotesNode["Notes / Papers / Timetables Model"]
+  end
+  UploadAPI --> NotesNode
+  AdminAPI --> NotesNode
+
+  %% Auto-approve when isAdminUploaded
+  UploadAPI -->|if isAdminUploaded:true| ContentDB

@@ -1,0 +1,15 @@
+%%{init: { 'theme': 'default' }}%%
+flowchart TB
+  %% Level 0 - System Context
+  ExternalUser["External User"] -->|Uses web client / mobile| WebClient["Client (React/Vite)"]
+  WebClient -->|HTTP / WebSocket| Server["Academic Vault API (Node/Express)"]
+  Server -->|Reads/Writes| Mongo[(MongoDB)]
+  Server -->|Uploads/Downloads| GoogleDrive[(Google Drive)]
+  Server -->|Stores/Retrieves images| Cloudinary[(Cloudinary)]
+  Server -->|Sends emails/notifications| EmailService[(Email / Push Service)]
+
+  %% Note about server
+  note right of Server
+    Primary runtime: Node.js
+    Main storage: MongoDB via Mongoose
+  end note

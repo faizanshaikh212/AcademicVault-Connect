@@ -39,6 +39,8 @@ const ProjectForm: React.FC = (): JSX.Element => {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [screenshotUrlInput, setScreenshotUrlInput] = useState("");
+  const [isValidScreenshotUrl, setIsValidScreenshotUrl] = useState(false);
 
   useEffect(() => {
     if (isEditMode) {
@@ -99,6 +101,99 @@ const ProjectForm: React.FC = (): JSX.Element => {
 
     setFormData({ ...formData, [name]: value });
     setError(null);
+  };
+
+  /**
+   * Handles uploading one or more screenshots and appending their URLs to form state
+   */
+  const handleScreenshotsUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const isPremium = user?.premium?.isPremium;
+    const MAX_FILE_SIZE = isPremium ? 20 * 1024 * 1024 : 5 * 1024 * 1024;
+
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      // Upload files sequentially to avoid overloading the server
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.size > MAX_FILE_SIZE) {
+          setError(
+            isPremium
+              ? "One of the files exceeds 20MB limit for premium users"
+              : "One of the files exceeds 5MB limit for basic users"
+          );
+          continue;
+        }
+        if (file.type === "image/gif" && !isPremium) {
+          setError("Please upgrade to premium to use animated GIF images.");
+          continue;
+        }
+        const allowedTypes = [
+          "image/jpeg",
+          "image/jpg",
+          "image/png",
+          "image/gif",
+        ];
+        if (!allowedTypes.includes(file.type)) {
+          setError("Please upload only JPEG, JPG, PNG, or GIF images.");
+          continue;
+        }
+
+        const uploadData = new FormData();
+        uploadData.append("file", file);
+
+        const { data } = await api.post("/upload", uploadData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        if (data.filePath) {
+          setFormData((prev) => ({
+            ...prev,
+            screenshots: [...prev.screenshots, data.filePath],
+          }));
+        }
+      }
+    } catch (err: any) {
+      console.error("Screenshots upload error:", err);
+      setError(err.response?.data?.message || "Screenshot upload failed.");
+    } finally {
+      // Reset input so same file can be re-selected in future
+      if (e.target) e.target.value = "";
+      setIsUploading(false);
+    }
+  };
+
+  const handleAddScreenshotUrl = () => {
+    const url = screenshotUrlInput.trim();
+    if (!url) return;
+    // basic validation for image URL
+    const isImage = /(https?:\/\/.+\.(jpg|jpeg|png|gif)(\?.*)?$)/i.test(url);
+    if (!isImage) {
+      setIsValidScreenshotUrl(false);
+      setError(
+        "Please enter a valid image URL (jpg, jpeg, png, gif). Use a direct image link."
+      );
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      screenshots: [...prev.screenshots, url],
+    }));
+    setScreenshotUrlInput("");
+    setIsValidScreenshotUrl(false);
+    setError(null);
+  };
+
+  const handleRemoveScreenshot = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      screenshots: prev.screenshots.filter((_, i) => i !== index),
+    }));
   };
 
   /**
@@ -359,6 +454,136 @@ const ProjectForm: React.FC = (): JSX.Element => {
             value={formData.projectLink}
             onChange={handleInputChange}
           />
+        </div>
+
+        {/* Screenshots Section */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Screenshots</label>
+
+          {/* File uploader on its own row so it doesn't compete with the URL field */}
+          <div className="mb-3">
+            <Input
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/gif"
+              onChange={handleScreenshotsUpload}
+              multiple
+              disabled={isUploading}
+              className="w-full"
+              aria-label="Upload screenshot images"
+            />
+          </div>
+
+          {/* URL input row: full width input + compact controls */}
+          <div className="mb-2">
+            <label htmlFor="screenshotUrl" className="sr-only">
+              Screenshot image URL
+            </label>
+            <div className="flex gap-2 items-start">
+              <Input
+                id="screenshotUrl"
+                name="screenshotUrl"
+                value={screenshotUrlInput}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setScreenshotUrlInput(val);
+                  const isImage =
+                    /(https?:\/\/.+\.(jpg|jpeg|png|gif)(\?.*)?$)/i.test(
+                      val.trim()
+                    );
+                  setIsValidScreenshotUrl(isImage);
+                  if (isImage) setError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (isValidScreenshotUrl) handleAddScreenshotUrl();
+                  }
+                }}
+                placeholder="Paste a direct image URL (jpg, png, gif)"
+                className="flex-1 min-w-0"
+                aria-label="Screenshot image URL"
+                aria-describedby="screenshot-url-help"
+              />
+
+              <div className="flex-shrink-0 flex flex-col items-end gap-2">
+                {screenshotUrlInput && isValidScreenshotUrl && (
+                  <div className="w-20 h-12">
+                    <img
+                      src={screenshotUrlInput}
+                      alt="Screenshot preview"
+                      className="w-full h-full object-cover rounded"
+                      onError={() => setIsValidScreenshotUrl(false)}
+                    />
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={handleAddScreenshotUrl}
+                    disabled={!isValidScreenshotUrl}
+                  >
+                    Add
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setScreenshotUrlInput("");
+                      setIsValidScreenshotUrl(false);
+                      setError(null);
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <p id="screenshot-url-help" className="text-xs text-gray-500 mt-1">
+              You can upload images or paste a direct image URL and press Enter
+              / Add.
+            </p>
+          </div>
+
+          {isUploading && (
+            <p className="text-sm text-blue-500 mt-2">
+              Uploading screenshots...
+            </p>
+          )}
+
+          {formData.screenshots && formData.screenshots.length > 0 && (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {formData.screenshots.map((ss, index) => (
+                <div key={index} className="relative">
+                  <img
+                    src={ss}
+                    alt={`Screenshot ${index + 1}`}
+                    className="h-24 w-full object-cover rounded"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => handleRemoveScreenshot(index)}
+                    className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full"
+                    size="icon"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div>
           <label

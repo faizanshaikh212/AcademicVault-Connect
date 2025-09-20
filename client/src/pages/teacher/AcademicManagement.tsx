@@ -14,6 +14,7 @@ import AcademicResourceForm from "../../components/shared/AcademicResourceForm";
 import ResourceEditModal from "../../components/shared/ResourceEditModal";
 import { academicUtils } from "../../services/academicService";
 import coursesService from "../../services/courses.service";
+import { questionPapersService } from "../../services/academicService";
 
 interface AcademicResource {
   _id: string;
@@ -100,6 +101,96 @@ const AcademicManagementNew: React.FC<AcademicManagementProps> = ({
     approvalFilter,
     sortValue,
   ]);
+
+  // Listen for external updates to question papers so this management view
+  // refreshes when a paper is edited elsewhere in the app (e.g. from
+  // SubjectTableView or public QuestionPapers page).
+  useEffect(() => {
+    const onExternalUpdate = async (evt: any) => {
+      try {
+        const id = evt?.detail?.id;
+        if (evt?.detail?.resource) {
+          // Normalize the incoming resource so the management table fields
+          // (which expect academicYear/year as strings) render correctly.
+          const raw = evt.detail.resource;
+          const updated: any = {
+            ...raw,
+            academicYear:
+              raw.academicYear ||
+              (raw.examYear !== undefined && raw.examYear !== null
+                ? String(raw.examYear)
+                : undefined) ||
+              raw.academicYear,
+            year:
+              raw.year ||
+              (raw.examYear !== undefined && raw.examYear !== null
+                ? String(raw.examYear)
+                : raw.year),
+          };
+
+          setResources((prev) => {
+            const found = prev.find((p) => p._id === updated._id);
+            if (found)
+              return prev.map((p) => (p._id === updated._id ? updated : p));
+            return [updated, ...prev];
+          });
+          // Also refetch authoritative list to avoid any shape/mapping mismatch
+          // (ensure teacher management shows the latest server-side fields)
+          try {
+            await fetchResources();
+          } catch (e) {
+            /* ignore */
+          }
+          return;
+        }
+        if (id) {
+          // Try to fetch the single updated resource using the canonical service
+          try {
+            const r = await questionPapersService.getQuestionPaperById(id);
+            let updated: any = r?.data || null;
+            if (updated) {
+              // normalize numeric fields into the site's AcademicResource shape
+              updated = {
+                ...updated,
+                academicYear:
+                  updated.academicYear ||
+                  (updated.examYear ? String(updated.examYear) : undefined) ||
+                  updated.academicYear,
+                year:
+                  updated.year ||
+                  (updated.examYear ? String(updated.examYear) : undefined),
+              };
+            }
+            if (updated) {
+              setResources((prev) => {
+                const found = prev.find((p) => p._id === updated._id);
+                if (found) {
+                  return prev.map((p) => (p._id === updated._id ? updated : p));
+                }
+                // If not present (e.g. newly approved), add at top
+                return [updated, ...prev];
+              });
+              return;
+            }
+          } catch (e) {
+            // if single fetch fails, fall through to full refetch
+          }
+        }
+        // fallback: full refresh
+        fetchResources();
+      } catch (e) {
+        // ignore
+        fetchResources();
+      }
+    };
+    window.addEventListener("questionPaper:updated", onExternalUpdate as any);
+    return () =>
+      window.removeEventListener(
+        "questionPaper:updated",
+        onExternalUpdate as any
+      );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchResources = async () => {
     try {
@@ -325,11 +416,28 @@ const AcademicManagementNew: React.FC<AcademicManagementProps> = ({
   };
 
   const handleDelete = async (resource: AcademicResource) => {
-    if (!confirm(`Delete "${resource.title}"?`)) return;
+    const safeTitle =
+      resource?.title ||
+      resource?.fileUrl ||
+      resource?.publicUrl ||
+      "this item";
+    if (!confirm(`Delete "${safeTitle}"?`)) return;
     try {
       await service.delete(resource._id);
       setResources((p) => p.filter((r) => r._id !== resource._id));
-      toast.success("Deleted");
+      // dispatch a global update so other views can refresh
+      try {
+        if (typeof window !== "undefined" && window.dispatchEvent) {
+          window.dispatchEvent(
+            new CustomEvent("questionPaper:updated", {
+              detail: { id: resource._id },
+            })
+          );
+        }
+      } catch (e) {
+        /* ignore */
+      }
+      toast.success("Deleted successfully");
     } catch (err) {
       console.error(err);
       toast.error("Delete failed");
@@ -664,7 +772,7 @@ const AcademicManagementNew: React.FC<AcademicManagementProps> = ({
                 </thead>
 
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {resources.map((r) => {
+                  {resources.map((r, idx) => {
                     // Try canonical fields first, then try to infer from title when missing
                     const clean = (v: any) =>
                       v === undefined ||
@@ -713,7 +821,12 @@ const AcademicManagementNew: React.FC<AcademicManagementProps> = ({
                     const rType = r.timetableType || r.type || "-";
                     return (
                       <tr
-                        key={r._id}
+                        key={
+                          r._id ??
+                          `resource-${idx}-${String(
+                            (r && (r.title || r.academicYear)) || idx
+                          ).replace(/\s+/g, "-")}`
+                        }
                         className="hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
                         {resourceType === "questionPapers" && (

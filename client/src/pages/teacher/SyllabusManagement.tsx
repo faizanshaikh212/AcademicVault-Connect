@@ -24,7 +24,11 @@ const TeacherSyllabusManagement: React.FC = () => {
       return {
         data: response.data.map((item: any) => ({
           ...item,
-          academicYear: item.academicYear || "N/A",
+          academicYear:
+            item.academicYear ||
+            (item.examYear !== undefined && item.examYear !== null
+              ? String(item.examYear)
+              : "N/A"),
           tags: item.tags || [],
         })),
         pagination: response.pagination,
@@ -47,7 +51,11 @@ const TeacherSyllabusManagement: React.FC = () => {
       return {
         data: response.data.map((item: any) => ({
           ...item,
-          academicYear: item.academicYear || "N/A",
+          academicYear:
+            item.academicYear ||
+            (item.examYear !== undefined && item.examYear !== null
+              ? String(item.examYear)
+              : "N/A"),
           tags: item.tags || [],
         })),
         pagination: response.pagination,

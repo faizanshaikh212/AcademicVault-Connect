@@ -318,13 +318,39 @@ const QuestionPaperForm: React.FC<Props> = ({
 
         await onSubmit(fd);
       } else {
-        const payload = {
+        // For edit mode, include both the raw IDs and the human-readable
+        // course/semester/subject strings so the server's update handler
+        // (which updates the string fields `course`, `semester`, `subject`)
+        // receives the correct values. This prevents stale display in
+        // management views which rely on those string fields.
+        const selectedCourse = courses.find((c) => c._id === courseId);
+        const selectedSemester = semesters.find((s) => s._id === semesterId);
+        const selectedSubject = subjects.find((s) => s._id === subjectId);
+
+        const payload: any = {
           courseId,
           semesterId,
           subjectId,
           year,
           month,
           status,
+          // human-readable fallbacks
+          course:
+            (selectedCourse && (selectedCourse.title || selectedCourse.name)) ||
+            courseId,
+          semester:
+            (selectedSemester &&
+              (selectedSemester.title ||
+                selectedSemester.name ||
+                selectedSemester.number)) ||
+            semesterId,
+          subject:
+            (selectedSubject &&
+              (selectedSubject.title || selectedSubject.name)) ||
+            subjectId,
+          // Keep examYear in sync with 'year' to update canonical examYear used
+          // by various views (management lists prefer examYear)
+          examYear: year,
         };
         await onSubmit(payload);
       }

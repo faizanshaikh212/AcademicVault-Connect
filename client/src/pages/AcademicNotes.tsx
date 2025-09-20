@@ -117,6 +117,21 @@ const AcademicNotes: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
+  // Apply filters immediately when any filter changes
+  useEffect(() => {
+    const newParams: NotesSearchParams = {
+      ...searchParams,
+      page: 1,
+      keyword: searchQuery || undefined,
+      course: selectedCourse || undefined,
+      subject: selectedSubject || undefined,
+      semester: selectedSemester || undefined,
+      academicYear: selectedYear || undefined,
+    };
+    setSearchParams(newParams);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCourse, selectedSubject, selectedSemester, selectedYear]);
+
   const handleClearFilters = () => {
     setSearchQuery("");
     setSelectedCourse("");

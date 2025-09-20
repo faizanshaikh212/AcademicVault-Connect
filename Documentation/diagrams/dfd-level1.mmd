@@ -1,0 +1,35 @@
+%%{init: { 'theme': 'default' }}%%
+flowchart TB
+  subgraph CLIENT[Client]
+    U["User (Browser / Mobile)"]
+    U -->|requests| C["UI Components (React)"]
+  end
+
+  subgraph API[Server - Academic Vault API]
+    A["Auth & Sessions"]
+    B["Content Management (Notes, Papers, Timetables)"]
+    C1["Search & Indexing"]
+    D["Notifications & Social"]
+    E["Admin / Approval"]
+  end
+
+  subgraph DATA[Data Stores]
+    DB[(MongoDB)]
+    GD[(Google Drive / External File Storage)]
+    CL[(Cloudinary)]
+  end
+
+  U -->|login| A
+  U -->|upload/search| B
+  U -->|search| C1
+  A --> DB
+  B --> DB
+  B -->|file upload/download| GD
+  A -->|store tokens| DB
+  A -->|use OAuth| GD
+  D -->|send images| CL
+  E -->|approve/reject| DB
+  C1 -->|text search| DB
+
+  classDef external fill:#f9f;stroke:#333;stroke-width:1px
+  class GD,CL external

@@ -9,6 +9,8 @@ interface Props {
   degreeType: string;
   course: string;
   initialSelectedSemester?: string;
+  // Optional key that parent can bump to force re-fetch of semesters/papers
+  refreshKey?: number;
   // onSemesterSelect will receive raw semester id and human label: (rawId, label)
   onSemesterSelect?: (rawId: string, label: string) => void;
   onView?: (paper: any) => void;
@@ -20,6 +22,7 @@ const SemesterView: React.FC<Props> = ({
   degreeType,
   course,
   initialSelectedSemester,
+  refreshKey,
   onSemesterSelect,
   onView,
   onEdit,
@@ -103,7 +106,6 @@ const SemesterView: React.FC<Props> = ({
             );
           const data = qpRes?.data || {};
 
-
           if (data && typeof data === "object" && !Array.isArray(data)) {
             const mapped: Record<string, QuestionPaper[]> = {};
             Object.keys(data).forEach((k) => {
@@ -137,8 +139,6 @@ const SemesterView: React.FC<Props> = ({
                 papersByRawIdMap[semesterName] = mapped[semesterName];
               });
             }
-
-
           } else {
             if (mounted) setPapersBySemester({});
           }
@@ -153,7 +153,7 @@ const SemesterView: React.FC<Props> = ({
     return () => {
       mounted = false;
     };
-  }, [degreeType, course]);
+  }, [degreeType, course, refreshKey]);
 
   // Keep internal selectedSemester in sync when parent changes initialSelectedSemester (deselect/select)
   useEffect(() => {
@@ -229,26 +229,7 @@ const SemesterView: React.FC<Props> = ({
     subjectsByRawId[raw].push(...(subjectsBySemester[k] || []));
   });
 
-  // Helper to resolve papers for a selected key (supports raw id or human label)
-  const resolvePapersForKey = (key: string) => {
-    if (!key) return [];
-    // direct match
-    if (papersByRawId[key]) return papersByRawId[key];
-    // if key matches a human label in idToLabel, try that
-    const label = idToLabel[key];
-    if (label && papersByRawId[label]) return papersByRawId[label];
-    // if papersBySemester had keys that match label, return them
-    if (papersBySemester && papersBySemester[key]) return papersBySemester[key];
-    // fallback: try find key where idToLabel[id] === key
-    const matchKey = Object.keys(idToLabel).find((id) => idToLabel[id] === key);
-    if (matchKey && papersByRawId[matchKey]) return papersByRawId[matchKey];
-    // lastly, search keys ignoring case
-    const foundKey = Object.keys(papersByRawId).find(
-      (k) => k.toLowerCase() === key.toLowerCase()
-    );
-    if (foundKey) return papersByRawId[foundKey];
-    return [];
-  };
+  // (no-op) papers resolved via papersByRawId/idToLabel maps above; helper removed to avoid unused symbol
 
   // selectedSemester holds raw id (String(s._id) or raw key)
   const handleSemesterClick = (rawId: string) => {
@@ -288,8 +269,6 @@ const SemesterView: React.FC<Props> = ({
       }
     });
 
-
-
     return (
       <SubjectTableView
         // SubjectTableView expects keys to be strings; we provide the human label as the displayed semester but
@@ -312,7 +291,7 @@ const SemesterView: React.FC<Props> = ({
         {semesters.length === 0 ? (
           // If no semesters are defined, show semesters from the question papers directly
           Object.keys(papersBySemester).length > 0 ? (
-            Object.keys(papersBySemester).map((semesterName, idx) => (
+            Object.keys(papersBySemester).map((semesterName) => (
               <div
                 key={semesterName}
                 onClick={() => handleSemesterClick(semesterName)}
@@ -326,7 +305,8 @@ const SemesterView: React.FC<Props> = ({
                     {semesterName}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {papersBySemester[semesterName]?.length || 0} papers available
+                    {papersBySemester[semesterName]?.length || 0} papers
+                    available
                   </p>
                 </div>
               </div>
@@ -334,7 +314,9 @@ const SemesterView: React.FC<Props> = ({
           ) : (
             <div className="col-span-full text-center text-gray-600 dark:text-gray-400">
               <p>No semesters or question papers found for this course.</p>
-              <p className="text-sm mt-2">Make sure papers are uploaded and approved by admin.</p>
+              <p className="text-sm mt-2">
+                Make sure papers are uploaded and approved by admin.
+              </p>
             </div>
           )
         ) : (

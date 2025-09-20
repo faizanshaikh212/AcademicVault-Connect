@@ -119,6 +119,19 @@ const SyllabusPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
+  // Apply filters immediately when filter selects change
+  useEffect(() => {
+    setSearchParams((prev) => ({
+      ...prev,
+      page: 1,
+      keyword: searchQuery || undefined,
+      course: selectedCourse || undefined,
+      academicYear: selectedYear || undefined,
+      semester: selectedSemester || undefined,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCourse, selectedYear, selectedSemester]);
+
   const handleClearFilters = () => {
     setSearchQuery("");
     setSelectedCourse("");

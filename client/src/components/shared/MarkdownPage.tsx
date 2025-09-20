@@ -15,7 +15,7 @@ const MarkdownPage: React.FC<MarkdownPageProps> = ({
 }) => {
   return (
     <div
-      className={cn("container mx-auto px-4 py-8 max-w-7xl pt-12", className)}
+      className={cn("container mx-auto px-4 py-8 max-w-7xl pt-30", className)}
     >
       <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">
         {title}

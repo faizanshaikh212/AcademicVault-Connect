@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useContext } from "react";
-import { FileText } from "lucide-react";
+import { FileText, Search, Filter } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { QuestionPaper } from "../types/academic";
 import { questionPapersService } from "../services/academicService";
@@ -14,7 +14,7 @@ import QuestionPapersEditModal from "../components/shared/QuestionPapersEditModa
 import CategoriesView from "../components/questionpapers/CategoriesView";
 import CoursesView from "../components/questionpapers/CoursesView";
 import SemesterView from "../components/questionpapers/SemesterView";
-import AdvancedSearch from "../components/shared/AdvancedSearch";
+import SubjectTableView from "../components/questionpapers/SubjectTableView";
 import coursesService from "../services/courses.service";
 
 interface QuestionPapersByCategory {
@@ -53,6 +53,7 @@ const QuestionPapersTable: React.FC = () => {
     null
   );
   const [searchLoading, setSearchLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [filterCourses, setFilterCourses] = useState<string[]>([]);
   const [filterSemesters, setFilterSemesters] = useState<string[]>([]);
@@ -527,8 +528,12 @@ const QuestionPapersTable: React.FC = () => {
         const res: any = await coursesService.listCourses();
         if (!mounted) return;
         const items: any[] = res?.data || [];
-        const courseNames = items.map(
-          (c: any) => c.name || c.title || c.course || c
+        const courseNames = items.map((c: any) =>
+          String(
+            c && (c.name || c.title || c.course)
+              ? c.name || c.title || c.course
+              : c
+          )
         );
         setFilterCourses(courseNames);
       } catch (err) {
@@ -553,7 +558,13 @@ const QuestionPapersTable: React.FC = () => {
         );
         if (!mounted) return;
         const items: any[] = res?.data || [];
-        const sems = items.map((s: any) => s.name || s.semester || s);
+        const sems = items.map((s: any) =>
+          String(
+            s && (s.title || s.name || s.semester)
+              ? s.title || s.name || s.semester
+              : s
+          )
+        );
         setFilterSemesters(sems);
       } catch (err) {
         // ignore
@@ -610,32 +621,20 @@ const QuestionPapersTable: React.FC = () => {
   const renderSearchResults = () => {
     if (searchResults === null) return null;
 
-    const highlightMatches = (text: string, query: string) => {
-      if (!query) return text;
-      const q = query.toLowerCase();
-      const parts: Array<string | JSX.Element> = [];
-      let idx = 0;
-      const lower = text.toLowerCase();
-      while (true) {
-        const found = lower.indexOf(q, idx);
-        if (found === -1) {
-          parts.push(text.substring(idx));
-          break;
-        }
-        if (found > idx) parts.push(text.substring(idx, found));
-        const match = text.substring(found, found + q.length);
-        parts.push(
-          <mark
-            key={`${found}-${idx}`}
-            className="bg-yellow-200 dark:bg-yellow-600 text-black"
-          >
-            {match}
-          </mark>
-        );
-        idx = found + q.length;
-      }
-      return parts;
-    };
+    // When we have a non-null searchResults array, transform it into the
+    // structure expected by SubjectTableView (papers grouped by semester), and
+    // render SubjectTableView so users see subject-level tables instead of
+    // individual cards. This also keeps behavior consistent with the
+    // non-searching 'table' view.
+    const papersBySemester: { [semester: string]: QuestionPaper[] } = {};
+    (searchResults || []).forEach((p) => {
+      // Prefer explicit semester label fields if available, fall back to
+      // `semester` or `General`.
+      const sem = (p as any).semesterLabel || (p as any).semester || "General";
+      const key = String(sem || "General");
+      if (!papersBySemester[key]) papersBySemester[key] = [];
+      papersBySemester[key].push(p);
+    });
 
     return (
       <div className="space-y-4">
@@ -647,49 +646,17 @@ const QuestionPapersTable: React.FC = () => {
         ) : searchResults.length === 0 ? (
           <div className="text-gray-600">No results found</div>
         ) : (
-          <div
-            ref={resultsRef}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4"
-          >
-            {searchResults.map((paper, i) => (
-              <div
-                key={paper._id}
-                className={`rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700 ${
-                  focusedIndex === i
-                    ? "ring-2 ring-blue-400 dark:ring-blue-300"
-                    : "bg-white dark:bg-gray-800"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {highlightMatches(paper.title || "", searchQuery)}
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {highlightMatches(
-                        `${paper.degreeType} • ${paper.course} • ${
-                          paper.semester || "General"
-                        } • ${paper.examYear}`,
-                        searchQuery
-                      )}
-                    </div>
-                    {paper.description && (
-                      <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                        {highlightMatches(paper.description, searchQuery)}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleViewPaper(paper)}
-                      className="text-blue-600 hover:underline"
-                    >
-                      View
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div ref={resultsRef} className="">
+            {/* Directly render SubjectTableView with the grouped search results
+                so users see subject-level tables matching their filters/queries. */}
+            <SubjectTableView
+              papersBySemester={papersBySemester}
+              subjectsBySemester={{}}
+              subjectsIdMap={{}}
+              onView={handleViewPaper}
+              onEdit={isTeacher ? handleEditPaper : undefined}
+              currentUserId={auth?.user?._id}
+            />
           </div>
         )}
       </div>
@@ -697,7 +664,44 @@ const QuestionPapersTable: React.FC = () => {
   };
 
   const handlePaperUpdate = () => {
+    // Refresh the current course/semester listing
     fetchPapers();
+    // bump refresh key so SemesterView re-fetches its data when mounted
+    setRefreshKey((r) => r + 1);
+    // If the user is currently viewing search results, refresh that list as well
+    if (searchResults !== null) {
+      (async () => {
+        try {
+          const params: any = { keyword: searchQuery || undefined, limit: 200 };
+          if (selectedCourseFilter) params.course = selectedCourseFilter;
+          if (selectedSemesterFilter) params.semester = selectedSemesterFilter;
+          const res = await questionPapersService.getAllQuestionPapers(params);
+          const papers: QuestionPaper[] = Array.isArray(res.data)
+            ? res.data
+            : (res.data as any) || [];
+          setSearchResults(papers);
+        } catch (err) {
+          console.error("Search refresh failed:", err);
+        }
+      })();
+    }
+    // Notify other parts of the app that a question paper has been updated so
+    // they can refresh their own lists (teacher management, etc.).
+    try {
+      window.dispatchEvent(new CustomEvent("questionPaper:updated", {}));
+    } catch (e) {
+      // ignore
+    }
+    try {
+      // include id so listeners can refetch a single authoritative resource if needed
+      window.dispatchEvent(
+        new CustomEvent("questionPaper:updated", {
+          detail: { id: selectedPaper?._id },
+        })
+      );
+    } catch (e) {
+      // ignore
+    }
   };
 
   return (
@@ -723,10 +727,10 @@ const QuestionPapersTable: React.FC = () => {
         />
       )}
 
-      <div className="relative z-10 pt-25">
+      <div className="relative z-10">
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {/* back button removed (history navigation is handled via popstate and breadcrumb) */}
@@ -745,71 +749,136 @@ const QuestionPapersTable: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
-          {/* Search Bar (Advanced) */}
-          <div className="mb-4 flex items-start justify-between">
-            <div className="flex-1">
-              <AdvancedSearch
-                title="Question Papers"
-                searchQuery={searchQuery}
-                onSearchChange={(v) => setSearchQuery(v)}
-                onSearch={() => {
-                  /* immediate search handled by effect */
-                }}
-                showFilters={showFilters}
-                setShowFilters={setShowFilters}
-                filtersNode={
-                  showFilters ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Course
-                        </label>
-                        <select
-                          value={selectedCourseFilter}
-                          onChange={(e) =>
-                            setSelectedCourseFilter(e.target.value)
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        >
-                          <option value="">All Courses</option>
-                          {filterCourses.map((course) => (
-                            <option key={course} value={course}>
-                              {course}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Semester
-                        </label>
-                        <select
-                          value={selectedSemesterFilter}
-                          onChange={(e) =>
-                            setSelectedSemesterFilter(e.target.value)
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        >
-                          <option value="">All Semesters</option>
-                          {filterSemesters.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  ) : null
-                }
-              />
-              <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                {searchResults === null
-                  ? ""
-                  : `${searchResults.length} result${
-                      searchResults.length === 1 ? "" : "s"
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Search Bar (Advanced) inside a white card to match other academic pages */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+            <div className="mb-4 flex items-start justify-between">
+              <div className="flex-1">
+                {/* Search bar styled like AcademicNotes/Syllabus */}
+                <div className="flex gap-4 mb-2">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      placeholder="Search question papers by title, course, or tags..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (() => {})}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
+                      showFilters
+                        ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300"
+                        : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                     }`}
+                  >
+                    <Filter className="w-5 h-5" />
+                    Filters
+                  </button>
+                  <button
+                    onClick={() => {
+                      /* immediate search handled by effect */
+                    }}
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  >
+                    Search
+                  </button>
+                </div>
+
+                {/* Filters node (keeps original controls) */}
+                {showFilters ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Course
+                      </label>
+                      <select
+                        value={selectedCourseFilter}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setSelectedCourseFilter(v);
+                          // navigate to table view for selected course
+                          if (v) {
+                            // choose course and trigger SemesterView
+                            setSelectedCourse(v);
+                            setCurrentView("table");
+                            setSearchResults(null);
+                            setSelectedSemester(null);
+                            setSelectedSemesterLabel(null);
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="">All Courses</option>
+                        {filterCourses.map((course, idx) => (
+                          <option
+                            key={`${String(course)}-${idx}`}
+                            value={course}
+                          >
+                            {course}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Semester
+                      </label>
+                      <select
+                        value={selectedSemesterFilter}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setSelectedSemesterFilter(v);
+                          if (v) {
+                            // when semester selected, ensure course is selected and show semester view
+                            setCurrentView("table");
+                            setSelectedSemester(v);
+                            setSelectedSemesterLabel(v);
+                            setSearchResults(null);
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="">All Semesters</option>
+                        {filterSemesters.map((s, idx) => (
+                          <option key={`${String(s)}-${idx}`} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="md:col-span-2 flex justify-end items-end">
+                      <button
+                        onClick={() => {
+                          setSelectedCourseFilter("");
+                          setSelectedSemesterFilter("");
+                          // reset search results and navigation
+                          setSearchResults(null);
+                          setCurrentView("categories");
+                          setSelectedCourse("");
+                          setSelectedSemester(null);
+                          setSelectedSemesterLabel(null);
+                        }}
+                        className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                  {searchResults === null
+                    ? ""
+                    : `${searchResults.length} result${
+                        searchResults.length === 1 ? "" : "s"
+                      }`}
+                </div>
               </div>
             </div>
           </div>
@@ -856,6 +925,7 @@ const QuestionPapersTable: React.FC = () => {
                       <SemesterView
                         degreeType={selectedDegreeType}
                         course={selectedCourse}
+                        refreshKey={refreshKey}
                         initialSelectedSemester={selectedSemester || undefined}
                         onSemesterSelect={handleSemesterSelect}
                         onView={handleViewPaper}

@@ -210,9 +210,11 @@ const SubjectTableView: React.FC<Props> = ({
                             <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider border border-gray-300 dark:border-gray-600">
                               Month
                             </th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider border border-gray-300 dark:border-gray-600">
-                              Type
-                            </th>
+                            {isTeacher && (
+                              <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider border border-gray-300 dark:border-gray-600">
+                                Status
+                              </th>
+                            )}
                             <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider border border-gray-300 dark:border-gray-600">
                               Actions
                             </th>
@@ -240,11 +242,63 @@ const SubjectTableView: React.FC<Props> = ({
                                   (paper as any).examMonth ||
                                   "-"}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-center border border-gray-300 dark:border-gray-600">
-                                <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs font-medium rounded-full">
-                                  {paper.examType || "Final"}
-                                </span>
-                              </td>
+                              {isTeacher && (
+                                <td className="px-4 py-4 whitespace-nowrap text-center border border-gray-300 dark:border-gray-600">
+                                  {(() => {
+                                    const status =
+                                      (paper as any).status ||
+                                      (paper as any).approvalStatus;
+                                    const mapLabel = (s: any) => {
+                                      if (!s)
+                                        return (
+                                          (paper as any).examType || "Final"
+                                        );
+                                      const t = String(s).toLowerCase();
+                                      if (t === "approved") return "Approved";
+                                      if (
+                                        t === "pending" ||
+                                        t === "in_review" ||
+                                        t === "in-review"
+                                      )
+                                        return "In review";
+                                      if (
+                                        t === "rejected" ||
+                                        t === "disapproved"
+                                      )
+                                        return "Disapproved";
+                                      return String(s);
+                                    };
+                                    const label = mapLabel(status);
+                                    const colorClass = (() => {
+                                      const s = String(
+                                        status || ""
+                                      ).toLowerCase();
+                                      if (s === "approved")
+                                        return "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200";
+                                      if (
+                                        s === "pending" ||
+                                        s === "in_review" ||
+                                        s === "in-review"
+                                      )
+                                        return "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200";
+                                      if (
+                                        s === "rejected" ||
+                                        s === "disapproved"
+                                      )
+                                        return "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200";
+                                      return "bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200";
+                                    })();
+
+                                    return (
+                                      <span
+                                        className={`px-2 py-1 ${colorClass} text-xs font-medium rounded-full`}
+                                      >
+                                        {label}
+                                      </span>
+                                    );
+                                  })()}
+                                </td>
+                              )}
                               <td className="px-4 py-4 whitespace-nowrap text-center border border-gray-300 dark:border-gray-600">
                                 <div className="flex items-center justify-center space-x-3">
                                   <button

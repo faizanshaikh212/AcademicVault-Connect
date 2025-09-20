@@ -7,11 +7,13 @@
 
 import express from "express";
 import multer from "multer";
+import { storage as cloudinaryStorage } from "../config/cloudinary.js";
 import { uploadFile } from "../controllers/upload.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+// Use multer-storage-cloudinary so uploads stream directly to Cloudinary for these endpoints
+const upload = multer({ storage: cloudinaryStorage });
 
 /**
  * @route POST /api/upload
