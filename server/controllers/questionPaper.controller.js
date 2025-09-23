@@ -65,13 +65,14 @@ export const getAllQuestionPapers = async (req, res) => {
     if (isApproved !== undefined) {
       query.isApproved = isApproved === "true";
     } else {
-      // Default to showing approved items only for public access
-      // If user is authenticated, include their own uploads (so teachers see their unapproved uploads)
-      if (req.user && req.user._id) {
-        query.$or = [{ isApproved: true }, { uploader: req.user._id }];
-      } else {
+      // For admin/teacher users, show all by default. For others, show approved only
+      if (
+        !req.user ||
+        (!req.user.role.includes("admin") && !req.user.role.includes("teacher"))
+      ) {
         query.isApproved = true;
       }
+      // Admin/teacher users see all question papers by default (no isApproved filter)
     }
 
     // Flexible regex/OR search across common fields (supports short queries)
@@ -482,10 +483,10 @@ export const updateQuestionPaper = async (req, res) => {
       });
     }
 
-    // Check permissions
+    // Check permissions - teachers and admins can update any question paper
     if (
       !req.user.role.includes("admin") &&
-      questionPaper.uploader.toString() !== req.user._id.toString()
+      !req.user.role.includes("teacher")
     ) {
       return res.status(403).json({
         success: false,
@@ -591,10 +592,10 @@ export const deleteQuestionPaper = async (req, res) => {
       });
     }
 
-    // Check permissions
+    // Check permissions - teachers and admins can delete any question paper
     if (
       !req.user.role.includes("admin") &&
-      questionPaper.uploader.toString() !== req.user._id.toString()
+      !req.user.role.includes("teacher")
     ) {
       return res.status(403).json({
         success: false,

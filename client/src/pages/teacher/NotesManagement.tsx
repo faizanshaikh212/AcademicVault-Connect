@@ -14,14 +14,13 @@ const TeacherNotesManagement: React.FC = () => {
     "my-notes"
   );
 
-  // Service for teacher's own notes
+  // Service for all notes (teachers can manage all notes)
   const myNotesService = {
     getAll: async (params?: any) => {
-      // Get only approved notes uploaded by this teacher
+      // Get all notes for teachers to manage
       const response = await notesService.getAllNotes({
         ...params,
-        uploader: user?._id,
-        isApproved: "true",
+        // Removed uploader filter - teachers can see all notes
       });
       return response;
     },
@@ -48,7 +47,7 @@ const TeacherNotesManagement: React.FC = () => {
   };
 
   const tabs = [
-    { id: "my-notes", label: "My Notes", service: myNotesService },
+    { id: "my-notes", label: "All Notes", service: myNotesService },
     { id: "pending", label: "Pending Review", service: pendingService },
   ];
 
@@ -61,11 +60,10 @@ const TeacherNotesManagement: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id
+                ? "bg-blue-600 text-white"
+                : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
             >
               {tab.label}
               {tab.id === "pending" && (
@@ -86,7 +84,7 @@ const TeacherNotesManagement: React.FC = () => {
               key={tab.id}
               resourceType="notes"
               title={
-                tab.id === "my-notes" ? "My Academic Notes" : "Pending Notes"
+                tab.id === "my-notes" ? "All Academic Notes" : "Pending Notes"
               }
               service={tab.service}
             />

@@ -407,10 +407,10 @@ export const updateNote = async (req, res) => {
       });
     }
 
-    // Check permissions
+    // Check permissions - teachers and admins can update any note
     if (
       !req.user.role.includes("admin") &&
-      note.uploader.toString() !== req.user._id.toString()
+      !req.user.role.includes("teacher")
     ) {
       return res.status(403).json({
         success: false,
@@ -498,10 +498,10 @@ export const deleteNote = async (req, res) => {
       });
     }
 
-    // Check permissions
+    // Check permissions - teachers and admins can delete any note
     if (
       !req.user.role.includes("admin") &&
-      note.uploader.toString() !== req.user._id.toString()
+      !req.user.role.includes("teacher")
     ) {
       return res.status(403).json({
         success: false,

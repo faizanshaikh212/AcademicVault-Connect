@@ -12,14 +12,13 @@ const TeacherSyllabusManagement: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"my" | "pending">("my");
 
-  // Service for teacher's own syllabi
+  // Service for all syllabi (teachers can manage all syllabi)
   const mySyllabusService = {
     getAll: async (params?: any) => {
-      // Get only approved syllabi uploaded by this teacher
+      // Get all syllabi for teachers to manage
       const response = await syllabusService.getAllSyllabus({
         ...params,
-        uploader: user?._id,
-        isApproved: "true",
+        // Removed uploader filter - teachers can see all syllabi
       });
       return {
         data: response.data.map((item: any) => ({
@@ -68,7 +67,7 @@ const TeacherSyllabusManagement: React.FC = () => {
   };
 
   const tabs = [
-    { id: "my", label: "My Syllabi", count: null },
+    { id: "my", label: "All Syllabi", count: null },
     { id: "pending", label: "Pending Review", count: null },
   ];
 
@@ -92,11 +91,10 @@ const TeacherSyllabusManagement: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as "my" | "pending")}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === tab.id
-                  ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
+                }`}
             >
               {tab.label}
               {tab.count !== null && tab.count > 0 && (
@@ -113,7 +111,7 @@ const TeacherSyllabusManagement: React.FC = () => {
       {activeTab === "my" && (
         <AcademicManagement
           resourceType="syllabus"
-          title="My Syllabi"
+          title="All Syllabi"
           service={mySyllabusService}
         />
       )}

@@ -454,10 +454,10 @@ export const updateTimetable = async (req, res) => {
       });
     }
 
-    // Check permissions
+    // Check permissions - teachers and admins can update any timetable
     if (
       !req.user.role.includes("admin") &&
-      timetable.uploader.toString() !== req.user._id.toString()
+      !req.user.role.includes("teacher")
     ) {
       return res.status(403).json({
         success: false,
@@ -589,10 +589,10 @@ export const deleteTimetable = async (req, res) => {
       });
     }
 
-    // Check permissions
+    // Check permissions - teachers and admins can delete any timetable
     if (
       !req.user.role.includes("admin") &&
-      timetable.uploader.toString() !== req.user._id.toString()
+      !req.user.role.includes("teacher")
     ) {
       return res.status(403).json({
         success: false,

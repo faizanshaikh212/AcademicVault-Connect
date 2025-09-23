@@ -62,8 +62,14 @@ export const getAllSyllabus = async (req, res) => {
     if (isApproved !== undefined) {
       query.isApproved = isApproved === "true";
     } else {
-      // Default to showing approved items only for public access
-      query.isApproved = true;
+      // For admin/teacher users, show all by default. For others, show approved only
+      if (
+        !req.user ||
+        (!req.user.role.includes("admin") && !req.user.role.includes("teacher"))
+      ) {
+        query.isApproved = true;
+      }
+      // Admin/teacher users see all syllabus by default (no isApproved filter)
     }
 
     // Flexible keyword search (accept both `search` and `keyword`) and perform
@@ -350,10 +356,10 @@ export const updateSyllabus = async (req, res) => {
       });
     }
 
-    // Check permissions
+    // Check permissions - teachers and admins can update any syllabus
     if (
       !req.user.role.includes("admin") &&
-      syllabus.uploader.toString() !== req.user._id.toString()
+      !req.user.role.includes("teacher")
     ) {
       return res.status(403).json({
         success: false,
@@ -437,10 +443,10 @@ export const updateSyllabusFile = async (req, res) => {
       });
     }
 
-    // Check permissions
+    // Check permissions - teachers and admins can update any syllabus
     if (
       !req.user.role.includes("admin") &&
-      syllabus.uploader.toString() !== req.user._id.toString()
+      !req.user.role.includes("teacher")
     ) {
       return res.status(403).json({
         success: false,
@@ -507,10 +513,10 @@ export const deleteSyllabus = async (req, res) => {
       });
     }
 
-    // Check permissions
+    // Check permissions - teachers and admins can delete any syllabus
     if (
       !req.user.role.includes("admin") &&
-      syllabus.uploader.toString() !== req.user._id.toString()
+      !req.user.role.includes("teacher")
     ) {
       return res.status(403).json({
         success: false,
