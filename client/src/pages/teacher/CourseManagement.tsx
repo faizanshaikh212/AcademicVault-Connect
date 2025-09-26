@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import CourseSemesters from "../../components/teacher/CourseSemesters";
 import { BookOpen, Plus, Search, Filter } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 const CourseManagement: React.FC = () => {
   const [courses, setCourses] = useState<any[]>([]);
@@ -35,6 +36,11 @@ const CourseManagement: React.FC = () => {
 
   const saveCourseEdit = async (id: string) => {
     try {
+      if (!editingTitle.trim()) {
+        toast.error("Course title is required");
+        return;
+      }
+
       await coursesService.updateCourse(id, {
         title: editingTitle,
         type: editingCategory || undefined,
@@ -49,8 +55,19 @@ const CourseManagement: React.FC = () => {
       setEditingCourse(null);
       setEditingCategory("");
       fetchCourses();
-    } catch (err) {
+      toast.success("Course updated successfully!");
+    } catch (err: any) {
       console.error(err);
+      if (err?.response?.status === 403) {
+        toast.error("Access denied: You don't have permission to edit this course");
+      } else if (err?.response?.status === 404) {
+        toast.error("Course not found");
+      } else if (err?.response?.status === 400) {
+        const message = err?.response?.data?.message || "Invalid course data";
+        toast.error(message);
+      } else {
+        toast.error("Failed to update course. Please try again.");
+      }
     }
   };
 
@@ -66,9 +83,14 @@ const CourseManagement: React.FC = () => {
       const response = await coursesService.listMyCourses();
       const coursesData = response.data || response || [];
       setCourses(Array.isArray(coursesData) ? coursesData : []);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setCourses([]);
+      if (err?.response?.status === 403) {
+        toast.error("Access denied: You don't have permission to view courses");
+      } else if (err?.response?.status !== 401) { // Don't show error for auth issues
+        toast.error("Failed to load courses. Please refresh the page.");
+      }
     } finally {
       setLoading(false);
     }
@@ -92,8 +114,16 @@ const CourseManagement: React.FC = () => {
     try {
       await coursesService.deleteCourse(id);
       setCourses((s) => s.filter((c) => c._id !== id));
-    } catch (err) {
+      toast.success("Course deleted successfully!");
+    } catch (err: any) {
       console.error(err);
+      if (err?.response?.status === 403) {
+        toast.error("Access denied: You don't have permission to delete this course");
+      } else if (err?.response?.status === 404) {
+        toast.error("Course not found");
+      } else {
+        toast.error("Failed to delete course. Please try again.");
+      }
     }
   };
 
@@ -117,9 +147,14 @@ const CourseManagement: React.FC = () => {
       const response = await coursesService.getTeachersForAccess();
       const teachersData = response.data || response || [];
       setTeachers(Array.isArray(teachersData) ? teachersData : []);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching teachers:", err);
       setTeachers([]);
+      if (err?.response?.status === 403) {
+        toast.error("Access denied: You don't have permission to view teachers list");
+      } else {
+        toast.error("Failed to load teachers list");
+      }
     } finally {
       setLoadingTeachers(false);
     }
@@ -130,13 +165,26 @@ const CourseManagement: React.FC = () => {
 
     try {
       await coursesService.grantCourseAccess(accessModalCourse._id, { userId });
+      toast.success("Access granted successfully!");
       fetchCourses();
       const updatedCourse = courses.find(c => c._id === accessModalCourse._id);
       if (updatedCourse) {
         setAccessModalCourse(updatedCourse);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error granting access:", err);
+
+      // Handle different error types with user-friendly messages
+      if (err?.response?.status === 403) {
+        toast.error("Access denied: You don't have permission to grant access to this course");
+      } else if (err?.response?.status === 404) {
+        toast.error("Course or user not found");
+      } else if (err?.response?.status === 400) {
+        const message = err?.response?.data?.message || "Invalid request";
+        toast.error(message);
+      } else {
+        toast.error("Failed to grant access. Please try again.");
+      }
     }
   };
 
@@ -145,13 +193,26 @@ const CourseManagement: React.FC = () => {
 
     try {
       await coursesService.revokeCourseAccess(accessModalCourse._id, { userId });
+      toast.success("Access revoked successfully!");
       fetchCourses();
       const updatedCourse = courses.find(c => c._id === accessModalCourse._id);
       if (updatedCourse) {
         setAccessModalCourse(updatedCourse);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error revoking access:", err);
+
+      // Handle different error types with user-friendly messages
+      if (err?.response?.status === 403) {
+        toast.error("Access denied: You don't have permission to revoke access from this course");
+      } else if (err?.response?.status === 404) {
+        toast.error("Course or user not found");
+      } else if (err?.response?.status === 400) {
+        const message = err?.response?.data?.message || "Invalid request";
+        toast.error(message);
+      } else {
+        toast.error("Failed to revoke access. Please try again.");
+      }
     }
   };
 
@@ -250,7 +311,10 @@ const CourseManagement: React.FC = () => {
                     <Button
                       onClick={async () => {
                         try {
-                          if (!title.trim()) return;
+                          if (!title.trim()) {
+                            toast.error("Course title is required");
+                            return;
+                          }
                           const payload: any = { title: title.trim() };
                           if (category) payload.type = category;
                           if (semesterCount !== "" && semesterCount !== null)
@@ -266,8 +330,17 @@ const CourseManagement: React.FC = () => {
                           setSemesterCount("");
                           setCategory("");
                           setShowCreateForm(false);
-                        } catch (err) {
+                          toast.success("Course created successfully!");
+                        } catch (err: any) {
                           console.error(err);
+                          if (err?.response?.status === 403) {
+                            toast.error("Access denied: You don't have permission to create courses");
+                          } else if (err?.response?.status === 400) {
+                            const message = err?.response?.data?.message || "Invalid course data";
+                            toast.error(message);
+                          } else {
+                            toast.error("Failed to create course. Please try again.");
+                          }
                         }
                       }}
                       disabled={!title.trim()}
