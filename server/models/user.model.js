@@ -49,8 +49,7 @@ const userSchema = new mongoose.Schema(
       required: [true, "Username is required"],
       unique: true,
       trim: true,
-      lowercase: true,
-      index: true, // Add index for faster queries by username
+      lowercase: true
     },
     email: {
       type: String,
@@ -101,6 +100,61 @@ const userSchema = new mongoose.Schema(
       lastRenewal: { type: Date, default: null },
       expiryNotified: { type: Boolean, default: false }, // Track if we've sent expiry notification
     },
+    // Email verification
+    isEmailVerified: {
+      type: Boolean,
+      default: false
+    },
+    emailVerificationToken: {
+      type: String,
+      default: null
+    },
+    emailVerificationExpires: {
+      type: Date,
+      default: null
+    },
+
+    // Password reset
+    passwordResetToken: {
+      type: String,
+      default: null
+    },
+    passwordResetExpires: {
+      type: Date,
+      default: null
+    },
+
+    // Two-Factor Authentication
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false
+    },
+    twoFactorSecret: {
+      type: String,
+      default: null // Will be encrypted
+    },
+    twoFactorBackupCodes: [{
+      type: String // Will be encrypted
+    }],
+    twoFactorVerified: {
+      type: Boolean,
+      default: false
+    },
+
+    // Security tracking
+    lastPasswordChange: {
+      type: Date,
+      default: Date.now
+    },
+    failedLoginAttempts: {
+      type: Number,
+      default: 0
+    },
+    lockUntil: {
+      type: Date,
+      default: null
+    },
+
     // Refresh token for session rotation (stored server-side for revocation)
     refreshToken: {
       type: String,
@@ -149,6 +203,15 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+// Add indexes for performance (email and username already have unique indexes)
+userSchema.index({ isEmailVerified: 1 });
+userSchema.index({ lockUntil: 1 });
+
+// Virtual for account lock status
+userSchema.virtual('isLocked').get(function () {
+  return !!(this.lockUntil && this.lockUntil > Date.now());
+});
 
 // Create and export the User model
 const User = mongoose.model("User", userSchema);

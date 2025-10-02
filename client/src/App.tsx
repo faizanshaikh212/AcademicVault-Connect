@@ -7,6 +7,9 @@ import { RoleProvider } from "./contexts/RoleContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import PasswordResetForm from "./components/auth/PasswordResetForm";
+import VerifyEmail from "./pages/VerifyEmail";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import ProjectForm from "./pages/ProjectForm";
@@ -18,8 +21,10 @@ import OurNetwork from "./pages/OurNetwork";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import SessionsPage from "./pages/Settings/Sessions";
+import SecurityPage from "./pages/Settings/Security";
 import CookieBanner from "./components/layout/CookieBanner";
 import CookieSettingsModal from "./components/layout/CookieSettingsModal";
+import EmailVerificationBanner from "./components/auth/EmailVerificationBanner";
 import RoleRequest from "./pages/RoleRequest";
 import RequestPremium from "./pages/RequestPremium";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -74,6 +79,7 @@ import TeacherStudentManagement from "./pages/teacher/StudentManagement";
 const MainLayout = () => (
   <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950">
     <Navbar />
+    <EmailVerificationBanner />
     <main className="flex-grow">
       <Outlet />
     </main>
@@ -116,6 +122,9 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<PasswordResetForm />} />
+          <Route path="/verify-email/:token" element={<VerifyEmail />} />
           <Route element={<AdminRoute />}>
             <Route path="/admin/*" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
@@ -151,7 +160,7 @@ function App() {
               <Route path="students" element={<TeacherStudentManagement />} />
             </Route>
           </Route>
-          <Route element={<ProtectedRoute />}></Route>
+
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Home />} />
             <Route path="projects" element={<Projects />} />
@@ -180,6 +189,7 @@ function App() {
               <Route path="blogs/edit/:id" element={<BlogForm />} />
               <Route path="settings" element={<Settings />} />
               <Route path="settings/sessions" element={<SessionsPage />} />
+              <Route path="settings/security" element={<SecurityPage />} />
               <Route path="request-teacher-role" element={<RoleRequest />} />
               <Route path="request-premium" element={<RequestPremium />} />
               <Route

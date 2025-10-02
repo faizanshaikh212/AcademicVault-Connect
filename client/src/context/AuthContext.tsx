@@ -201,7 +201,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     // Call server to clear refresh cookie and revoke session
     try {
-      api.post("/auth/logout").catch(() => {});
+      api.post("/auth/logout").catch(() => { });
     } catch (e) {
       // ignore
     }
@@ -250,7 +250,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       throw new Error(
         error.response?.data?.message ||
-          "Something went wrong. Please try again."
+        "Something went wrong. Please try again."
       );
     }
   };
@@ -273,6 +273,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Function to refresh user data from server
+  const refreshUser = async (): Promise<void> => {
+    if (!token) {
+      throw new Error("No authentication token available");
+    }
+
+    try {
+      const { data: userData } = await api.get("/users/me");
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+    } catch (error) {
+      console.error("Failed to refresh user data:", error);
+      throw error;
+    }
+  };
+
   const value = {
     user,
     token,
@@ -282,6 +298,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     refreshToken,
     updateProfile,
     updateUser,
+    refreshUser,
     verifyPassword,
     cookieConsent,
     setCookieConsent: (v: boolean) => {
@@ -290,17 +307,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // also set cookieSettings defaults for accepted/declined
         const defaults = v
           ? ({
-              necessary: true,
-              preferences: true,
-              analytics: true,
-              marketing: true,
-            } as const)
+            necessary: true,
+            preferences: true,
+            analytics: true,
+            marketing: true,
+          } as const)
           : ({
-              necessary: true,
-              preferences: false,
-              analytics: false,
-              marketing: false,
-            } as const);
+            necessary: true,
+            preferences: false,
+            analytics: false,
+            marketing: false,
+          } as const);
         localStorage.setItem("cookieSettings", JSON.stringify(defaults));
         setCookieSettingsState(defaults as any);
       } catch (e) {

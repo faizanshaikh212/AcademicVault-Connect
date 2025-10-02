@@ -5,6 +5,9 @@
  * @module server
  */
 
+// Suppress specific deprecation warnings
+import "./utils/suppressWarnings.js";
+
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -15,6 +18,10 @@ import { Server } from "socket.io";
 import notificationRoutes from "./routes/notification.routes.js";
 // Import the premium expiration check job
 import "./jobs/premiumExpirationCheck.js";
+// Import security cleanup jobs
+import "./jobs/securityCleanup.js";
+// Import security monitoring jobs
+import "./jobs/securityMonitoring.js";
 
 // --- ADD THIS ---
 // Recreate __dirname for ES Modules

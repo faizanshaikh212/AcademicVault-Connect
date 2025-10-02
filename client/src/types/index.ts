@@ -33,6 +33,12 @@ export interface User {
     isActive: boolean;
     subscriptionDate: string;
   };
+  // Enhanced authentication fields
+  isEmailVerified?: boolean;
+  twoFactorEnabled?: boolean;
+  lastPasswordChange?: string;
+  failedLoginAttempts?: number;
+  lockUntil?: string;
 }
 
 // Defines the structure of the authentication context's state
@@ -48,6 +54,7 @@ export interface AuthContextType extends AuthState {
   isLoading: boolean;
   updateProfile: (profile: Partial<User["profile"]>) => void;
   updateUser: (userData: Partial<User>) => void;
+  refreshUser: () => Promise<void>;
   verifyPassword: (password: string) => Promise<boolean>;
   // Cookie settings: null = undecided. Necessary always true.
   cookieSettings: {
@@ -129,13 +136,13 @@ export interface Notification {
   _id: string;
   sender: Pick<User, "_id" | "username" | "profile">;
   type:
-    | "follow"
-    | "friend_request"
-    | "friend_request_accepted"
-    | "new_news"
-    | "new_notice"
-    | "role_approved"
-    | "premium_approved";
+  | "follow"
+  | "friend_request"
+  | "friend_request_accepted"
+  | "new_news"
+  | "new_notice"
+  | "role_approved"
+  | "premium_approved";
   link: string;
   message?: string;
   isRead: boolean;

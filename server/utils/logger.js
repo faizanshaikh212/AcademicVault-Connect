@@ -18,6 +18,9 @@ const logger = {
       console.debug(...args);
     }
   },
+  warn: (...args) => {
+    console.warn(...args);
+  },
 };
 
 export default logger;

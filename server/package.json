@@ -23,25 +23,39 @@
   },
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "dev:quiet": "NODE_NO_WARNINGS=1 nodemon server.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "cloudinary": "1.41.3",
+    "cloudinary": "^2.2.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^8.1.0",
+    "express-validator": "^7.0.1",
+    "geoip-lite": "^1.4.10",
     "googleapis": "^159.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.0",
-    "multer": "1.4.5-lts.1",
-    "multer-storage-cloudinary": "4.0.0",
+    "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "^4.0.0",
     "node-cron": "^4.2.1",
-    "socket.io": "^4.7.5"
+    "nodemailer": "^6.9.8",
+    "qrcode": "^1.5.3",
+    "socket.io": "^4.7.5",
+    "speakeasy": "^2.0.0",
+    "ua-parser-js": "^1.0.37"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4",
+    "@types/jest": "^29.5.8",
+    "mongodb-memory-server": "^9.1.3"
   }
 }
