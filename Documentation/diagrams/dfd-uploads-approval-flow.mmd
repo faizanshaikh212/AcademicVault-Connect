@@ -18,5 +18,5 @@ flowchart TD
   UploadAPI --> NotesNode
   AdminAPI --> NotesNode
 
-  %% Auto-approve when isAdminUploaded
-  UploadAPI -->|if isAdminUploaded:true| ContentDB
+  %% Auto-approve legacy label removed. Approval now explicit.
+  UploadAPI -->|if uploader is teacher then auto-approve| ContentDB

@@ -48,7 +48,7 @@
   - metadata (title, description, course, subject, semester, degreeType, academicYear)
   - file info (fileType, fileSize, originalFileName)
   - storage references (googleDriveFileId or fileId, publicUrl, downloadUrl, embedUrl/directUrl as needed)
-  - uploader (User reference), isAdminUploaded, isApproved, approvedBy, approvedAt, rejectionReason
+  - uploader (User reference), isApproved, approvedBy, approvedAt, rejectionReason
   - analytics (downloadCount, viewCount)
   - status: pending/approved/rejected (or domain-specific variants)
 - Notes (notes.model.js): has dedicated Google Drive metadata and text search indexes; methods include increment counters, approve/reject, and search helpers.
@@ -89,7 +89,7 @@ Note: Some models (Notes, Timetables) store course/subject as plain strings for 
 1. Upload & Approval
 
 - User uploads a file through controller -> file is uploaded to Google Drive or Cloudinary -> model instance created with storage IDs/URLs and status: pending.
-- If isAdminUploaded === true, pre-save middleware auto-approves and sets isApproved/status accordingly.
+  -- Legacy auto-approve via isAdminUploaded has been removed; approval is now explicit or inferred from uploader role.
 - Admin reviews pending items via admin routes -> approve() or reject() methods on model change state, set approvedBy, approvedAt, and optionally send Notification records.
 
 2. Search & Retrieval
