@@ -4,12 +4,11 @@
  */
 
 import React, { useState } from "react";
-import { useAuth } from "../../hooks/useAuth";
+
 import AcademicManagement from "./AcademicManagement";
 import { syllabusService } from "../../services/academicService";
 
 const TeacherSyllabusManagement: React.FC = () => {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"my" | "pending">("my");
 
   // Service for all syllabi (teachers can manage all syllabi)

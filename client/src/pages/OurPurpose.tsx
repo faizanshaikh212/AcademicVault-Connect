@@ -33,7 +33,7 @@ const OurPurpose: React.FC = () => {
             </p>
           </div>
           <img
-            src="https://placehold.co/600x400/E2E8F0/4A5568?text=Collaboration"
+            src="https://c1.wallpaperflare.com/preview/687/236/10/business-office-contract-agreement.jpg"
             alt="Collaboration"
             className="rounded-lg shadow-xl"
           />
@@ -42,7 +42,7 @@ const OurPurpose: React.FC = () => {
         {/* Section 2: Image Left, Text Right */}
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <img
-            src="https://placehold.co/600x400/bee3f8/2a4365?text=Innovation"
+            src="https://c0.wallpaperflare.com/preview/560/693/69/business-background-illustration-people.jpg"
             alt="Innovation"
             className="rounded-lg shadow-xl"
           />

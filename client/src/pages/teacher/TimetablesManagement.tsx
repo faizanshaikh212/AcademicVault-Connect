@@ -4,12 +4,11 @@
  */
 
 import React, { useState } from "react";
-import { useAuth } from "../../hooks/useAuth";
+
 import AcademicManagement from "./AcademicManagement";
 import { timetablesService } from "../../services/academicService";
 
 const TeacherTimetablesManagement: React.FC = () => {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"my" | "pending">("my");
 
   // Service for all timetables (teachers can manage all timetables)

@@ -19,14 +19,14 @@ const TeacherDashboard: React.FC = () => {
   const { shouldUseAdminPrivileges } = useRole();
 
   const [stats, setStats] = useState({
-    notesCount: null,
-    coursesCount: null,
-    studentsCount: null,
-    timetablesCount: null,
-    questionPapersCount: null,
-    syllabusCount: null,
-    pendingApprovals: null,
-    noticesCount: null
+    notesCount: null as number | null,
+    coursesCount: null as number | null,
+    studentsCount: null as number | null,
+    timetablesCount: null as number | null,
+    questionPapersCount: null as number | null,
+    syllabusCount: null as number | null,
+    pendingApprovals: null as number | null,
+    noticesCount: null as number | null
   });
   const [loading, setLoading] = useState(true);
 

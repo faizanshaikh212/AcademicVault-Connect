@@ -1,7 +1,7 @@
 {
-  "name": "academic-vault-client",
+  "name": "academic-vault--connect-client",
   "private": true,
-  "version": "1.0.0",
+  "version": "3.11.0",
   "description": "Frontend client for Academic Vault",
   "type": "module",
   "author": {
@@ -40,6 +40,7 @@
     "axios": "^1.7.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "gsap": "^3.13.0",
     "lucide-react": "^0.395.0",
     "ogl": "^1.0.11",

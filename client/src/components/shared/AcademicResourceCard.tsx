@@ -47,8 +47,6 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
   onEdit,
   onDelete,
   showActions = true,
-  isAdmin = false,
-  isTeacher = false,
 }) => {
   const { user } = useAuth();
   const { shouldUseTeacherPrivileges, shouldUseAdminPrivileges } = useRole();

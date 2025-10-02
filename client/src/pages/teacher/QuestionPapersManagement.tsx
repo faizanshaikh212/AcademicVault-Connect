@@ -4,12 +4,11 @@
  */
 
 import React, { useState } from "react";
-import { useAuth } from "../../hooks/useAuth";
+
 import AcademicManagement from "./AcademicManagement";
 import { questionPapersService } from "../../services/academicService";
 
 const TeacherQuestionPapersManagement: React.FC = () => {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"my" | "pending">("my");
 
   // Service for all question papers (teachers can manage all question papers)

@@ -6,10 +6,9 @@
 import React, { useState } from "react";
 import AcademicManagement from "./AcademicManagement";
 import { notesService } from "../../services/academicService";
-import { useAuth } from "../../hooks/useAuth";
+
 
 const TeacherNotesManagement: React.FC = () => {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"my-notes" | "pending">(
     "my-notes"
   );

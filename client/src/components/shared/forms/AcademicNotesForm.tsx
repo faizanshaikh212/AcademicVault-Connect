@@ -83,7 +83,7 @@ const AcademicNotesForm: React.FC<Props> = ({
     initialValues.year ||
     new Date().getFullYear().toString()
   );
-  const { shouldUseTeacherPrivileges, getAcademicNoteDefaults } = useRole();
+  const { getAcademicNoteDefaults } = useRole();
   const noteDefaults = getAcademicNoteDefaults();
 
   const [type, setType] = useState(() => {
