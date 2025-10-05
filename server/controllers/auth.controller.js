@@ -1034,6 +1034,31 @@ const verify2FALogin = async (req, res) => {
   }
 };
 
+/**
+ * Get backup codes for 2FA
+ */
+const getBackupCodes = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user.twoFactorEnabled) {
+      return res.status(400).json({ message: "2FA is not enabled for this account." });
+    }
+
+    // Return backup codes (they're already hashed/encrypted in the database)
+    res.json({
+      message: "Backup codes retrieved successfully",
+      backupCodes: user.twoFactorBackupCodes || [],
+      totalCodes: user.twoFactorBackupCodes?.length || 0
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error retrieving backup codes.",
+      error: error.message,
+    });
+  }
+};
+
 export {
   registerUser,
   loginUser,
@@ -1051,4 +1076,5 @@ export {
   verify2FASetup,
   disable2FA,
   verify2FALogin,
+  getBackupCodes,
 };

@@ -9,7 +9,7 @@ interface SecuritySettingsProps {
 }
 
 const SecuritySettings: React.FC<SecuritySettingsProps> = ({ className = '' }) => {
-    const { user, refreshUser } = useAuth();
+    const { user, refreshUser, verifyPassword } = useAuth();
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<string>('');
     const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
@@ -19,6 +19,10 @@ const SecuritySettings: React.FC<SecuritySettingsProps> = ({ className = '' }) =
         password: '',
         token: ''
     });
+    const [showBackupCodes, setShowBackupCodes] = useState(false);
+    const [backupCodesPassword, setBackupCodesPassword] = useState('');
+    const [backupCodes, setBackupCodes] = useState<string[]>([]);
+    const [usedBackupCodes, setUsedBackupCodes] = useState<string[]>([]);
 
     const [userSecurity, setUserSecurity] = useState({
         twoFactorEnabled: false,
@@ -36,6 +40,39 @@ const SecuritySettings: React.FC<SecuritySettingsProps> = ({ className = '' }) =
         }
     }, [user]);
 
+    const handleShowBackupCodes = async () => {
+        if (!backupCodesPassword) {
+            setMessage('Password is required to view backup codes');
+            setMessageType('error');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            setMessage('');
+
+            // Verify password first
+            const passwordValid = await verifyPassword(backupCodesPassword);
+            if (!passwordValid) {
+                setMessage('Incorrect password');
+                setMessageType('error');
+                return;
+            }
+
+            // Fetch backup codes
+            const { data } = await api.get('/auth/backup-codes');
+            setBackupCodes(data.backupCodes || []);
+            setUsedBackupCodes(data.usedCodes || []);
+            setShowBackupCodes(true);
+            setBackupCodesPassword('');
+        } catch (err: any) {
+            setMessage(err.response?.data?.message || 'Failed to fetch backup codes');
+            setMessageType('error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleDisable2FA = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -48,13 +85,24 @@ const SecuritySettings: React.FC<SecuritySettingsProps> = ({ className = '' }) =
                 token: disableForm.token
             });
 
-            setMessage('Two-factor authentication has been disabled successfully.');
+            // Immediately update local security state
+            setUserSecurity(prev => ({
+                ...prev,
+                twoFactorEnabled: false
+            }));
+
+            setMessage('Two-factor authentication has been disabled successfully. You will be logged out for security.');
             setMessageType('success');
             setShowDisable2FA(false);
             setDisableForm({ password: '', token: '' });
 
-            // Refresh user data
-            await refreshUser();
+            // Wait a moment for user to see the message, then logout
+            setTimeout(() => {
+                // Force logout since all sessions are revoked
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+            }, 2000);
         } catch (err: any) {
             if (err.response?.data?.requiresReauth) {
                 setMessage(
@@ -75,19 +123,14 @@ const SecuritySettings: React.FC<SecuritySettingsProps> = ({ className = '' }) =
         setMessage('Two-factor authentication has been enabled successfully!');
         setMessageType('success');
 
+        // Immediately update local security state
+        setUserSecurity(prev => ({
+            ...prev,
+            twoFactorEnabled: true
+        }));
+
         // Refresh user data
         await refreshUser();
-
-        // Force update the local security state
-        setTimeout(() => {
-            if (user) {
-                setUserSecurity({
-                    twoFactorEnabled: user.twoFactorEnabled || false,
-                    lastPasswordChange: user.lastPasswordChange ? new Date(user.lastPasswordChange) : null,
-                    emailVerified: user.isEmailVerified || false
-                });
-            }
-        }, 500);
     };
 
     const formatLastPasswordChange = (date: Date | null) => {
@@ -230,12 +273,75 @@ const SecuritySettings: React.FC<SecuritySettingsProps> = ({ className = '' }) =
                                 </span>
                             </div>
 
-                            <button
-                                onClick={() => setShowDisable2FA(true)}
-                                className="px-4 py-2 border border-red-300 text-red-700 hover:bg-red-50 rounded-lg font-medium transition-colors"
-                            >
-                                Disable 2FA
-                            </button>
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => setShowDisable2FA(true)}
+                                    className="px-4 py-2 border border-red-300 text-red-700 hover:bg-red-50 rounded-lg font-medium transition-colors"
+                                >
+                                    Disable 2FA
+                                </button>
+
+                                {/* Backup Codes Section */}
+                                <div className="border-t pt-4">
+                                    <h4 className="text-sm font-medium text-gray-900 mb-2">Backup Codes</h4>
+                                    <p className="text-sm text-gray-600 mb-3">
+                                        Use backup codes to access your account if you lose your authenticator device.
+                                    </p>
+
+                                    {!showBackupCodes ? (
+                                        <div className="space-y-2">
+                                            <input
+                                                type="password"
+                                                placeholder="Enter your password"
+                                                value={backupCodesPassword}
+                                                onChange={(e) => setBackupCodesPassword(e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            />
+                                            <button
+                                                onClick={handleShowBackupCodes}
+                                                disabled={loading || !backupCodesPassword}
+                                                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
+                                            >
+                                                {loading ? 'Verifying...' : 'Show Backup Codes'}
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <div className="bg-gray-50 rounded-lg p-4">
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {backupCodes.map((code, index) => {
+                                                        const isUsed = usedBackupCodes.includes(code);
+                                                        return (
+                                                            <div
+                                                                key={index}
+                                                                className={`p-2 rounded border font-mono text-sm ${isUsed
+                                                                    ? 'bg-red-100 border-red-300 text-red-700 line-through'
+                                                                    : 'bg-white border-gray-300 text-gray-800'
+                                                                    }`}
+                                                            >
+                                                                {code}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                                <p className="text-xs text-gray-500 mt-2">
+                                                    {usedBackupCodes.length} of {backupCodes.length} codes used
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    setShowBackupCodes(false);
+                                                    setBackupCodes([]);
+                                                    setUsedBackupCodes([]);
+                                                }}
+                                                className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                                            >
+                                                Hide Codes
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <div className="space-y-4">

@@ -20,6 +20,7 @@ import {
   verify2FASetup,
   disable2FA,
   verify2FALogin,
+  getBackupCodes,
 } from "../controllers/auth.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 import {
@@ -138,6 +139,14 @@ router.post("/verify-2fa-login",
   logSecurityEvent('2fa_login'),
   detectSuspiciousActivity,
   verify2FALogin
+);
+
+// Get backup codes (requires recent auth)
+router.get("/backup-codes",
+  protect,
+  requireRecentAuth(5 * 60 * 1000), // 5 minutes
+  logSecurityEvent('backup_codes_view'),
+  getBackupCodes
 );
 
 export default router;
