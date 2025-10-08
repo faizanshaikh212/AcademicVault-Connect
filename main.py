@@ -72,8 +72,8 @@ if __name__ == '__main__':
     webview.create_window(
         'Academic Vault',
         app_url,
-        width=1280,
-        height=720,
+        width=1360,
+        height=768,
         resizable=True,
         min_size=(360, 640)
     )
