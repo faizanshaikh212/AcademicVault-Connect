@@ -204,6 +204,13 @@ export const validate2FADisable = [
         .isNumeric()
         .withMessage('2FA token must contain only numbers'),
 
+    body('backupCode')
+        .optional()
+        .isLength({ min: 8, max: 8 })
+        .withMessage('Backup code must be 8 characters')
+        .matches(/^[A-F0-9]+$/)
+        .withMessage('Backup code must contain only uppercase letters and numbers'),
+
     handleValidationErrors
 ];
 

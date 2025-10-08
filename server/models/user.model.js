@@ -136,7 +136,14 @@ const userSchema = new mongoose.Schema(
     twoFactorBackupCodes: [{
       type: String // Will be encrypted
     }],
+    twoFactorUsedBackupCodes: [{
+      type: String // Will be encrypted
+    }],
     twoFactorVerified: {
+      type: Boolean,
+      default: false
+    },
+    backupCodesLowNotified: {
       type: Boolean,
       default: false
     },

@@ -81,28 +81,47 @@ class TwoFactorService {
      * Validate backup code
      * @param {string} inputCode - User input backup code
      * @param {Array} encryptedBackupCodes - Array of encrypted backup codes
-     * @returns {Object} - Validation result and remaining codes
+     * @param {Array} encryptedUsedCodes - Array of encrypted used backup codes
+     * @returns {Object} - Validation result and updated codes
      */
-    validateBackupCode(inputCode, encryptedBackupCodes) {
+    validateBackupCode(inputCode, encryptedBackupCodes, encryptedUsedCodes = []) {
         const normalizedInput = inputCode.toUpperCase().replace(/\s/g, '');
 
+        // Check if code is already used
+        for (const usedCode of encryptedUsedCodes) {
+            const decryptedUsedCode = decrypt(usedCode);
+            if (decryptedUsedCode === normalizedInput) {
+                return {
+                    valid: false,
+                    error: 'This backup code has already been used',
+                    remainingCodes: encryptedBackupCodes,
+                    usedCodes: encryptedUsedCodes
+                };
+            }
+        }
+
+        // Check if code is valid
         for (let i = 0; i < encryptedBackupCodes.length; i++) {
             const decryptedCode = decrypt(encryptedBackupCodes[i]);
             if (decryptedCode === normalizedInput) {
-                // Remove used code
+                // Move code from available to used
                 const remainingCodes = [...encryptedBackupCodes];
-                remainingCodes.splice(i, 1);
+                const usedCode = remainingCodes.splice(i, 1)[0];
+                const updatedUsedCodes = [...encryptedUsedCodes, usedCode];
 
                 return {
                     valid: true,
-                    remainingCodes
+                    remainingCodes,
+                    usedCodes: updatedUsedCodes
                 };
             }
         }
 
         return {
             valid: false,
-            remainingCodes: encryptedBackupCodes
+            error: 'Invalid backup code',
+            remainingCodes: encryptedBackupCodes,
+            usedCodes: encryptedUsedCodes
         };
     }
 
@@ -122,6 +141,31 @@ class TwoFactorService {
      */
     decryptBackupCodes(encryptedCodes) {
         return encryptedCodes.map(code => decrypt(code)).filter(Boolean);
+    }
+
+    /**
+     * Get all backup codes with their status (used/unused)
+     * @param {Array} encryptedAvailableCodes - Encrypted available backup codes
+     * @param {Array} encryptedUsedCodes - Encrypted used backup codes
+     * @returns {Array} - Array of backup code objects with status
+     */
+    getAllBackupCodesWithStatus(encryptedAvailableCodes, encryptedUsedCodes = []) {
+        // Safety check for undefined/null arrays
+        const availableCodesArray = Array.isArray(encryptedAvailableCodes) ? encryptedAvailableCodes : [];
+        const usedCodesArray = Array.isArray(encryptedUsedCodes) ? encryptedUsedCodes : [];
+
+        const availableCodes = this.decryptBackupCodes(availableCodesArray).map(code => ({
+            code,
+            isUsed: false
+        }));
+
+        const usedCodes = this.decryptBackupCodes(usedCodesArray).map(code => ({
+            code,
+            isUsed: true
+        }));
+
+        // Combine and sort to maintain consistent order
+        return [...availableCodes, ...usedCodes].sort((a, b) => a.code.localeCompare(b.code));
     }
 }
 

@@ -21,6 +21,8 @@ import {
   disable2FA,
   verify2FALogin,
   getBackupCodes,
+  getBackupCodesWithPassword,
+  regenerateBackupCodes,
 } from "../controllers/auth.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 import {
@@ -147,6 +149,22 @@ router.get("/backup-codes",
   requireRecentAuth(5 * 60 * 1000), // 5 minutes
   logSecurityEvent('backup_codes_view'),
   getBackupCodes
+);
+
+// Get backup codes with password verification (no recent auth required)
+router.post("/backup-codes-with-password",
+  protect,
+  validatePasswordVerification,
+  logSecurityEvent('backup_codes_view_password'),
+  getBackupCodesWithPassword
+);
+
+// Regenerate backup codes (requires recent auth and password)
+router.post("/regenerate-backup-codes",
+  protect,
+  requireRecentAuth(10 * 60 * 1000), // 10 minutes
+  logSecurityEvent('backup_codes_regenerate'),
+  regenerateBackupCodes
 );
 
 export default router;

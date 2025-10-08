@@ -24,7 +24,8 @@
     "server": "npm run dev --prefix server",
     "client": "npm run dev --prefix client",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "npm run build -w client"
+    "build": "npm run build -w client",
+    "validate-roles": "node server/scripts/validateRoleAccess.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

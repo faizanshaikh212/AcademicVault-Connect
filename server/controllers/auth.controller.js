@@ -868,6 +868,7 @@ const verify2FASetup = async (req, res) => {
     user.twoFactorEnabled = true;
     user.twoFactorVerified = true;
     user.twoFactorBackupCodes = encryptedBackupCodes;
+    user.twoFactorUsedBackupCodes = []; // Initialize empty used codes array
     await user.save();
 
     // Send notification email
@@ -892,7 +893,7 @@ const verify2FASetup = async (req, res) => {
  */
 const disable2FA = async (req, res) => {
   try {
-    const { password, token } = req.body;
+    const { password, token, backupCode } = req.body;
 
     if (!password) {
       return res.status(400).json({ message: "Current password is required." });
@@ -909,13 +910,30 @@ const disable2FA = async (req, res) => {
       return res.status(401).json({ message: "Incorrect password." });
     }
 
-    // Verify 2FA token if provided
-    if (token) {
+    // Verify 2FA token or backup code
+    if (token || backupCode) {
       const twoFactorService = (await import('../services/twoFactorService.js')).default;
-      const isValid = twoFactorService.verifyToken(token, user.twoFactorSecret);
+      let isValid = false;
+
+      if (token) {
+        isValid = twoFactorService.verifyToken(token, user.twoFactorSecret);
+      } else if (backupCode) {
+        const result = twoFactorService.validateBackupCode(
+          backupCode,
+          user.twoFactorBackupCodes,
+          user.twoFactorUsedBackupCodes || []
+        );
+        isValid = result.valid;
+
+        if (isValid) {
+          // Update backup codes arrays
+          user.twoFactorBackupCodes = result.remainingCodes;
+          user.twoFactorUsedBackupCodes = result.usedCodes;
+        }
+      }
 
       if (!isValid) {
-        return res.status(400).json({ message: "Invalid 2FA code." });
+        return res.status(400).json({ message: "Invalid 2FA code or backup code." });
       }
     }
 
@@ -923,6 +941,7 @@ const disable2FA = async (req, res) => {
     user.twoFactorEnabled = false;
     user.twoFactorSecret = null;
     user.twoFactorBackupCodes = [];
+    user.twoFactorUsedBackupCodes = [];
     user.twoFactorVerified = false;
     await user.save();
 
@@ -978,12 +997,17 @@ const verify2FALogin = async (req, res) => {
       isValid = twoFactorService.verifyToken(token, user.twoFactorSecret);
     } else if (backupCode) {
       // Verify backup code
-      const result = twoFactorService.validateBackupCode(backupCode, user.twoFactorBackupCodes);
+      const result = twoFactorService.validateBackupCode(
+        backupCode,
+        user.twoFactorBackupCodes,
+        user.twoFactorUsedBackupCodes || []
+      );
       isValid = result.valid;
 
       if (isValid) {
-        // Update remaining backup codes
+        // Update backup codes arrays
         user.twoFactorBackupCodes = result.remainingCodes;
+        user.twoFactorUsedBackupCodes = result.usedCodes;
         await user.save();
       }
     }
@@ -1045,15 +1069,150 @@ const getBackupCodes = async (req, res) => {
       return res.status(400).json({ message: "2FA is not enabled for this account." });
     }
 
-    // Return backup codes (they're already hashed/encrypted in the database)
+    const twoFactorService = (await import('../services/twoFactorService.js')).default;
+    const decryptedCodes = twoFactorService.decryptBackupCodes(user.twoFactorBackupCodes || []);
+
+    // Check if backup codes are running low
+    const remainingCodes = decryptedCodes.length;
+    const isLowOnCodes = remainingCodes <= 3 && remainingCodes > 0;
+
+    // Send notification if low on codes and haven't been notified recently
+    if (isLowOnCodes && !user.backupCodesLowNotified) {
+      try {
+        const emailService = (await import('../services/emailService.js')).default;
+        await emailService.sendBackupCodesLowNotification(user, remainingCodes);
+
+        // Mark as notified to avoid spam
+        user.backupCodesLowNotified = true;
+        await user.save();
+      } catch (emailError) {
+        console.error('Failed to send backup codes low notification:', emailError);
+      }
+    }
+
     res.json({
       message: "Backup codes retrieved successfully",
-      backupCodes: user.twoFactorBackupCodes || [],
-      totalCodes: user.twoFactorBackupCodes?.length || 0
+      backupCodes: decryptedCodes,
+      totalCodes: decryptedCodes.length,
+      isLowOnCodes,
+      remainingCodes
     });
   } catch (error) {
     res.status(500).json({
       message: "Server error retrieving backup codes.",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Get backup codes with password verification (no recent auth required)
+ */
+const getBackupCodesWithPassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ message: "Password is required to view backup codes." });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user.twoFactorEnabled) {
+      return res.status(400).json({ message: "2FA is not enabled for this account." });
+    }
+
+    // Verify password
+    if (!(await user.matchPassword(password))) {
+      return res.status(401).json({ message: "Incorrect password." });
+    }
+
+    const twoFactorService = (await import('../services/twoFactorService.js')).default;
+    const allCodesWithStatus = twoFactorService.getAllBackupCodesWithStatus(
+      user.twoFactorBackupCodes || [],
+      user.twoFactorUsedBackupCodes || []
+    );
+    const availableCodes = twoFactorService.decryptBackupCodes(user.twoFactorBackupCodes || []);
+
+    // Check if backup codes are running low
+    const remainingCodes = availableCodes.length;
+    const isLowOnCodes = remainingCodes <= 3 && remainingCodes > 0;
+
+    // Send notification if low on codes and haven't been notified recently
+    if (isLowOnCodes && !user.backupCodesLowNotified) {
+      try {
+        const emailService = (await import('../services/emailService.js')).default;
+        await emailService.sendBackupCodesLowNotification(user, remainingCodes);
+
+        // Mark as notified to avoid spam
+        user.backupCodesLowNotified = true;
+        await user.save();
+      } catch (emailError) {
+        console.error('Failed to send backup codes low notification:', emailError);
+      }
+    }
+
+    res.json({
+      message: "Backup codes retrieved successfully",
+      backupCodes: allCodesWithStatus,
+      totalCodes: allCodesWithStatus.length,
+      isLowOnCodes,
+      remainingCodes
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error retrieving backup codes.",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Regenerate backup codes for 2FA
+ */
+const regenerateBackupCodes = async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ message: "Current password is required to regenerate backup codes." });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user.twoFactorEnabled) {
+      return res.status(400).json({ message: "2FA is not enabled for this account." });
+    }
+
+    // Verify password
+    if (!(await user.matchPassword(password))) {
+      return res.status(401).json({ message: "Incorrect password." });
+    }
+
+    const twoFactorService = (await import('../services/twoFactorService.js')).default;
+
+    // Generate new backup codes
+    const newBackupCodes = twoFactorService.generateBackupCodes();
+    const encryptedBackupCodes = twoFactorService.encryptBackupCodes(newBackupCodes);
+
+    // Update user with new backup codes
+    user.twoFactorBackupCodes = encryptedBackupCodes;
+    user.twoFactorUsedBackupCodes = []; // Reset used codes
+    user.backupCodesLowNotified = false; // Reset notification flag
+    await user.save();
+
+    // Send notification email
+    const emailService = (await import('../services/emailService.js')).default;
+    await emailService.sendBackupCodesRegeneratedNotification(user);
+
+    res.json({
+      message: "New backup codes generated successfully!",
+      backupCodes: newBackupCodes,
+      warning: "Save these backup codes in a secure location. Your old backup codes are no longer valid."
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error regenerating backup codes.",
       error: error.message,
     });
   }
@@ -1077,4 +1236,6 @@ export {
   disable2FA,
   verify2FALogin,
   getBackupCodes,
+  getBackupCodesWithPassword,
+  regenerateBackupCodes,
 };

@@ -192,6 +192,58 @@ class EmailService {
   }
 
   /**
+   * Send backup codes low notification
+   * @param {Object} user - User object
+   * @param {number} remainingCodes - Number of remaining backup codes
+   */
+  async sendBackupCodesLowNotification(user, remainingCodes) {
+    const html = this.getEmailTemplate('backupCodesLow', {
+      firstName: user.firstName,
+      remainingCodes,
+      supportEmail: process.env.SUPPORT_EMAIL || 'support@academicvault.com'
+    });
+
+    const mailOptions = {
+      from: `"Academic Vault" <${process.env.SMTP_USER}>`,
+      to: user.email,
+      subject: 'Action Required: Low Backup Codes - Academic Vault',
+      html,
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      console.log(`Backup codes low notification sent to ${user.email}`);
+    } catch (error) {
+      console.error('Error sending backup codes low notification:', error);
+    }
+  }
+
+  /**
+   * Send backup codes regenerated notification
+   * @param {Object} user - User object
+   */
+  async sendBackupCodesRegeneratedNotification(user) {
+    const html = this.getEmailTemplate('backupCodesRegenerated', {
+      firstName: user.firstName,
+      supportEmail: process.env.SUPPORT_EMAIL || 'support@academicvault.com'
+    });
+
+    const mailOptions = {
+      from: `"Academic Vault" <${process.env.SMTP_USER}>`,
+      to: user.email,
+      subject: 'Backup Codes Regenerated - Academic Vault',
+      html,
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      console.log(`Backup codes regenerated notification sent to ${user.email}`);
+    } catch (error) {
+      console.error('Error sending backup codes regenerated notification:', error);
+    }
+  }
+
+  /**
    * Get email template
    * @param {string} templateName - Template name
    * @param {Object} data - Template data
@@ -372,6 +424,86 @@ class EmailService {
               <p>We detected the following security event on your account:</p>
               <p><strong>${data.event}</strong></p>
               <p>If this was you, no action is needed. If you don't recognize this activity, please secure your account immediately by changing your password.</p>
+            </div>
+            <div class="footer">
+              <p>Need help? Contact us at <a href="mailto:${data.supportEmail}">${data.supportEmail}</a></p>
+              <p>&copy; 2024 Academic Vault. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      backupCodesLow: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Low Backup Codes Alert</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #dc3545; color: white; padding: 20px; text-align: center; }
+            .content { padding: 30px 20px; background: #f9f9f9; }
+            .alert { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin: 20px 0; }
+            .footer { padding: 20px; text-align: center; color: #666; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Academic Vault</h1>
+            </div>
+            <div class="content">
+              <h2>⚠️ Action Required: Low Backup Codes</h2>
+              <p>Hello ${data.firstName},</p>
+              <div class="alert">
+                <strong>Warning:</strong> You only have ${data.remainingCodes} backup codes remaining for your two-factor authentication.
+              </div>
+              <p>Backup codes are essential for accessing your account if you lose your authenticator device. We recommend generating new backup codes immediately to ensure you don't get locked out of your account.</p>
+              <p><strong>To generate new backup codes:</strong></p>
+              <ol>
+                <li>Log in to your Academic Vault account</li>
+                <li>Go to Security Settings</li>
+                <li>Click "Generate New Backup Codes"</li>
+                <li>Save the new codes in a secure location</li>
+              </ol>
+              <p>If you need assistance, please contact our support team.</p>
+            </div>
+            <div class="footer">
+              <p>Need help? Contact us at <a href="mailto:${data.supportEmail}">${data.supportEmail}</a></p>
+              <p>&copy; 2024 Academic Vault. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      backupCodesRegenerated: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Backup Codes Regenerated</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #28a745; color: white; padding: 20px; text-align: center; }
+            .content { padding: 30px 20px; background: #f9f9f9; }
+            .footer { padding: 20px; text-align: center; color: #666; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Academic Vault</h1>
+            </div>
+            <div class="content">
+              <h2>✅ Backup Codes Successfully Regenerated</h2>
+              <p>Hello ${data.firstName},</p>
+              <p>Your two-factor authentication backup codes have been successfully regenerated.</p>
+              <p><strong>Important:</strong> Your old backup codes are no longer valid. Make sure to save your new backup codes in a secure location.</p>
+              <p>If you did not request this change, please contact our support team immediately and change your password.</p>
             </div>
             <div class="footer">
               <p>Need help? Contact us at <a href="mailto:${data.supportEmail}">${data.supportEmail}</a></p>
