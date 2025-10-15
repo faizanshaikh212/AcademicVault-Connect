@@ -22,7 +22,7 @@ export interface BaseAcademicResource {
     lastName: string;
     username: string;
     avatar?: string;
-  };
+  } | null;
   isAdminUploaded: boolean;
   isApproved: boolean;
   approvedBy?: {

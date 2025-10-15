@@ -40,7 +40,7 @@ const TeacherRoute: React.FC = () => {
 
   // Check if user exists
   if (!user) {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.warn('TeacherRoute: No user found, redirecting to login');
     }
     return <Navigate to="/login" replace state={{ from: location }} />;
@@ -48,7 +48,7 @@ const TeacherRoute: React.FC = () => {
 
   // Check if user has teacher privileges (teacher or admin role)
   if (!hasTeacherAccess) {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.warn('TeacherRoute: User lacks teacher privileges', {
         userRoles: user.role,
         hasTeacherRole: hasRole('teacher'),
@@ -83,7 +83,7 @@ const TeacherRoute: React.FC = () => {
             </button>
             <Navigate to="/request-teacher-role" replace />
           </div>
-          {process.env.NODE_ENV === 'development' && (
+          {import.meta.env.DEV && (
             <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900 rounded-md text-left">
               <p className="text-xs text-yellow-800 dark:text-yellow-200 font-mono">
                 Debug: User roles: {JSON.stringify(user.role)}

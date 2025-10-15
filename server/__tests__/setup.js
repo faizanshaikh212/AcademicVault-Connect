@@ -4,6 +4,9 @@
  */
 
 import mongoose from 'mongoose';
+import { jest } from '@jest/globals';
+
+global.jest = jest;
 
 // Setup before all tests
 beforeAll(async () => {

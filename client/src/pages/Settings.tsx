@@ -69,7 +69,11 @@ const Settings: React.FC = () => {
     return () => {
       mounted = false;
     };
-  }, [user?._id, user?.email, login]);
+    // `login` is recreated by AuthProvider on every render. Including it here
+    // makes this effect run again after its own state update, causing a request
+    // loop on the settings page. User identity is sufficient for this check.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?._id, user?.email]);
 
   const [formData, setFormData] = useState({
     firstName: user?.firstName || "",
@@ -99,7 +103,7 @@ const Settings: React.FC = () => {
       return;
     }
 
-    if (file.type === "image/gif" && !user.premium.isPremium) {
+    if (file.type === "image/gif" && !user.premium?.isPremium) {
       setMessage({
         type: "error",
         text: "Animated avatars are a premium feature.",
@@ -293,7 +297,7 @@ const Settings: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Roles:</span>
                 <div className="flex gap-2">
-                  {user.role.map((role: string) => (
+                  {(Array.isArray(user.role) ? user.role : []).map((role: string) => (
                     <span
                       key={role}
                       className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"

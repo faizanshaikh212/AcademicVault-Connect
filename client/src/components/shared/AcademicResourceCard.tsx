@@ -50,6 +50,7 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
 }) => {
   const { user } = useAuth();
   const { shouldUseTeacherPrivileges, shouldUseAdminPrivileges } = useRole();
+  const uploader = resource.uploader;
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -315,29 +316,33 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
         {/* Uploader and date */}
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
           <div className="flex items-center gap-2">
-            {resource.uploader &&
-              ((resource.uploader as any).avatar ||
-                (resource.uploader as any).profile?.avatar ||
-                (resource.uploader as any).profile?.avatarUrl) ? (
+            {uploader &&
+              ((uploader as any).avatar ||
+                (uploader as any).profile?.avatar ||
+                (uploader as any).profile?.avatarUrl) ? (
               <img
                 src={
-                  (resource.uploader as any).avatar ||
-                  (resource.uploader as any).profile?.avatar ||
-                  (resource.uploader as any).profile?.avatarUrl
+                  (uploader as any).avatar ||
+                  (uploader as any).profile?.avatar ||
+                  (uploader as any).profile?.avatarUrl
                 }
-                alt={`${resource.uploader.firstName || ""} ${resource.uploader.lastName || ""
+                alt={`${uploader.firstName || ""} ${uploader.lastName || ""
                   }`}
                 className="w-8 h-8 rounded-full object-cover"
               />
             ) : (
               <User className="w-4 h-4" />
             )}
-            <Link
-              to={`/profile/${resource.uploader.username}`}
-              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              {resource.uploader.firstName} {resource.uploader.lastName}
-            </Link>
+            {uploader ? (
+              <Link
+                to={`/profile/${uploader.username}`}
+                className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                {uploader.firstName} {uploader.lastName}
+              </Link>
+            ) : (
+              <span>Unknown uploader</span>
+            )}
           </div>
           <div className="flex items-center gap-1">
             <Calendar className="w-4 h-4" />
@@ -410,7 +415,7 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
             {/* Show Edit button for admin, teacher, or resource owner */}
             {(hasAdminPrivileges ||
               hasTeacherPrivileges ||
-              (user && resource.uploader._id === user._id)) &&
+              (user && uploader?._id === user._id)) &&
               onEdit && (
                 <button
                   onClick={() => onEdit(resource)}
@@ -421,7 +426,7 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
                 </button>
               )}
             {/* Show Delete button for admin or resource owner */}
-            {(hasAdminPrivileges || (user && resource.uploader._id === user._id)) &&
+            {(hasAdminPrivileges || (user && uploader?._id === user._id)) &&
               onDelete && (
                 <button
                   onClick={() => onDelete(resource)}

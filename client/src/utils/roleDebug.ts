@@ -55,7 +55,7 @@ interface RoleTestResult {
  * Get current user's role debug information
  */
 export const getUserRoleDebugInfo = async (): Promise<RoleDebugInfo | null> => {
-    if (process.env.NODE_ENV !== 'development') {
+    if (!import.meta.env.DEV) {
         console.warn('Role debugging is only available in development mode');
         return null;
     }
@@ -76,7 +76,7 @@ export const testRoleChecking = async (
     testRoles: string[],
     requiredRole?: string
 ): Promise<RoleTestResult | null> => {
-    if (process.env.NODE_ENV !== 'development') {
+    if (!import.meta.env.DEV) {
         console.warn('Role debugging is only available in development mode');
         return null;
     }
@@ -103,7 +103,7 @@ export const logRoleCheck = (
     hasAccess: boolean,
     additionalInfo?: any
 ) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
         console.group(`🔐 Role Check: ${context}`);
         console.log('User Roles:', userRoles);
         console.log('Required Role:', requiredRole);
@@ -125,7 +125,7 @@ export const debugComponentVisibility = (
     requiredRoles: string[],
     isVisible: boolean
 ) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
         console.group(`👁️ Component Visibility: ${componentName}`);
         console.log('User Roles:', userRoles);
         console.log('Required Roles:', requiredRoles);
@@ -139,7 +139,7 @@ export const debugComponentVisibility = (
  * Create a debug panel for role information (React component helper)
  */
 export const createRoleDebugPanel = (userRoles: string[]) => {
-    if (process.env.NODE_ENV !== 'development') {
+    if (!import.meta.env.DEV) {
         return null;
     }
 

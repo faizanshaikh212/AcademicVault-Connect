@@ -163,7 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         );
         if (data?.isSubscribed !== undefined) {
           // If the subscription status is different from what we have, update user
-          if (!user.newsletterSubscription?.isActive === data.isActive) {
+          if (user.newsletterSubscription?.isActive !== data.isActive) {
             const { data: updatedUser } = await api.get("/users/me");
             if (updatedUser) {
               updateUser(updatedUser);
