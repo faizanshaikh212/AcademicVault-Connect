@@ -1,6 +1,5 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
-import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import CodeBlock from "./CodeBlock";
 import { cn } from "@/lib/utils";
@@ -23,9 +22,8 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
         components={{
-          img: ({ node, alt, src, ...props }) => (
+          img: ({ alt, src, ...props }) => (
             <img
               alt={alt}
               src={src}
@@ -33,7 +31,7 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({
               className="max-w-full h-auto rounded-lg"
             />
           ),
-          h1: ({ node, children, ...props }) => (
+          h1: ({ children, ...props }) => (
             <h1
               className="text-4xl font-bold mb-6 pb-2 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
               {...props}
@@ -41,7 +39,7 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({
               {children}
             </h1>
           ),
-          h2: ({ node, children, ...props }) => (
+          h2: ({ children, ...props }) => (
             <h2
               className="text-3xl font-bold mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
               {...props}
@@ -49,7 +47,7 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({
               {children}
             </h2>
           ),
-          h3: ({ node, children, ...props }) => (
+          h3: ({ children, ...props }) => (
             <h3
               className="text-2xl font-bold mb-3 text-gray-900 dark:text-white"
               {...props}
@@ -57,7 +55,7 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({
               {children}
             </h3>
           ),
-          h4: ({ node, children, ...props }) => (
+          h4: ({ children, ...props }) => (
             <h4
               className="text-xl font-bold mb-2 text-gray-900 dark:text-white"
               {...props}
@@ -65,24 +63,24 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({
               {children}
             </h4>
           ),
-          p: ({ node, children, ...props }) => (
+          p: ({ children, ...props }) => (
             <p className="mb-4 text-gray-700 dark:text-gray-300" {...props}>
               {children}
             </p>
           ),
-          ul: ({ node, ...props }) => (
+          ul: (props) => (
             <ul
               className="list-disc list-inside my-4 text-gray-700 dark:text-gray-300"
               {...props}
             />
           ),
-          ol: ({ node, ...props }) => (
+          ol: (props) => (
             <ol
               className="list-decimal list-inside my-4 text-gray-700 dark:text-gray-300"
               {...props}
             />
           ),
-          li: ({ node, children, ...props }) => (
+          li: ({ children, ...props }) => (
             <li
               className="ml-4 mb-2 text-gray-700 dark:text-gray-300"
               {...props}

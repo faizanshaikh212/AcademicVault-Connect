@@ -4,6 +4,7 @@ import api from "@/services/api";
 import NewsletterSubscribe from "@/components/shared/NewsletterSubscribe";
 import { formatDistance } from "date-fns";
 import MarkdownContent from "@/components/shared/MarkdownContent";
+import CoverMedia from "@/components/shared/CoverMedia";
 import { isIframeSupported, getIframeSrc } from "@/utils/fileUtils";
 
 interface Attachment {
@@ -49,7 +50,7 @@ const NewsDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex min-h-[60vh] items-center justify-center text-sm text-slate-500 dark:text-gray-400">
         Loading...
       </div>
     );
@@ -57,33 +58,33 @@ const NewsDetail: React.FC = () => {
 
   if (!news) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex min-h-[60vh] items-center justify-center text-sm text-slate-500 dark:text-gray-400">
         News not found
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-gray-950 min-h-screen py-12 pt-30">
-      <article className="container mx-auto px-4 max-w-6xl">
+    <div className="min-h-screen bg-white py-12 pt-28 dark:bg-gray-900">
+      <article className="container mx-auto w-full max-w-5xl px-5 sm:px-6">
         {/* Cover Image */}
-        <div className="w-2/3 mx-auto relative mb-8">
-          <img
-            src={news.coverImage}
+        <div className="relative mx-auto mb-8 max-w-4xl overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
+          <CoverMedia
+            src={news.coverImage || undefined}
             alt={news.title}
-            className="w-full h-full object-cover rounded-lg shadow-xl"
+            className="aspect-[16/9] w-full object-cover"
           />
         </div>
 
         {/* Header */}
         <header className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          <h1 className="mb-4 text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-5xl">
             {news.title}
           </h1>
 
           {/* Meta information */}
-          <div className="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-4">
-            <div className="flex items-center space-x-4">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-gray-500 dark:text-gray-400">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
               <span>By {news.author?.username || "Anonymous"}</span>
               <span>•</span>
               <time dateTime={news.createdAt}>
@@ -108,7 +109,7 @@ const NewsDetail: React.FC = () => {
         </header>
 
         {/* Content */}
-        <div className="border dark:border-gray-800 rounded-lg p-8 mb-16 bg-white dark:bg-gray-900">
+        <div className="mb-16 border-t border-gray-200 pt-8 dark:border-gray-700">
           <article>
             <MarkdownContent content={news.content} />
           </article>

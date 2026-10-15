@@ -109,7 +109,7 @@ const AdminLayout: React.FC = () => {
               )}
             </div>
           </header>
-          <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
+          <main className="app-main min-w-0 w-full flex-1 overflow-y-auto p-4 sm:p-8 xl:px-10">
             <Outlet />
           </main>
         </div>

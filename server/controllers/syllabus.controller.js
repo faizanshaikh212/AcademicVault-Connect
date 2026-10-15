@@ -7,6 +7,7 @@ import Syllabus from "../models/syllabus.model.js";
 import fileStorageService from "../services/fileStorage.service.js";
 import multer from "multer";
 import { createNotification } from "./notification.controller.js";
+import { shouldUseTeacherPrivileges } from "../utils/roleUtils.js";
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
@@ -58,18 +59,11 @@ export const getAllSyllabus = async (req, res) => {
     // Build query
     let query = {};
 
-    // Handle approval status filtering
-    if (isApproved !== undefined) {
+    const canReviewResources = shouldUseTeacherPrivileges(req.user?.role);
+    if (!canReviewResources) {
+      query.isApproved = true;
+    } else if (isApproved !== undefined) {
       query.isApproved = isApproved === "true";
-    } else {
-      // For admin/teacher users, show all by default. For others, show approved only
-      if (
-        !req.user ||
-        (!req.user.role.includes("admin") && !req.user.role.includes("teacher"))
-      ) {
-        query.isApproved = true;
-      }
-      // Admin/teacher users see all syllabus by default (no isApproved filter)
     }
 
     // Flexible keyword search (accept both `search` and `keyword`) and perform
@@ -186,6 +180,16 @@ export const getSyllabusById = async (req, res) => {
       .populate("approvedBy", "firstName lastName username");
 
     if (!syllabus) {
+      return res.status(404).json({
+        success: false,
+        message: "Syllabus not found",
+      });
+    }
+
+    if (
+      !syllabus.isApproved &&
+      !shouldUseTeacherPrivileges(req.user?.role)
+    ) {
       return res.status(404).json({
         success: false,
         message: "Syllabus not found",
@@ -599,6 +603,16 @@ export const trackDownload = async (req, res) => {
     const syllabus = await Syllabus.findById(req.params.id);
 
     if (!syllabus) {
+      return res.status(404).json({
+        success: false,
+        message: "Syllabus not found",
+      });
+    }
+
+    if (
+      !syllabus.isApproved &&
+      !shouldUseTeacherPrivileges(req.user?.role)
+    ) {
       return res.status(404).json({
         success: false,
         message: "Syllabus not found",

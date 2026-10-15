@@ -7,6 +7,7 @@ import Timetable from "../models/timetable.model.js";
 import fileStorageService from "../services/fileStorage.service.js";
 import multer from "multer";
 import { createNotification } from "./notification.controller.js";
+import { shouldUseTeacherPrivileges } from "../utils/roleUtils.js";
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
@@ -64,18 +65,11 @@ export const getAllTimetables = async (req, res) => {
     // Build query
     let query = {};
 
-    // Handle approval status filtering
-    if (isApproved !== undefined) {
+    const canReviewResources = shouldUseTeacherPrivileges(req.user?.role);
+    if (canReviewResources && isApproved !== undefined) {
       query.isApproved = isApproved === "true" || isApproved === true;
     } else {
-      // For admin/teacher users, show all by default. For others, show approved only
-      if (
-        !req.user ||
-        (!req.user.role.includes("admin") && !req.user.role.includes("teacher"))
-      ) {
-        query.isApproved = true;
-      }
-      // Admin/teacher users see all timetables by default (no isApproved filter)
+      query.isApproved = true;
     }
 
     // Flexible keyword search (accept both `search` and `keyword`) and perform
@@ -146,7 +140,8 @@ export const getAllTimetables = async (req, res) => {
     // top of the approval filter. This mirrors how notes handle explicit
     // status/isApproved filtering and prevents hiding pending items.
     if (isActive === undefined) {
-      const explicitIsApprovedProvided = typeof isApproved !== "undefined";
+      const explicitIsApprovedProvided =
+        canReviewResources && typeof isApproved !== "undefined";
 
       if (!explicitIsApprovedProvided) {
         const now = new Date();
@@ -271,6 +266,16 @@ export const getTimetableById = async (req, res) => {
       .populate("notificationsSent.recipients", "firstName lastName username");
 
     if (!timetable) {
+      return res.status(404).json({
+        success: false,
+        message: "Timetable not found",
+      });
+    }
+
+    if (
+      !timetable.isApproved &&
+      !shouldUseTeacherPrivileges(req.user?.role)
+    ) {
       return res.status(404).json({
         success: false,
         message: "Timetable not found",
@@ -448,6 +453,16 @@ export const updateTimetable = async (req, res) => {
     const timetable = await Timetable.findById(req.params.id);
 
     if (!timetable) {
+      return res.status(404).json({
+        success: false,
+        message: "Timetable not found",
+      });
+    }
+
+    if (
+      !timetable.isApproved &&
+      !shouldUseTeacherPrivileges(req.user?.role)
+    ) {
       return res.status(404).json({
         success: false,
         message: "Timetable not found",
@@ -739,6 +754,16 @@ export const trackDownload = async (req, res) => {
     const timetable = await Timetable.findById(req.params.id);
 
     if (!timetable) {
+      return res.status(404).json({
+        success: false,
+        message: "Timetable not found",
+      });
+    }
+
+    if (
+      !timetable.isApproved &&
+      !shouldUseTeacherPrivileges(req.user?.role)
+    ) {
       return res.status(404).json({
         success: false,
         message: "Timetable not found",

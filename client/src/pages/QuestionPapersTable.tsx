@@ -9,7 +9,6 @@ import { toast } from "react-hot-toast";
 import { QuestionPaper } from "../types/academic";
 import { questionPapersService } from "../services/academicService";
 import { AuthContext } from "../context/AuthContext";
-import Galaxy from "../components/background/Galaxy";
 import QuestionPapersEditModal from "../components/shared/QuestionPapersEditModal";
 import CategoriesView from "../components/questionpapers/CategoriesView";
 import CoursesView from "../components/questionpapers/CoursesView";
@@ -705,8 +704,7 @@ const QuestionPapersTable: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative">
-      <Galaxy />
+    <div className="min-h-screen bg-white pt-20 dark:bg-gray-900">
 
       {/* Edit Modal */}
       {selectedPaper && (
@@ -729,9 +727,9 @@ const QuestionPapersTable: React.FC = () => {
 
       <div className="relative z-10">
         {/* Header */}
-        <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-30">
-            <div className="flex items-center justify-between">
+        <div className="border-b border-slate-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="mx-auto w-full max-w-[120rem] px-5 py-8 md:px-8">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 {/* back button removed (history navigation is handled via popstate and breadcrumb) */}
                 <FileText className="w-8 h-8 text-blue-600 dark:text-blue-400" />
@@ -749,13 +747,12 @@ const QuestionPapersTable: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Search Bar (Advanced) inside a white card to match other academic pages */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <div className="mx-auto w-full max-w-[120rem] px-5 py-8 md:px-8">
+          <div className="mb-8 border-b border-gray-200 pb-6 dark:border-gray-700">
             <div className="mb-4 flex items-start justify-between">
               <div className="flex-1">
                 {/* Search bar styled like AcademicNotes/Syllabus */}
-                <div className="flex gap-4 mb-2">
+                <div className="mb-2 flex flex-col gap-3 sm:flex-row">
                   <div className="flex-1 relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
@@ -770,7 +767,7 @@ const QuestionPapersTable: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${showFilters
+                    className={`flex items-center justify-center gap-2 rounded-lg border px-4 py-2 transition-colors sm:w-auto ${showFilters
                         ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900 dark:border-blue-600 dark:text-blue-300"
                         : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                       }`}
@@ -782,7 +779,7 @@ const QuestionPapersTable: React.FC = () => {
                     onClick={() => {
                       /* immediate search handled by effect */
                     }}
-                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    className="rounded-lg bg-blue-600 px-6 py-2 text-white transition-colors hover:bg-blue-700 sm:w-auto"
                   >
                     Search
                   </button>

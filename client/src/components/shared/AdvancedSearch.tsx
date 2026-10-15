@@ -108,7 +108,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+    <div className="mb-8 border-b border-gray-200 pb-6 dark:border-gray-700">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div>
@@ -123,7 +123,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
         </div>
       </div>
 
-      <div className={`flex gap-4 mb-4 ${compact ? "items-center" : ""}`}>
+      <div className={`mb-4 flex flex-col gap-3 sm:flex-row sm:items-center ${compact ? "sm:items-center" : ""}`}>
         <div className={`flex-1 relative ${compact ? "" : ""}`}>
           <Search
             className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 ${
@@ -136,7 +136,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && onSearch()}
-            className={`w-full pl-10 pr-4 ${
+            className={`min-w-0 w-full pl-10 pr-4 ${
               compact ? "py-1" : "py-2"
             } border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
           />
@@ -147,7 +147,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
         {showFilterButton !== false && (
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 ${
+            className={`flex items-center justify-center gap-2 px-4 sm:shrink-0 ${
               compact ? "py-1" : "py-2"
             } border rounded-lg transition-colors ${
               showFilters
@@ -164,7 +164,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
           onClick={onSearch}
           className={`px-6 ${
             compact ? "py-1" : "py-2"
-          } bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors`}
+          } rounded-lg bg-blue-600 text-white transition-colors hover:bg-blue-700 sm:shrink-0`}
         >
           Search
         </button>

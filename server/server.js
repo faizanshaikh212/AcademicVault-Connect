@@ -15,7 +15,10 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import http from "http";
 import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
 import notificationRoutes from "./routes/notification.routes.js";
+import User from "./models/user.model.js";
+import Session from "./models/session.model.js";
 // Import the premium expiration check job
 import "./jobs/premiumExpirationCheck.js";
 // Import security cleanup jobs
@@ -156,6 +159,40 @@ const io = new Server(server, {
     origin: CLIENT_ORIGIN,
   },
 });
+
+io.use(async (socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (typeof token !== "string" || !token) {
+    return next(new Error("Authentication required"));
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.sub).select("_id");
+    if (!user) {
+      return next(new Error("Authentication failed"));
+    }
+
+    if (decoded.sid) {
+      const session = await Session.findById(decoded.sid);
+      if (
+        !session ||
+        session.revoked ||
+        session.expiresAt < new Date() ||
+        session.user.toString() !== user._id.toString()
+      ) {
+        return next(new Error("Session is no longer valid"));
+      }
+    }
+
+    socket.data.userId = user._id.toString();
+    next();
+  } catch (error) {
+    logger.debug("Socket authentication failed:", error.message);
+    next(new Error("Authentication failed"));
+  }
+});
+
 app.use((req, res, next) => {
   req.io = io;
   next();
@@ -164,11 +201,9 @@ app.use((req, res, next) => {
 import logger from "./utils/logger.js";
 
 io.on("connection", (socket) => {
-  logger.info("User Connected", { $userId: socket.id });
-  socket.on("setup", (userData) => {
-    socket.join(userData._id);
-    socket.emit("connected");
-  });
+  logger.info("User Connected", { $userId: socket.data.userId });
+  socket.join(socket.data.userId);
+  socket.emit("connected");
 
   socket.on("disconnect", () => {
     logger.info("USER DISCONNECTED");

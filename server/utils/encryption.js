@@ -16,7 +16,7 @@ const SECRET_KEY = process.env.ENCRYPTION_SECRET ?
  * @returns {string} - Encrypted text with IV
  */
 export const encrypt = (text) => {
-    if (!text) return null;
+    if (text == null) return null;
 
     try {
         const iv = crypto.randomBytes(16);
@@ -38,7 +38,7 @@ export const encrypt = (text) => {
  * @returns {string} - Decrypted text
  */
 export const decrypt = (encryptedText) => {
-    if (!encryptedText) return null;
+    if (encryptedText == null) return null;
 
     try {
         const [ivHex, encrypted] = encryptedText.split(':');

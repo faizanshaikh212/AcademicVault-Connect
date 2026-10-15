@@ -221,7 +221,7 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
 
   return (
     <div
-      className={`bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700 overflow-hidden ${
+      className={`h-full overflow-hidden border-b border-gray-200 pb-5 dark:border-gray-700 ${
         // Gray out disapproved notes for teachers/admins
         resourceType === "notes" &&
           noteStatus === "Disapproved" &&
@@ -231,7 +231,7 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
         }`}
     >
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="py-4">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
@@ -294,7 +294,7 @@ const AcademicResourceCard: React.FC<AcademicResourceCardProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="p-4">
+      <div className="py-4">
         {/* File info and stats */}
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-3">
           <div className="flex items-center gap-4">

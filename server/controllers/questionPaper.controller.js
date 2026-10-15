@@ -7,6 +7,7 @@ import QuestionPaper from "../models/questionPaper.model.js";
 import fileStorageService from "../services/fileStorage.service.js";
 import multer from "multer";
 import { createNotification } from "./notification.controller.js";
+import { shouldUseTeacherPrivileges } from "../utils/roleUtils.js";
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
@@ -61,18 +62,11 @@ export const getAllQuestionPapers = async (req, res) => {
     // Build query
     let query = {};
 
-    // Handle approval status filtering
-    if (isApproved !== undefined) {
+    const canReviewResources = shouldUseTeacherPrivileges(req.user?.role);
+    if (!canReviewResources) {
+      query.isApproved = true;
+    } else if (isApproved !== undefined) {
       query.isApproved = isApproved === "true";
-    } else {
-      // For admin/teacher users, show all by default. For others, show approved only
-      if (
-        !req.user ||
-        (!req.user.role.includes("admin") && !req.user.role.includes("teacher"))
-      ) {
-        query.isApproved = true;
-      }
-      // Admin/teacher users see all question papers by default (no isApproved filter)
     }
 
     // Flexible regex/OR search across common fields (supports short queries)
@@ -315,6 +309,16 @@ export const getQuestionPaperById = async (req, res) => {
       .populate("approvedBy", "firstName lastName username");
 
     if (!questionPaper) {
+      return res.status(404).json({
+        success: false,
+        message: "Question paper not found",
+      });
+    }
+
+    if (
+      !questionPaper.isApproved &&
+      !shouldUseTeacherPrivileges(req.user?.role)
+    ) {
       return res.status(404).json({
         success: false,
         message: "Question paper not found",
@@ -681,6 +685,16 @@ export const trackDownload = async (req, res) => {
     const questionPaper = await QuestionPaper.findById(req.params.id);
 
     if (!questionPaper) {
+      return res.status(404).json({
+        success: false,
+        message: "Question paper not found",
+      });
+    }
+
+    if (
+      !questionPaper.isApproved &&
+      !shouldUseTeacherPrivileges(req.user?.role)
+    ) {
       return res.status(404).json({
         success: false,
         message: "Question paper not found",

@@ -133,7 +133,7 @@ const Register: React.FC = () => {
 
   if (registrationStep === 'verification') {
     return (
-      <div style={{ width: "100%", height: "600px", position: "relative" }}>
+      <div className="relative min-h-[100svh] w-full overflow-hidden">
         <LightRays
           raysOrigin="top-center"
           raysColor="#4b5d5dff"
@@ -146,7 +146,7 @@ const Register: React.FC = () => {
           distortion={0.05}
           className="absolute inset-0 pointer-events-none z-[-1]"
         />
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative z-10 flex min-h-[100svh] items-center justify-center px-4 py-24">
           <EmailVerificationPrompt email={registeredEmail} />
         </div>
       </div>
@@ -154,7 +154,7 @@ const Register: React.FC = () => {
   }
 
   return (
-    <div style={{ width: "100%", height: "600px", position: "relative" }}>
+    <div className="relative min-h-[100svh] w-full overflow-hidden">
       <LightRays
         raysOrigin="top-center"
         raysColor="#4b5d5dff"
@@ -167,10 +167,10 @@ const Register: React.FC = () => {
         distortion={0.05}
         className="absolute inset-0 pointer-events-none z-[-1]"
       />
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="relative z-10 w-full">
         <AuthLayout title="Create an Account">
           <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row">
               <Input
                 id="register-firstname"
                 name="firstName"

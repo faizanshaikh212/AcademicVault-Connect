@@ -9,9 +9,16 @@ import teacher from '../middleware/teacher.middleware.js';
 import { admin } from '../middleware/admin.middleware.js';
 
 // Mock app for testing middleware
-const createTestApp = (middleware) => {
+const createTestApp = (middleware, user) => {
     const app = express();
     app.use(express.json());
+
+    if (user !== undefined) {
+        app.use((req, res, next) => {
+            req.user = user;
+            next();
+        });
+    }
 
     // Test route with middleware
     app.get('/test', middleware, (req, res) => {
@@ -51,18 +58,8 @@ const mockUsers = {
 };
 
 describe('Teacher Middleware', () => {
-    let app;
-
-    beforeEach(() => {
-        app = createTestApp(teacher);
-    });
-
     test('should allow access for teacher role', async () => {
-        // Mock request with teacher user
-        app.use((req, res, next) => {
-            req.user = mockUsers.teacher;
-            next();
-        });
+        const app = createTestApp(teacher, mockUsers.teacher);
 
         const response = await request(app).get('/test');
         expect(response.status).toBe(200);
@@ -70,11 +67,7 @@ describe('Teacher Middleware', () => {
     });
 
     test('should allow access for admin role', async () => {
-        // Mock request with admin user
-        app.use((req, res, next) => {
-            req.user = mockUsers.admin;
-            next();
-        });
+        const app = createTestApp(teacher, mockUsers.admin);
 
         const response = await request(app).get('/test');
         expect(response.status).toBe(200);
@@ -82,11 +75,7 @@ describe('Teacher Middleware', () => {
     });
 
     test('should allow access for user with both teacher and admin roles', async () => {
-        // Mock request with teacher+admin user
-        app.use((req, res, next) => {
-            req.user = mockUsers.teacherAdmin;
-            next();
-        });
+        const app = createTestApp(teacher, mockUsers.teacherAdmin);
 
         const response = await request(app).get('/test');
         expect(response.status).toBe(200);
@@ -94,11 +83,7 @@ describe('Teacher Middleware', () => {
     });
 
     test('should allow access for user with student and teacher roles', async () => {
-        // Mock request with student+teacher user
-        app.use((req, res, next) => {
-            req.user = mockUsers.studentTeacher;
-            next();
-        });
+        const app = createTestApp(teacher, mockUsers.studentTeacher);
 
         const response = await request(app).get('/test');
         expect(response.status).toBe(200);
@@ -106,11 +91,7 @@ describe('Teacher Middleware', () => {
     });
 
     test('should deny access for student only role', async () => {
-        // Mock request with student user
-        app.use((req, res, next) => {
-            req.user = mockUsers.student;
-            next();
-        });
+        const app = createTestApp(teacher, mockUsers.student);
 
         const response = await request(app).get('/test');
         expect(response.status).toBe(403);
@@ -119,18 +100,14 @@ describe('Teacher Middleware', () => {
     });
 
     test('should deny access when no user object', async () => {
-        const response = await request(app).get('/test');
+        const response = await request(createTestApp(teacher)).get('/test');
         expect(response.status).toBe(401);
         expect(response.body.success).toBe(false);
         expect(response.body.error).toBe('NO_USER_OBJECT');
     });
 
     test('should deny access when user has no role property', async () => {
-        // Mock request with user without role
-        app.use((req, res, next) => {
-            req.user = { _id: 'user123', username: 'user' };
-            next();
-        });
+        const app = createTestApp(teacher, { _id: 'user123', username: 'user' });
 
         const response = await request(app).get('/test');
         expect(response.status).toBe(403);
@@ -140,18 +117,8 @@ describe('Teacher Middleware', () => {
 });
 
 describe('Admin Middleware', () => {
-    let app;
-
-    beforeEach(() => {
-        app = createTestApp(admin);
-    });
-
     test('should allow access for admin role', async () => {
-        // Mock request with admin user
-        app.use((req, res, next) => {
-            req.user = mockUsers.admin;
-            next();
-        });
+        const app = createTestApp(admin, mockUsers.admin);
 
         const response = await request(app).get('/test');
         expect(response.status).toBe(200);
@@ -159,11 +126,7 @@ describe('Admin Middleware', () => {
     });
 
     test('should allow access for user with both teacher and admin roles', async () => {
-        // Mock request with teacher+admin user
-        app.use((req, res, next) => {
-            req.user = mockUsers.teacherAdmin;
-            next();
-        });
+        const app = createTestApp(admin, mockUsers.teacherAdmin);
 
         const response = await request(app).get('/test');
         expect(response.status).toBe(200);
@@ -171,11 +134,7 @@ describe('Admin Middleware', () => {
     });
 
     test('should deny access for teacher only role', async () => {
-        // Mock request with teacher user
-        app.use((req, res, next) => {
-            req.user = mockUsers.teacher;
-            next();
-        });
+        const app = createTestApp(admin, mockUsers.teacher);
 
         const response = await request(app).get('/test');
         expect(response.status).toBe(403);
@@ -184,11 +143,7 @@ describe('Admin Middleware', () => {
     });
 
     test('should deny access for student only role', async () => {
-        // Mock request with student user
-        app.use((req, res, next) => {
-            req.user = mockUsers.student;
-            next();
-        });
+        const app = createTestApp(admin, mockUsers.student);
 
         const response = await request(app).get('/test');
         expect(response.status).toBe(403);
@@ -197,11 +152,7 @@ describe('Admin Middleware', () => {
     });
 
     test('should deny access for student+teacher roles', async () => {
-        // Mock request with student+teacher user
-        app.use((req, res, next) => {
-            req.user = mockUsers.studentTeacher;
-            next();
-        });
+        const app = createTestApp(admin, mockUsers.studentTeacher);
 
         const response = await request(app).get('/test');
         expect(response.status).toBe(403);
@@ -212,13 +163,7 @@ describe('Admin Middleware', () => {
 
 describe('Middleware Error Response Format', () => {
     test('teacher middleware should return standardized error format', async () => {
-        const app = createTestApp(teacher);
-
-        // Mock request with student user
-        app.use((req, res, next) => {
-            req.user = mockUsers.student;
-            next();
-        });
+        const app = createTestApp(teacher, mockUsers.student);
 
         const response = await request(app).get('/test');
 
@@ -238,13 +183,7 @@ describe('Middleware Error Response Format', () => {
     });
 
     test('admin middleware should return standardized error format', async () => {
-        const app = createTestApp(admin);
-
-        // Mock request with teacher user
-        app.use((req, res, next) => {
-            req.user = mockUsers.teacher;
-            next();
-        });
+        const app = createTestApp(admin, mockUsers.teacher);
 
         const response = await request(app).get('/test');
 

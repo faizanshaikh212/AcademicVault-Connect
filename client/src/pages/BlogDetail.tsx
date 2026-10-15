@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 import { Calendar, User as UserIcon, Edit } from "lucide-react";
 import MarkdownContent from "@/components/shared/MarkdownContent";
+import CoverMedia from "@/components/shared/CoverMedia";
 
 const BlogDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,12 +40,13 @@ const BlogDetail: React.FC = () => {
   const isAuthor = currentUser?._id === blog.author._id;
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8 pt-30">
+    <div className="min-h-screen bg-white px-5 py-10 pt-28 dark:bg-gray-900 md:px-8">
+      <article className="mx-auto w-full max-w-4xl">
       <div className="relative">
-        <img
-          src={blog.coverImage}
+        <CoverMedia
+          src={blog.coverImage || undefined}
           alt={blog.title}
-          className="w-full h-96 object-cover rounded-lg shadow-lg mb-8"
+          className="mb-8 aspect-[16/9] w-full rounded-lg object-cover"
         />
         {isAuthor && (
           <Button asChild className="absolute top-4 right-4 z-10">
@@ -54,11 +56,11 @@ const BlogDetail: React.FC = () => {
           </Button>
         )}
       </div>
-      <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4">
+      <h1 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl">
         {blog.title}
       </h1>
 
-      <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400 mb-8">
+      <div className="mb-8 flex flex-wrap items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
         <div className="flex items-center gap-2">
           <UserIcon className="h-5 w-5" />
           <Link
@@ -77,6 +79,7 @@ const BlogDetail: React.FC = () => {
       {/* Markdown content with syntax highlighting */}
       <article>
         <MarkdownContent content={blog.content} />
+      </article>
       </article>
     </div>
   );

@@ -22,7 +22,7 @@ describe('TwoFactorService', () => {
             expect(result.secret).toBeDefined();
             expect(result.otpauthUrl).toBeDefined();
             expect(result.secret).toMatch(/^[A-Z2-7]+$/); // Base32 format
-            expect(result.otpauthUrl).toContain('Academic Vault');
+            expect(decodeURIComponent(result.otpauthUrl)).toContain('Academic Vault');
         });
     });
 
@@ -101,7 +101,11 @@ describe('SessionService', () => {
             expect(deviceInfo.name).toBeDefined();
             expect(deviceInfo.browser).toBeDefined();
             expect(deviceInfo.os).toBeDefined();
-            expect(deviceInfo.location).toBeDefined();
+            expect(deviceInfo.location).toEqual({
+                country: 'Unknown',
+                city: 'Unknown',
+                region: 'Unknown'
+            });
         });
     });
 
@@ -163,25 +167,22 @@ describe('SessionService', () => {
             testUser = await testUtils.createTestUser();
         });
 
-        it('should detect new location', async () => {
-            // Create a session from a known location
+        it('should not infer a location change when geolocation is unavailable', async () => {
             await testUtils.createTestSession(testUser._id, {
                 deviceInfo: {
                     location: { country: 'US' }
                 }
             });
 
-            // Mock request from different location
-            const mockReqNewLocation = {
+            const mockReqWithoutLocation = {
                 ...mockReq,
-                ip: '1.2.3.4' // This would resolve to a different country
+                ip: '192.168.1.2'
             };
 
-            const result = await sessionService.detectSuspiciousActivity(testUser._id, mockReqNewLocation);
+            const result = await sessionService.detectSuspiciousActivity(testUser._id, mockReqWithoutLocation);
 
-            // Note: This test might not work perfectly due to geoip-lite limitations in test environment
-            expect(result.isSuspicious).toBeDefined();
-            expect(result.factors).toBeDefined();
+            expect(result.isSuspicious).toBe(false);
+            expect(result.factors).not.toContain('new_location');
         });
     });
 });

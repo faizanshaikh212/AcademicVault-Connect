@@ -1,7 +1,6 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
 import CodeBlock from "./CodeBlock";
 
 interface Contact {
@@ -97,7 +96,6 @@ const ContactRequestTable: React.FC<Props> = ({
           <div className="markdown-content bg-gray-950 p-4 border-t border-gray-800">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
               components={{
                 code: (props) => <CodeBlock {...props} />,
                 p: ({ children }) => (

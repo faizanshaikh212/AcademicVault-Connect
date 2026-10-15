@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Project } from "../../types";
 import { getAvatarUrl } from "@/lib/avatar";
 import { getCoverImageUrl } from "@/lib/images";
+import CoverMedia from "./CoverMedia";
 import { ArrowRight, Edit2, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "../ui/Button";
@@ -54,23 +55,23 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
   };
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-all hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
+    <article className="group relative flex h-full flex-col overflow-hidden">
       <Link
         to={`/projects/${project._id}`}
         className="absolute inset-0 z-10"
         aria-label={project.title}
       />
 
-      <div className="aspect-video overflow-hidden">
-        <img
-          src={getCoverImageUrl(project.coverImage)}
+      <div className="aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-800">
+        <CoverMedia
+          src={project.coverImage ? getCoverImageUrl(project.coverImage) : undefined}
           alt={project.title}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="h-full w-full object-cover"
         />
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">
           {project.title}
         </h3>
         <p className="mt-2 flex-1 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
@@ -89,7 +90,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
         </div>
       </div>
 
-      <div className="border-t p-4 dark:border-gray-800">
+      <div className="mt-auto border-t border-gray-200 py-3 dark:border-gray-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img
@@ -146,7 +147,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
         confirmText="Delete"
         variant="destructive"
       />
-    </div>
+    </article>
   );
 };
 

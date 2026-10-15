@@ -1,6 +1,7 @@
 import { Notice } from "../models/notice.model.js";
 import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
+import { shouldUseTeacherPrivileges } from "../utils/roleUtils.js";
 
 // Get all published notices
 export const getPublishedNotices = async (req, res) => {
@@ -34,6 +35,9 @@ export const getNoticeById = async (req, res) => {
   try {
     const notice = await Notice.findById(req.params.id).populate("author", "username");
     if (!notice) return res.status(404).json({ message: "Notice not found" });
+    if (!notice.isPublished && !shouldUseTeacherPrivileges(req.user?.role)) {
+      return res.status(404).json({ message: "Notice not found" });
+    }
     res.json(notice);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch notice", error: error.message });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import api from "@/services/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -12,8 +12,11 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Edit, Trash2, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
-import StaticPageEditor from "@/components/admin/StaticPageEditor";
 import MainPagesSection from "@/components/admin/MainPagesSection";
+
+const StaticPageEditor = React.lazy(
+  () => import("@/components/admin/StaticPageEditor")
+);
 
 /**
  * Interface representing a generic content item in the admin panel
@@ -93,7 +96,7 @@ const ContentManagement: React.FC = () => {
     try {
       const { data } = await api.get(`/pages/${slug}`);
       setEditingPage(data);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to fetch page", err);
       // Initialize with default content if page doesn't exist
       setEditingPage({
@@ -236,12 +239,16 @@ const ContentManagement: React.FC = () => {
         </div>
       </div>
 
-      <StaticPageEditor
-        isOpen={!!editingPage}
-        onClose={() => setEditingPage(null)}
-        editingPage={editingPage}
-        setEditingPage={setEditingPage}
-      />
+      {editingPage && (
+        <Suspense fallback={<div role="status">Loading editor...</div>}>
+          <StaticPageEditor
+            isOpen
+            onClose={() => setEditingPage(null)}
+            editingPage={editingPage}
+            setEditingPage={setEditingPage}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };

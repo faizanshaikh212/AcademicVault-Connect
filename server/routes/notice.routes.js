@@ -1,5 +1,5 @@
 import express from "express";
-import { protect as auth } from "../middleware/auth.middleware.js";
+import { protect as auth, optionalAuth } from "../middleware/auth.middleware.js";
 import { admin } from "../middleware/admin.middleware.js";
 import teacher from "../middleware/teacher.middleware.js";
 import * as noticeController from "../controllers/notice.controller.js";
@@ -11,11 +11,9 @@ const noticeRouter = express.Router();
 noticeRouter.get("/notices", noticeController.getPublishedNotices);
 
 // Teacher/Admin endpoints for all notices - MUST come before /:id route
-noticeRouter.get("/notices/all", async (req, res) => {
+noticeRouter.get("/notices/all", [auth, teacher], async (req, res) => {
     try {
-        console.log("Simple notices endpoint called");
         const notices = await Notice.find().sort({ createdAt: -1 });
-        console.log("Found notices:", notices.length);
         res.json(notices);
     } catch (error) {
         console.error("Error in simple notices endpoint:", error);
@@ -23,7 +21,7 @@ noticeRouter.get("/notices/all", async (req, res) => {
     }
 });
 
-noticeRouter.get("/notices/:id", noticeController.getNoticeById);
+noticeRouter.get("/notices/:id", optionalAuth, noticeController.getNoticeById);
 
 // Teacher and Admin can create notices
 noticeRouter.post("/notices/create", [auth, teacher], noticeController.createNotice);

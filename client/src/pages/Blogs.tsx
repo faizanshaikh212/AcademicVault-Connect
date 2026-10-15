@@ -58,30 +58,30 @@ const Blogs: React.FC = () => {
   });
 
   return (
-    <div className="relative w-full min-h-screen pt-30">
-      <div className="absolute inset-0 -z-10"></div>
-      <div className="container mx-auto px-4 pb-8">
-        {/* Page Header */}
-        <div className="flex flex-col items-start justify-between gap-4 border-b pb-6 md:flex-row md:items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-              Community Blogs
-            </h1>
-            <p className="mt-2 text-gray-300">
-              Insights, tutorials, and stories from our community.
-            </p>
+    <div className="min-h-screen w-full bg-white pt-20 dark:bg-gray-900">
+      <header className="px-5 py-10 md:px-8 md:py-14">
+        <div className="container mx-auto w-full max-w-[120rem]">
+          <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+                Community Blogs
+              </h1>
+              <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">
+                Insights, tutorials, and stories from our community.
+              </p>
+            </div>
+            <Button asChild>
+              <Link to="/blogs/new">
+                <Plus className="mr-2 h-4 w-4" /> Write an Article
+              </Link>
+            </Button>
           </div>
-          <Button asChild>
-            <Link to="/blogs/new">
-              <Plus className="mr-2 h-4 w-4" /> Write an Article
-            </Link>
-          </Button>
         </div>
-      </div>
+      </header>
 
-      <div className="bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-12">
-          <div className="mb-6">
+      <main className="container mx-auto w-full max-w-[120rem] px-5 pb-12 md:px-8">
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1">
             <AdvancedSearch
               title={"Search articles"}
               searchQuery={searchQuery}
@@ -91,21 +91,18 @@ const Blogs: React.FC = () => {
               setShowFilters={setShowFilters}
               showFilterButton={false}
             />
-
-            <div className="flex items-center justify-between mt-2 mb-6">
-              <div />
-              <Sort
-                options={[
-                  { value: "newest", label: "Newest" },
-                  { value: "oldest", label: "Oldest" },
-                  { value: "title_asc", label: "Title A-Z" },
-                  { value: "title_desc", label: "Title Z-A" },
-                ]}
-                value={sortOption}
-                onChange={(v) => setSortOption(v)}
-                className="mt-0"
-              />
             </div>
+            <Sort
+              options={[
+                { value: "newest", label: "Newest" },
+                { value: "oldest", label: "Oldest" },
+                { value: "title_asc", label: "Title A-Z" },
+                { value: "title_desc", label: "Title Z-A" },
+              ]}
+              value={sortOption}
+              onChange={(v) => setSortOption(v)}
+              className="mt-0"
+            />
           </div>
 
           <div className="min-h-[400px]">
@@ -114,7 +111,7 @@ const Blogs: React.FC = () => {
             ) : error ? (
               <p className="text-center text-red-500">{error}</p>
             ) : sortedAndFiltered.length > 0 ? (
-              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                 {sortedAndFiltered.map((blog) => (
                   <BlogCard
                     key={blog._id}
@@ -128,7 +125,7 @@ const Blogs: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center min-h-[400px] bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+              <div className="flex min-h-[320px] flex-col items-center justify-center px-6 text-center">
                 <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
                   No Articles Found
                 </p>
@@ -140,11 +137,10 @@ const Blogs: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
-        <div className="border-t border-gray-200 dark:border-gray-800">
-          <div className="container mx-auto px-4 py-12">
-            <NewsletterSubscribe />
-          </div>
+      </main>
+      <div className="border-t border-gray-200 py-12 dark:border-gray-800">
+        <div className="container mx-auto w-full max-w-[120rem] px-5 md:px-8">
+          <NewsletterSubscribe />
         </div>
       </div>
     </div>

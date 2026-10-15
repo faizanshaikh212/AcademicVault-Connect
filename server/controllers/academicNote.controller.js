@@ -67,8 +67,8 @@ export const getAllNotes = async (req, res) => {
     // Build query
     let query = {};
 
-    // Handle approval filter for management interface
-    if (isApproved !== undefined) {
+    const canReviewResources = shouldUseTeacherPrivileges(req.user?.role);
+    if (canReviewResources && isApproved !== undefined) {
       if (isApproved === "false") {
         // For management, show both "In Review" and "Disapproved" when isApproved=false
         query.status = { $in: ["In for Review", "Disapproved"] };
@@ -76,14 +76,8 @@ export const getAllNotes = async (req, res) => {
         query.status = "Approved";
       }
     } else {
-      // For public access (non-admin users), show approved and "In Review" notes
-      if (
-        !req.user ||
-        (!req.user.role.includes("admin") && !req.user.role.includes("teacher"))
-      ) {
-        query.status = { $in: ["Approved", "In for Review"] };
-      }
-      // For admin/teacher users, show all notes by default (no status filter)
+      query.status = "Approved";
+      query.isApproved = true;
     }
 
     // Handle uploader filtering
@@ -203,6 +197,16 @@ export const getNoteById = async (req, res) => {
       .populate("approvedBy", "firstName lastName username");
 
     if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: "Note not found",
+      });
+    }
+
+    if (
+      (!note.isApproved || note.status !== "Approved") &&
+      !shouldUseTeacherPrivileges(req.user?.role)
+    ) {
       return res.status(404).json({
         success: false,
         message: "Note not found",
@@ -634,6 +638,16 @@ export const trackDownload = async (req, res) => {
     const note = await AcademicNote.findById(req.params.id);
 
     if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: "Note not found",
+      });
+    }
+
+    if (
+      (!note.isApproved || note.status !== "Approved") &&
+      !shouldUseTeacherPrivileges(req.user?.role)
+    ) {
       return res.status(404).json({
         success: false,
         message: "Note not found",

@@ -6,9 +6,6 @@ const CookieBanner: React.FC = () => {
   const { cookieConsent, setCookieConsent, cookieSettings, setCookieSettings } =
     useAuth();
 
-  // Only show banner until user makes a choice
-  if (cookieConsent !== null) return null;
-
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [local, setLocal] = useState({
     preferences: false,
@@ -31,21 +28,15 @@ const CookieBanner: React.FC = () => {
   // to style from global CSS (keeps component styles small).
   useEffect(() => {
     const bodyClass = "has-cookie-banner";
-    if (typeof document !== "undefined") {
-      if (customizeOpen === false) {
-        // Banner visible when cookieConsent is null and not in customize mode
-        document.body.classList.remove(bodyClass);
-      }
-      // When the banner renders (cookieConsent null), we'll add the class
-      // based on presence of this component. This component only mounts when
-      // cookieConsent is null (see early return above), so adding here is fine.
+    if (cookieConsent === null) {
       document.body.classList.add(bodyClass);
+    } else {
+      document.body.classList.remove(bodyClass);
     }
     return () => {
-      if (typeof document !== "undefined")
-        document.body.classList.remove(bodyClass);
+      document.body.classList.remove(bodyClass);
     };
-  }, [customizeOpen]);
+  }, [cookieConsent]);
 
   const acceptAll = () => {
     setCookieConsent(true);
@@ -77,6 +68,8 @@ const CookieBanner: React.FC = () => {
       });
     }
   };
+
+  if (cookieConsent !== null) return null;
 
   return (
     <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-[min(1100px,94%)]">

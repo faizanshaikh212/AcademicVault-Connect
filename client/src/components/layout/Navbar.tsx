@@ -160,10 +160,10 @@ const Navbar: React.FC = () => {
           ? "-translate-y-full"
           : "translate-y-0",
         "fixed top-0 left-0 z-50 w-full transition-all duration-300",
-        "border-b border-gray-200/50 bg-white/90 backdrop-blur-lg supports-[backdrop-filter]:bg-white/70 dark:bg-gray-900/70 dark:border-gray-800/50"
+        "border-b border-gray-200/50 bg-white/90 backdrop-blur-lg supports-[backdrop-filter]:bg-white/70 dark:border-gray-700/70 dark:bg-gray-900/85"
       )}
     >
-      <div className="container mx-auto flex h-20 items-center justify-between px-4">
+      <div className="container mx-auto flex h-16 w-full max-w-[120rem] items-center justify-between px-4 sm:h-20 sm:px-6 xl:px-10">
         <div className="flex items-center gap-2">
           <Link
             to="/"

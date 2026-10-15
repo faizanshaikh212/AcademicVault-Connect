@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "@/services/api";
 import { Blog } from "../types";
 import { Button } from "@/components/ui/Button";
 import BlogCard from "@/components/shared/BlogCard";
-import Particles from "@/components/background/Particles";
 import Aurora from "@/components/background/Aurora";
-import { ArrowRight, BookOpen, Users, Lightbulb } from "lucide-react";
+import { ArrowRight, BookOpen, FileText, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import NewsletterSubscribe from "@/components/shared/NewsletterSubscribe";
 
@@ -16,52 +15,45 @@ const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchLatestBlogs = async () => {
       try {
         const { data } = await api.get<Blog[]>("/blogs");
-        setLatestBlogs(data.slice(0, 4));
+        if (isMounted) setLatestBlogs(data.slice(0, 4));
       } catch (error) {
         console.error("Failed to fetch latest blogs", error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
+
     fetchLatestBlogs();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
-    <div className="relative w-full overflow-hidden dark:bg-gray-900">
-      {/* Full Page Particle Background - this fixes the hover issue */}
-      <Particles
-        className="absolute inset-0 z-0"
-        particleCount={200}
-        particleSpread={10}
-        speed={0.1}
-        particleBaseSize={100}
-        moveParticlesOnHover={true}
-        alphaParticles={false}
-        disableRotation={false}
-      />
-
+    <div className="relative w-full overflow-hidden bg-white dark:bg-gray-900">
       <div className="relative z-10">
-        {/* 1. Hero Section with Aurora */}
-        <section className="relative flex h-[70vh] min-h-[500px] w-full items-center justify-center text-center text-white overflow-hidden">
+        <section className="relative flex min-h-[clamp(22rem,56svh,32rem)] items-center justify-center overflow-hidden px-5 py-16 text-center text-slate-900 dark:text-gray-200 md:px-8">
           <Aurora
             colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
             blend={0.5}
-            amplitude={1.0}
+            amplitude={1}
             speed={0.5}
             className="absolute inset-0 z-0"
           />
-          <div className="relative z-10 flex flex-col items-center px-4">
-            <h1 className="text-4xl text-gray-900 dark:text-gray-200 font-extrabold tracking-tight md:text-5xl lg:text-6xl">
-              Connect, Collaborate, Create.
+          <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center">
+            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
+              Find, share, and learn.
             </h1>
-            <p className="mt-4 max-w-2xl text-lg text-gray-900 dark:text-gray-200 md:text-xl">
-              The ultimate workspace for students and teachers to share
-              knowledge, build projects, and grow together.
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-700 dark:text-gray-300 sm:text-lg sm:leading-8">
+              A shared place for students and teachers to find academic
+              resources, share useful work, and stay connected.
             </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <div className="mt-6 flex flex-wrap justify-center gap-4">
               {!user && (
                 <Button asChild size="lg">
                   <Link to="/register">
@@ -73,7 +65,7 @@ const Home: React.FC = () => {
                 asChild
                 size="lg"
                 variant="outline"
-                className="bg-transparent border-gray-700 dark:border-white text-gray-900 dark:text-white hover:bg-white/90 hover:text-gray-900"
+                className="border-gray-700 bg-transparent text-slate-900 hover:bg-white/80 dark:border-white dark:text-white dark:hover:bg-white/90 dark:hover:text-gray-900"
               >
                 <Link to="/about-us">Learn More</Link>
               </Button>
@@ -81,82 +73,112 @@ const Home: React.FC = () => {
           </div>
         </section>
 
-        {/* 2. Why Choose Us Section */}
-        <section className="py-16 md:py-24 bg-gray-50 dark:bg-gray-900">
-          <div className="container mx-auto px-4">
+        <section className="bg-gray-50 py-12 dark:bg-gray-900 md:py-16">
+          <div className="container mx-auto w-full max-w-[120rem] px-5 md:px-8 xl:px-10">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-                Why Choose Academic Vault?
+                A useful place for academic work
               </h2>
-              <p className="mt-4 max-w-3xl mx-auto text-lg text-gray-600 dark:text-gray-400">
-                We provide a feature-rich environment designed for academic
-                success and collaboration.
+              <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-600 dark:text-gray-400">
+                Find materials, share projects, and learn from what others have
+                contributed.
               </p>
             </div>
-            <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
-              <div className="flex flex-col items-center text-center p-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300">
-                  <Users className="h-8 w-8" />
-                </div>
-                <h3 className="mt-6 text-xl font-semibold">Global Network</h3>
-                <p className="mt-2 text-gray-600 dark:text-gray-400">
-                  Connect with peers and mentors from around the world.
+            <div className="mt-9 grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-8">
+              <article className="flex flex-col items-center p-4 text-center">
+                <BookOpen
+                  className="h-8 w-8 text-blue-600 dark:text-blue-400"
+                  aria-hidden="true"
+                />
+                <h3 className="mt-5 text-xl font-semibold">
+                  Academic Resources
+                </h3>
+                <p className="mt-2 max-w-sm text-gray-600 dark:text-gray-400">
+                  Browse notes, past papers, syllabi, and timetables by subject
+                  and course.
                 </p>
-              </div>
-              <div className="flex flex-col items-center text-center p-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300">
-                  <Lightbulb className="h-8 w-8" />
-                </div>
-                <h3 className="mt-6 text-xl font-semibold">Project Showcase</h3>
-                <p className="mt-2 text-gray-600 dark:text-gray-400">
-                  Share your work, get feedback, and build your portfolio.
+                <Link
+                  to="/academic/notes"
+                  className="mt-4 inline-flex items-center text-sm font-medium text-blue-700 hover:underline dark:text-blue-300"
+                >
+                  Browse resources <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </article>
+              <article className="flex flex-col items-center p-4 text-center">
+                <FileText
+                  className="h-8 w-8 text-blue-600 dark:text-blue-400"
+                  aria-hidden="true"
+                />
+                <h3 className="mt-5 text-xl font-semibold">Projects & Ideas</h3>
+                <p className="mt-2 max-w-sm text-gray-600 dark:text-gray-400">
+                  Share a project, write an article, or discover practical work
+                  from the community.
                 </p>
-              </div>
-              <div className="flex flex-col items-center text-center p-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300">
-                  <BookOpen className="h-8 w-8" />
-                </div>
-                <h3 className="mt-6 text-xl font-semibold">Shared Knowledge</h3>
-                <p className="mt-2 text-gray-600 dark:text-gray-400">
-                  Publish and discover articles, tutorials, and blogs.
+                <Link
+                  to="/projects"
+                  className="mt-4 inline-flex items-center text-sm font-medium text-blue-700 hover:underline dark:text-blue-300"
+                >
+                  Explore projects <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </article>
+              <article className="flex flex-col items-center p-4 text-center">
+                <Users
+                  className="h-8 w-8 text-blue-600 dark:text-blue-400"
+                  aria-hidden="true"
+                />
+                <h3 className="mt-5 text-xl font-semibold">Shared Knowledge</h3>
+                <p className="mt-2 max-w-sm text-gray-600 dark:text-gray-400">
+                  Learn from notes, guides, and experiences shared by students
+                  and teachers.
                 </p>
-              </div>
+                <Link
+                  to="/blogs"
+                  className="mt-4 inline-flex items-center text-sm font-medium text-blue-700 hover:underline dark:text-blue-300"
+                >
+                  Read community articles <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </article>
             </div>
           </div>
         </section>
 
-        {/* Blog Section: Displays featured blog posts and content */}
-        <section className="py-16 md:py-24 bg-white dark:bg-gray-950">
-          <div className="container mx-auto px-4">
+        <section className="bg-white py-12 dark:bg-gray-950 md:py-16">
+          <div className="container mx-auto w-full max-w-[120rem] px-5 md:px-8 xl:px-10">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-                From Our Blog
+                From the community
               </h2>
-              <p className="mt-4 max-w-3xl mx-auto text-lg text-gray-600 dark:text-gray-400">
-                Check out the latest articles from our community of creators and
-                educators.
+              <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-600 dark:text-gray-400">
+                Read articles and ideas shared by students and teachers.
               </p>
             </div>
-            <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+
+            <div className="mt-9">
               {isLoading ? (
-                <p className="col-span-full text-center">
-                  Loading latest blogs...
+                <p className="text-center text-gray-600 dark:text-gray-400">
+                  Loading latest articles...
                 </p>
+              ) : latestBlogs.length > 0 ? (
+                <div className="grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                  {latestBlogs.map((blog) => (
+                    <BlogCard key={blog._id} blog={blog} />
+                  ))}
+                </div>
               ) : (
-                latestBlogs.map((blog) => (
-                  <BlogCard key={blog._id} blog={blog} />
-                ))
+                <p className="text-center text-gray-600 dark:text-gray-400">
+                  No articles have been published yet.
+                </p>
               )}
             </div>
-            <div className="mt-12 text-center">
+
+            <div className="mt-9 text-center">
               <Button asChild size="lg" variant="outline">
-                <Link to="/blogs">See All Blogs</Link>
+                <Link to="/blogs">See All Articles</Link>
               </Button>
             </div>
           </div>
         </section>
 
-        {/* Newsletter Section */}
         <NewsletterSubscribe />
       </div>
     </div>

@@ -4,6 +4,7 @@ import api from "@/services/api";
 import { Project } from "../types";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
+import CoverMedia from "@/components/shared/CoverMedia";
 import {
   ExternalLink,
   Github,
@@ -49,14 +50,14 @@ const ProjectDetail: React.FC = () => {
   const isAuthor = currentUser?._id === project.author._id;
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-32">
-      <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
+    <div className="min-h-screen bg-white px-5 py-10 pt-28 dark:bg-gray-900 md:px-8">
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)] lg:gap-12">
+        <div className="min-w-0">
           <div className="relative">
-            <img
-              src={project.coverImage}
+            <CoverMedia
+              src={project.coverImage || undefined}
               alt={project.title}
-              className="w-full rounded-lg shadow-lg aspect-video object-cover"
+              className="aspect-video w-full rounded-lg object-cover"
             />
             {isAuthor && (
               <Button asChild className="absolute top-4 right-4 z-10">
@@ -83,7 +84,7 @@ const ProjectDetail: React.FC = () => {
                     key={index}
                     src={ss}
                     alt={`Screenshot ${index + 1}`}
-                    className="rounded-lg shadow-md w-full object-cover"
+                    className="w-full rounded-lg object-cover"
                   />
                 ))}
               </div>
@@ -93,8 +94,8 @@ const ProjectDetail: React.FC = () => {
 
         {/* Sidebar Column */}
         <aside className="lg:col-span-1">
-          <div className="fixed lg:w-[calc(100%/3-2rem)] space-y-4 rounded-lg border bg-white p-6 shadow-sm dark:bg-gray-900 dark:border-gray-800 overflow-y-auto max-h-[calc(100vh-8rem)] z-10">
-            <h3 className="text-lg font-semibold border-b pb-2 dark:border-gray-700">
+          <div className="h-fit w-full space-y-4 border-t border-gray-200 pt-5 dark:border-gray-700 lg:sticky lg:top-24 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+            <h3 className="border-b border-gray-200 pb-2 text-lg font-semibold dark:border-gray-700">
               Project Details
             </h3>
 

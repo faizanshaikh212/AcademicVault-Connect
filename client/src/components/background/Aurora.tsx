@@ -123,6 +123,7 @@ export default function Aurora(props: AuroraProps) {
       const c = new Color(hex);
       return [c.r, c.g, c.b];
     });
+    let previousColorStops = colorStops;
 
     program = new Program(gl, {
       vertex: VERT,
@@ -148,10 +149,13 @@ export default function Aurora(props: AuroraProps) {
         program.uniforms.uAmplitude.value = propsRef.current.amplitude ?? 1.0;
         program.uniforms.uBlend.value = propsRef.current.blend ?? blend;
         const stops = propsRef.current.colorStops ?? colorStops;
-        program.uniforms.uColorStops.value = stops.map((hex: string) => {
-          const c = new Color(hex);
-          return [c.r, c.g, c.b];
-        });
+        if (stops !== previousColorStops) {
+          program.uniforms.uColorStops.value = stops.map((hex: string) => {
+            const c = new Color(hex);
+            return [c.r, c.g, c.b];
+          });
+          previousColorStops = stops;
+        }
         renderer.render({ scene: mesh });
       }
     };

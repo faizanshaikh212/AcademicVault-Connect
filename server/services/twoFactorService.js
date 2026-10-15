@@ -16,14 +16,18 @@ class TwoFactorService {
      */
     async generateSecret(user) {
         const secret = speakeasy.generateSecret({
-            name: `${user.firstName} ${user.lastName}`,
-            issuer: 'Academic Vault',
             length: 32
         });
+        const label = `${user.firstName} ${user.lastName}`;
 
         return {
             secret: secret.base32,
-            otpauthUrl: secret.otpauth_url
+            otpauthUrl: speakeasy.otpauthURL({
+                secret: secret.base32,
+                encoding: 'base32',
+                label: `Academic Vault:${label}`,
+                issuer: 'Academic Vault'
+            })
         };
     }
 

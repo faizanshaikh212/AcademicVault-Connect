@@ -1,60 +1,56 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense } from "react";
 import { Routes, Route, Outlet } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import { RoleProvider } from "./contexts/RoleContext";
 
-// Page Imports
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import PasswordResetForm from "./components/auth/PasswordResetForm";
-import VerifyEmail from "./pages/VerifyEmail";
-import Projects from "./pages/Projects";
-import ProjectDetail from "./pages/ProjectDetail";
-import ProjectForm from "./pages/ProjectForm";
-import Blogs from "./pages/Blogs";
-import BlogDetail from "./pages/BlogDetail";
-import BlogForm from "./pages/BlogForm";
-import OurPurpose from "./pages/OurPurpose";
-import OurNetwork from "./pages/OurNetwork";
-import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
-import SessionsPage from "./pages/Settings/Sessions";
-import SecurityPage from "./pages/Settings/Security";
 import CookieBanner from "./components/layout/CookieBanner";
 import CookieSettingsModal from "./components/layout/CookieSettingsModal";
 import EmailVerificationBanner from "./components/auth/EmailVerificationBanner";
-import RoleRequest from "./pages/RoleRequest";
-import RequestPremium from "./pages/RequestPremium";
-import AdminDashboard from "./pages/AdminDashboard";
-import UserManagement from "./pages/admin/UserManagement";
-import RoleRequests from "./pages/admin/RoleRequests";
-import ContentManagement from "./pages/admin/ContentManagement";
-import PremiumRequests from "./pages/admin/PremiumRequests";
-import PremiumUsersManagement from "./pages/admin/PremiumUsersManagement";
-import CustomerCare from "./pages/admin/CustomerCare";
-import NotFound from "./pages/NotFound";
-import TermsAndConditions from "./pages/TermsAndConditions";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import ContactUs from "./pages/ContactUs";
-import NotificationHistory from "./pages/NotificationHistory";
-import News from "./pages/News";
-import NewsDetail from "./pages/NewsDetail";
-import NoticesPage from "./pages/Notices";
-import NoticeDetail from "./pages/NoticeDetail";
-import NewsForm from "./pages/admin/NewsForm";
-import NewsManagement from "./pages/admin/NewsManagement";
-import NoticeManagement from "./pages/admin/NoticeManagement";
-import SubscriberList from "./pages/admin/SubscriberList";
-import AboutUs from "./pages/AboutUs";
-
-// Academic Pages
-import AcademicNotes from "./pages/AcademicNotes";
-import QuestionPapers from "./pages/QuestionPapersTable";
-import Syllabus from "./pages/Syllabus";
-import Timetables from "./pages/Timetables";
-
+import Home from "./pages/Home";
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const PasswordResetForm = lazy(() => import("./components/auth/PasswordResetForm"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
+const Projects = lazy(() => import("./pages/Projects"));
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
+const ProjectForm = lazy(() => import("./pages/ProjectForm"));
+const Blogs = lazy(() => import("./pages/Blogs"));
+const BlogDetail = lazy(() => import("./pages/BlogDetail"));
+const BlogForm = lazy(() => import("./pages/BlogForm"));
+const OurPurpose = lazy(() => import("./pages/OurPurpose"));
+const OurNetwork = lazy(() => import("./pages/OurNetwork"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Settings = lazy(() => import("./pages/Settings"));
+const SessionsPage = lazy(() => import("./pages/Settings/Sessions"));
+const SecurityPage = lazy(() => import("./pages/Settings/Security"));
+const RoleRequest = lazy(() => import("./pages/RoleRequest"));
+const RequestPremium = lazy(() => import("./pages/RequestPremium"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
+const RoleRequests = lazy(() => import("./pages/admin/RoleRequests"));
+const ContentManagement = lazy(() => import("./pages/admin/ContentManagement"));
+const PremiumRequests = lazy(() => import("./pages/admin/PremiumRequests"));
+const PremiumUsersManagement = lazy(() => import("./pages/admin/PremiumUsersManagement"));
+const CustomerCare = lazy(() => import("./pages/admin/CustomerCare"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const ContactUs = lazy(() => import("./pages/ContactUs"));
+const NotificationHistory = lazy(() => import("./pages/NotificationHistory"));
+const News = lazy(() => import("./pages/News"));
+const NewsDetail = lazy(() => import("./pages/NewsDetail"));
+const NoticesPage = lazy(() => import("./pages/Notices"));
+const NoticeDetail = lazy(() => import("./pages/NoticeDetail"));
+const NewsForm = lazy(() => import("./pages/admin/NewsForm"));
+const NewsManagement = lazy(() => import("./pages/admin/NewsManagement"));
+const NoticeManagement = lazy(() => import("./pages/admin/NoticeManagement"));
+const SubscriberList = lazy(() => import("./pages/admin/SubscriberList"));
+const AboutUs = lazy(() => import("./pages/AboutUs"));
+const AcademicNotes = lazy(() => import("./pages/AcademicNotes"));
+const QuestionPapers = lazy(() => import("./pages/QuestionPapersTable"));
+const Syllabus = lazy(() => import("./pages/Syllabus"));
+const Timetables = lazy(() => import("./pages/Timetables"));
 
 // Layout Imports
 import Navbar from "./components/layout/Navbar";
@@ -64,23 +60,23 @@ import AdminRoute from "./components/layout/AdminRoute";
 import AdminLayout from "./components/layout/AdminLayout";
 import TeacherRoute from "./components/layout/TeacherRoute";
 import TeacherLayout from "./components/layout/TeacherLayout";
-import TeacherNoticesManagement from "./pages/teacher/NoticesManagement";
-import TeacherDashboard from "./pages/teacher/Dashboard";
-import TeacherNotesManagement from "./pages/teacher/NotesManagement";
-import TeacherQuestionPapersManagement from "./pages/teacher/QuestionPapersManagement";
-import TeacherSyllabusManagement from "./pages/teacher/SyllabusManagement";
-import TeacherTimetablesManagement from "./pages/teacher/TimetablesManagement";
-import TeacherCourseManagement from "./pages/teacher/CourseManagement";
-import TeacherStudentManagement from "./pages/teacher/StudentManagement";
+const TeacherNoticesManagement = lazy(() => import("./pages/teacher/NoticesManagement"));
+const TeacherDashboard = lazy(() => import("./pages/teacher/Dashboard"));
+const TeacherNotesManagement = lazy(() => import("./pages/teacher/NotesManagement"));
+const TeacherQuestionPapersManagement = lazy(() => import("./pages/teacher/QuestionPapersManagement"));
+const TeacherSyllabusManagement = lazy(() => import("./pages/teacher/SyllabusManagement"));
+const TeacherTimetablesManagement = lazy(() => import("./pages/teacher/TimetablesManagement"));
+const TeacherCourseManagement = lazy(() => import("./pages/teacher/CourseManagement"));
+const TeacherStudentManagement = lazy(() => import("./pages/teacher/StudentManagement"));
 
 /**
  * Main application layout with Navbar and Footer.
  */
 const MainLayout = () => (
-  <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950">
+  <div className="flex min-h-screen flex-col bg-white dark:bg-gray-900">
     <Navbar />
     <EmailVerificationBanner />
-    <main className="flex-grow">
+    <main className="app-main min-w-0 w-full flex-grow">
       <Outlet />
     </main>
     <Footer />
@@ -89,21 +85,8 @@ const MainLayout = () => (
 
 function App() {
   const { isLoading: authLoading } = useAuth();
-  const [pageLoading, setPageLoading] = useState(false);
 
-  // Add event listeners for page refresh/reload
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      setPageLoading(true);
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, []);
-
-  if (authLoading || pageLoading) {
+  if (authLoading) {
     return (
       <div className="fixed inset-0 z-50 flex min-h-screen items-center justify-center bg-gray-900 text-white">
         <div className="flex flex-col items-center gap-4">
@@ -119,6 +102,16 @@ function App() {
       <div className="text-gray-800 dark:text-gray-200">
         <CookieBanner />
         <CookieSettingsModal />
+        <Suspense
+          fallback={
+            <div
+              role="status"
+              className="flex min-h-[50vh] items-center justify-center text-sm text-slate-600 dark:text-gray-300"
+            >
+              Loading page…
+            </div>
+          }
+        >
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -204,6 +197,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
+        </Suspense>
       </div>
     </RoleProvider>
   );

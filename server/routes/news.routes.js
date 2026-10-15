@@ -1,10 +1,11 @@
 import express from "express";
 import { News, NewsletterSubscriber } from "../models/news.model.js";
-import { protect as auth } from "../middleware/auth.middleware.js";
+import { protect as auth, optionalAuth } from "../middleware/auth.middleware.js";
 import { admin } from "../middleware/admin.middleware.js";
 import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
 import logger from "../utils/logger.js";
+import { shouldUseAdminPrivileges } from "../utils/roleUtils.js";
 
 const newsRouter = express.Router();
 
@@ -204,13 +205,16 @@ newsRouter.get("/news/all", [auth, admin], async (req, res) => {
 });
 
 // Get single news article
-newsRouter.get("/news/:id", async (req, res) => {
+newsRouter.get("/news/:id", optionalAuth, async (req, res) => {
   try {
     const news = await News.findById(req.params.id).populate(
       "author",
       "username"
     );
     if (!news) {
+      return res.status(404).json({ message: "News not found" });
+    }
+    if (!news.isPublished && !shouldUseAdminPrivileges(req.user?.role)) {
       return res.status(404).json({ message: "News not found" });
     }
     res.json(news);

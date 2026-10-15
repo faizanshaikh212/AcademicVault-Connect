@@ -195,6 +195,7 @@ Project structure highlights (server):
 
 Key considerations:
 
+- Run the server with Node.js 24 or newer; the GeoIP database package requires this runtime.
 - Use Mongoose models and parameterized queries where needed; sanitize inputs and validate request bodies to prevent injection-style attacks.
 - Organize controllers to keep route handling thin and delegate heavy logic to services.
 - Implement rate-limiting and input validation in middleware for endpoints that accept uploads or free-form input.

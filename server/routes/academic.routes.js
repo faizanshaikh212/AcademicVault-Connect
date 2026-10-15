@@ -4,7 +4,7 @@
  */
 
 import express from 'express';
-import { protect } from '../middleware/auth.middleware.js';
+import { protect, optionalAuth } from '../middleware/auth.middleware.js';
 import { admin } from '../middleware/admin.middleware.js';
 
 // Import controllers
@@ -18,9 +18,9 @@ const router = express.Router();
 // ===== ACADEMIC NOTES ROUTES =====
 
 // Public routes
-router.get('/notes', academicNoteController.getAllNotes);
-router.get('/notes/:id', academicNoteController.getNoteById);
-router.post('/notes/:id/download', academicNoteController.trackDownload);
+router.get('/notes', optionalAuth, academicNoteController.getAllNotes);
+router.get('/notes/:id', optionalAuth, academicNoteController.getNoteById);
+router.post('/notes/:id/download', optionalAuth, academicNoteController.trackDownload);
 
 // Protected routes (authenticated users)
 router.post('/notes',
@@ -38,12 +38,12 @@ router.post('/notes/:id/reject', protect, admin, academicNoteController.rejectNo
 // ===== QUESTION PAPERS ROUTES =====
 
 // Public routes
-router.get('/question-papers', questionPaperController.getAllQuestionPapers);
-router.get('/question-papers/categories', questionPaperController.getQuestionPapersByCategory);
-router.get('/question-papers/categories/:degreeType', questionPaperController.getQuestionPapersByCategory);
-router.get('/question-papers/categories/:degreeType/:course', questionPaperController.getQuestionPapersByCategory);
-router.get('/question-papers/:id', questionPaperController.getQuestionPaperById);
-router.post('/question-papers/:id/download', questionPaperController.trackDownload);
+router.get('/question-papers', optionalAuth, questionPaperController.getAllQuestionPapers);
+router.get('/question-papers/categories', optionalAuth, questionPaperController.getQuestionPapersByCategory);
+router.get('/question-papers/categories/:degreeType', optionalAuth, questionPaperController.getQuestionPapersByCategory);
+router.get('/question-papers/categories/:degreeType/:course', optionalAuth, questionPaperController.getQuestionPapersByCategory);
+router.get('/question-papers/:id', optionalAuth, questionPaperController.getQuestionPaperById);
+router.post('/question-papers/:id/download', optionalAuth, questionPaperController.trackDownload);
 
 // Protected routes (authenticated users)
 router.post('/question-papers',
@@ -62,9 +62,9 @@ router.post('/question-papers/:id/approve', protect, admin, questionPaperControl
 // ===== SYLLABUS ROUTES =====
 
 // Public routes
-router.get('/syllabus', syllabusController.getAllSyllabus);
-router.get('/syllabus/:id', syllabusController.getSyllabusById);
-router.post('/syllabus/:id/download', syllabusController.trackDownload);
+router.get('/syllabus', optionalAuth, syllabusController.getAllSyllabus);
+router.get('/syllabus/:id', optionalAuth, syllabusController.getSyllabusById);
+router.post('/syllabus/:id/download', optionalAuth, syllabusController.trackDownload);
 
 // Protected routes (authenticated users)
 router.post('/syllabus',
@@ -86,10 +86,10 @@ router.post('/syllabus/:id/approve', protect, admin, syllabusController.approveS
 // ===== TIMETABLES ROUTES =====
 
 // Public routes
-router.get('/timetables', timetableController.getAllTimetables);
-router.get('/timetables/active', timetableController.getActiveTimetables);
-router.get('/timetables/:id', timetableController.getTimetableById);
-router.post('/timetables/:id/download', timetableController.trackDownload);
+router.get('/timetables', optionalAuth, timetableController.getAllTimetables);
+router.get('/timetables/active', optionalAuth, timetableController.getActiveTimetables);
+router.get('/timetables/:id', optionalAuth, timetableController.getTimetableById);
+router.post('/timetables/:id/download', optionalAuth, timetableController.trackDownload);
 
 // Protected routes (authenticated users)
 router.post('/timetables',

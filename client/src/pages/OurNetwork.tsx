@@ -6,15 +6,6 @@ import { Input } from "@/components/ui/Input";
 import { Search } from "lucide-react";
 import NewsletterSubscribe from "@/components/shared/NewsletterSubscribe";
 
-const cardThemes = [
-  { borderColor: "#4F46E5", gradient: "linear-gradient(145deg,#4F46E5,#000)" },
-  { borderColor: "#10B981", gradient: "linear-gradient(210deg,#10B981,#000)" },
-  { borderColor: "#F59E0B", gradient: "linear-gradient(165deg,#F59E0B,#000)" },
-  { borderColor: "#EF4444", gradient: "linear-gradient(195deg,#EF4444,#000)" },
-  { borderColor: "#8B5CF6", gradient: "linear-gradient(225deg,#8B5CF6,#000)" },
-  { borderColor: "#06B6D4", gradient: "linear-gradient(135deg,#06B6D4,#000)" },
-];
-
 const OurNetwork: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -29,7 +20,7 @@ const OurNetwork: React.FC = () => {
         const { data } = await api.get<User[]>("/users/all");
         setUsers(data);
         setFilteredUsers(data);
-      } catch (err) {
+      } catch {
         setError("Failed to fetch our network. Please try again later.");
       } finally {
         setIsLoading(false);
@@ -52,27 +43,42 @@ const OurNetwork: React.FC = () => {
 
   return (
     <div className="bg-white dark:bg-gray-950">
-      <div className="text-center py-20 md:py-28 bg-gray-50 dark:bg-gray-900">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-          Our Network
-        </h1>
-        <p className="mt-4 max-w-3xl mx-auto text-lg text-gray-600 dark:text-gray-400">
-          Meet the talented and diverse members of the Academic Vault community.
-        </p>
-      </div>
+      <header className="bg-white px-5 pb-12 pt-32 dark:bg-gray-900 md:px-8 md:pb-16">
+        <div className="relative mx-auto w-full max-w-[120rem]">
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">
+            The people behind the resources
+          </p>
+          <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-5xl">
+            Our Network
+          </h1>
+          <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-600 dark:text-gray-400">
+            Meet students and teachers sharing academic resources, projects,
+            and ideas.
+          </p>
+        </div>
+      </header>
 
-      <div className="container mx-auto px-4 py-16">
-        {/* Search Bar */}
-        <div className="mb-12 max-w-xl mx-auto">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Search by name or username..."
-              className="w-full pl-12 h-12 text-lg"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+      <div className="container mx-auto w-full max-w-[120rem] px-5 py-10 md:px-8 md:py-14">
+        <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-950 dark:text-white">
+              Community members
+            </h2>
+            <p className="mt-1 text-sm text-slate-600 dark:text-gray-400">
+              Search by name or username.
+            </p>
+          </div>
+          <div className="w-full sm:max-w-md">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search by name or username..."
+                className="h-12 w-full border-slate-300 bg-transparent pl-12 text-base dark:border-gray-700"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
@@ -84,23 +90,15 @@ const OurNetwork: React.FC = () => {
             <p className="text-center text-red-500">{error}</p>
           ) : filteredUsers.length > 0 ? (
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filteredUsers.map((user, index) => {
-                const theme = cardThemes[index % cardThemes.length];
-                return (
-                  <UserCard
-                    key={user._id}
-                    user={user}
-                    borderColor={theme.borderColor}
-                    gradient={theme.gradient}
-                  />
-                );
-              })}
+              {filteredUsers.map((user) => (
+                <UserCard key={user._id} user={user} />
+              ))}
             </div>
           ) : (
             <p className="text-center text-gray-500">No users found.</p>
           )}
         </div>
-        <div className="mt-20">
+        <div className="mt-16">
           <NewsletterSubscribe />
         </div>
       </div>

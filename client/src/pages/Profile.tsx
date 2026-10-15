@@ -151,8 +151,8 @@ const Profile: React.FC = () => {
   return (
     <div className="bg-white dark:bg-gray-950 min-h-screen pt-30">
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto grid grid-cols-4 gap-10 items-start">
-          <div className="col-span-1 flex justify-end">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-6 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-8">
+          <div className="flex justify-center sm:justify-end">
             <img
               src={getAvatarUrl(
                 profileUser.profile?.avatar,
@@ -160,10 +160,10 @@ const Profile: React.FC = () => {
                 profileUser.updatedAt
               )}
               alt={profileUser.username}
-              className="h-32 w-32 rounded-full object-cover"
+              className="h-24 w-24 rounded-full object-cover ring-4 ring-white shadow-lg dark:ring-gray-900 sm:h-32 sm:w-32"
             />
           </div>
-          <div className="col-span-3 space-y-4">
+          <div className="min-w-0 space-y-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-normal">{profileUser.username}</h1>
@@ -202,7 +202,7 @@ const Profile: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-8">
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
               <Stat value={projects.length} label="projects" />
               <Stat
                 value={profileUser.socials?.followersCount ?? 0}
@@ -229,7 +229,7 @@ const Profile: React.FC = () => {
        * Uses dynamic styling based on active tab
        */}
       <div className="border-t dark:border-gray-800">
-        <div className="container mx-auto px-4 flex justify-center gap-12">
+        <div className="container mx-auto flex w-full justify-center gap-6 px-4 sm:gap-12">
           <button
             onClick={() => setActiveTab("projects")}
             className={`py-3 font-medium border-t-2 flex items-center gap-2 ${
@@ -257,7 +257,7 @@ const Profile: React.FC = () => {
        * Shows "Add New" card for own profile
        * Handles empty states with appropriate messages
        */}
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto w-full px-4 py-12">
         {activeTab === "projects" && (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">

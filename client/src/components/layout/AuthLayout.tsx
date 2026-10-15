@@ -14,15 +14,15 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
   return (
     <>
       <Navbar />
-      <div className="fixed inset-0 flex items-center justify-center bg-gray-900 pt-30">
+      <main className="relative z-10 flex min-h-[100svh] items-center justify-center bg-gradient-to-br from-slate-950 via-gray-900 to-blue-950 px-4 pb-8 pt-24">
         {/* Form Card */}
-        <div className="relative z-10 w-full max-w-md rounded-xl border border-white/10 bg-gray-900/50 p-8 shadow-2xl backdrop-blur-lg">
+        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-gray-900/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-lg sm:p-8">
           <h1 className="relative mb-6 text-center text-3xl font-bold text-white">
             {title}
           </h1>
           {children}
         </div>
-      </div>
+      </main>
     </>
   );
 };

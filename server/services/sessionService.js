@@ -1,6 +1,6 @@
 /**
  * Enhanced Session Service
- * Handles session management with device fingerprinting and geolocation
+ * Handles session management and device information
  */
 
 import UAParser from 'ua-parser-js';
@@ -56,7 +56,6 @@ class SessionService {
             req.socket.remoteAddress ||
             (req.connection.socket ? req.connection.socket.remoteAddress : null);
 
-        // Get location from IP
         const geo = geoip.lookup(ip);
 
         return {
@@ -210,8 +209,12 @@ class SessionService {
         const suspiciousFactors = [];
 
         // Check for new location
-        const knownLocations = recentSessions.map(s => s.deviceInfo.location?.country).filter(Boolean);
-        if (knownLocations.length > 0 && !knownLocations.includes(deviceInfo.location?.country)) {
+        const knownLocations = recentSessions
+            .map(s => s.deviceInfo.location?.country)
+            .filter(country => country && country !== 'Unknown');
+        if (deviceInfo.location?.country !== 'Unknown' &&
+            knownLocations.length > 0 &&
+            !knownLocations.includes(deviceInfo.location.country)) {
             suspiciousFactors.push('new_location');
         }
 
@@ -227,7 +230,8 @@ class SessionService {
             const lastLocation = lastSession.deviceInfo.location;
             const currentLocation = deviceInfo.location;
 
-            if (lastLocation?.country && currentLocation?.country &&
+            if (lastLocation?.country && lastLocation.country !== 'Unknown' &&
+                currentLocation?.country && currentLocation.country !== 'Unknown' &&
                 lastLocation.country !== currentLocation.country) {
                 suspiciousFactors.push('rapid_location_change');
             }

@@ -171,7 +171,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 First Name
@@ -261,7 +261,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Roles
             </label>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {availableRoles.map((role) => (
                 <label
                   key={role}
